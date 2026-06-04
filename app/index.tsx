@@ -14,12 +14,17 @@ function todayNumber(): number {
   return Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
 }
 
-const REMINDER_TIMES = [
-  { hour: 7, label: '7 AM' },
-  { hour: 8, label: '8 AM' },
-  { hour: 18, label: '6 PM' },
-  { hour: 21, label: '9 PM' },
-];
+const REMINDER_HOURS = Array.from({ length: 24 }, (_, h) => h);
+const REMINDER_MINUTES = [0, 15, 30, 45];
+
+function hourLabel(h: number): string {
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12} ${h < 12 ? 'AM' : 'PM'}`;
+}
+function timeLabel(h: number, m: number): string {
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+}
 
 export default function Home() {
   const insets = useSafeAreaInsets();
@@ -32,6 +37,7 @@ export default function Home() {
   const markFoundationSeen = useAppStore((s) => s.markFoundationSeen);
   const reminderEnabled = useAppStore((s) => s.reminderEnabled);
   const reminderHour = useAppStore((s) => s.reminderHour);
+  const reminderMinute = useAppStore((s) => s.reminderMinute);
   const setReminder = useAppStore((s) => s.setReminder);
   const resetAll = useAppStore((s) => s.resetAll);
 
@@ -52,17 +58,17 @@ export default function Home() {
         Alert.alert('Notifications are off', 'Allow notifications for Thrive in your phone settings to get reminders.');
         return;
       }
-      await scheduleDailyReminder(reminderHour, 0);
-      setReminder(true, reminderHour);
+      await scheduleDailyReminder(reminderHour, reminderMinute);
+      setReminder(true, reminderHour, reminderMinute);
     } else {
       await cancelReminders();
-      setReminder(false, reminderHour);
+      setReminder(false, reminderHour, reminderMinute);
     }
   };
 
-  const pickReminderTime = async (hour: number) => {
-    setReminder(true, hour);
-    await scheduleDailyReminder(hour, 0);
+  const changeReminder = async (hour: number, minute: number) => {
+    setReminder(true, hour, minute);
+    await scheduleDailyReminder(hour, minute);
   };
 
   return (
@@ -140,16 +146,30 @@ export default function Home() {
             />
           </View>
           {reminderEnabled ? (
-            <View style={styles.timeRow}>
-              {REMINDER_TIMES.map((t) => (
-                <Pressable
-                  key={t.hour}
-                  onPress={() => pickReminderTime(t.hour)}
-                  style={[styles.timeChip, reminderHour === t.hour && styles.timeChipOn]}
-                >
-                  <Text style={[styles.timeChipText, reminderHour === t.hour && styles.timeChipTextOn]}>{t.label}</Text>
-                </Pressable>
-              ))}
+            <View style={{ gap: spacing.sm }}>
+              <Text style={styles.reminderTimeValue}>{timeLabel(reminderHour, reminderMinute)}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hourScroll}>
+                {REMINDER_HOURS.map((h) => (
+                  <Pressable
+                    key={h}
+                    onPress={() => changeReminder(h, reminderMinute)}
+                    style={[styles.timeChip, reminderHour === h && styles.timeChipOn]}
+                  >
+                    <Text style={[styles.timeChipText, reminderHour === h && styles.timeChipTextOn]}>{hourLabel(h)}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+              <View style={styles.timeRow}>
+                {REMINDER_MINUTES.map((m) => (
+                  <Pressable
+                    key={m}
+                    onPress={() => changeReminder(reminderHour, m)}
+                    style={[styles.timeChip, reminderMinute === m && styles.timeChipOn]}
+                  >
+                    <Text style={[styles.timeChipText, reminderMinute === m && styles.timeChipTextOn]}>{`:${String(m).padStart(2, '0')}`}</Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
           ) : null}
         </View>
@@ -224,6 +244,8 @@ const styles = StyleSheet.create({
   timeChipOn: { backgroundColor: colors.primary, borderColor: colors.primary },
   timeChipText: { color: colors.text, fontSize: font.small, fontWeight: '700' },
   timeChipTextOn: { color: colors.primaryText },
+  reminderTimeValue: { color: colors.primary, fontSize: font.body, fontWeight: '800' },
+  hourScroll: { gap: spacing.sm, paddingRight: spacing.lg },
 
   devRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.lg, paddingTop: spacing.sm },
   reset: { alignItems: 'center', paddingVertical: spacing.sm },

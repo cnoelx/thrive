@@ -29,6 +29,7 @@ interface AppState {
   nudgeDismissedDay: number | null;
   reminderEnabled: boolean;
   reminderHour: number;
+  reminderMinute: number;
 
   completeOnboarding: (profile: Profile, initialProgress?: ProgressState) => void;
   /** Mark today's workout complete. */
@@ -37,7 +38,7 @@ interface AppState {
   claimBenchmark: (benchmarkId: string) => void;
   markFoundationSeen: () => void;
   dismissNudge: (dayNumber: number) => void;
-  setReminder: (enabled: boolean, hour: number) => void;
+  setReminder: (enabled: boolean, hour: number, minute: number) => void;
   /** Dev/testing helper to wipe back to a clean first-launch state. */
   resetAll: () => void;
 }
@@ -54,6 +55,7 @@ export const useAppStore = create<AppState>()(
       nudgeDismissedDay: null,
       reminderEnabled: false,
       reminderHour: 8,
+      reminderMinute: 0,
 
       completeOnboarding: (profile, initialProgress) =>
         set({
@@ -78,7 +80,7 @@ export const useAppStore = create<AppState>()(
 
       dismissNudge: (dayNumber) => set({ nudgeDismissedDay: dayNumber }),
 
-      setReminder: (enabled, hour) => set({ reminderEnabled: enabled, reminderHour: hour }),
+      setReminder: (enabled, hour, minute) => set({ reminderEnabled: enabled, reminderHour: hour, reminderMinute: minute }),
 
       resetAll: () =>
         set({
@@ -90,6 +92,7 @@ export const useAppStore = create<AppState>()(
           nudgeDismissedDay: null,
           reminderEnabled: false,
           reminderHour: 8,
+          reminderMinute: 0,
         }),
     }),
     {
@@ -105,6 +108,7 @@ export const useAppStore = create<AppState>()(
         nudgeDismissedDay: s.nudgeDismissedDay,
         reminderEnabled: s.reminderEnabled,
         reminderHour: s.reminderHour,
+        reminderMinute: s.reminderMinute,
       }),
     },
   ),
