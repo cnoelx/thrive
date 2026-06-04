@@ -1,0 +1,239 @@
+import { Redirect, useRouter } from 'expo-router';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { colors, font, radius, spacing } from '@/constants/theme';
+import { CATEGORIES, benchmarksFor } from '@/data/benchmarks';
+import { todaysWorkout } from '@/engine/dailyCard';
+import { completedLevel, foundationComplete, isClaimable, nextLevel } from '@/engine/progression';
+import { cancelReminders, requestNotificationPermission, scheduleDailyReminder } from '@/lib/notifications';
+import { useAppStore } from '@/store/useAppStore';
+
+function todayNumber(): number {
+  const now = new Date();
+  return Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
+}
+
+const REMINDER_TIMES = [
+  { hour: 7, label: '7 AM' },
+  { hour: 8, label: '8 AM' },
+  { hour: 18, label: '6 PM' },
+  { hour: 21, label: '9 PM' },
+];
+
+export default function Home() {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const onboarded = useAppStore((s) => s.onboarded);
+  const profile = useAppStore((s) => s.profile);
+  const progress = useAppStore((s) => s.progress);
+  const lastLoggedDay = useAppStore((s) => s.lastLoggedDay);
+  const foundationSeen = useAppStore((s) => s.foundationSeen);
+  const markFoundationSeen = useAppStore((s) => s.markFoundationSeen);
+  const reminderEnabled = useAppStore((s) => s.reminderEnabled);
+  const reminderHour = useAppStore((s) => s.reminderHour);
+  const setReminder = useAppStore((s) => s.setReminder);
+  const resetAll = useAppStore((s) => s.resetAll);
+
+  const day = todayNumber();
+  const doneToday = lastLoggedDay === day;
+
+  if (!onboarded || !profile) return <Redirect href="/onboarding" />;
+
+  const atFoundation = foundationComplete(progress);
+  const atL1Count = CATEGORIES.filter((cat) => completedLevel(progress, cat.id) >= 1).length;
+  const showCelebration = atFoundation && !foundationSeen;
+  const todayWk = todaysWorkout(progress, new Date());
+
+  const toggleReminder = async (value: boolean) => {
+    if (value) {
+      const ok = await requestNotificationPermission();
+      if (!ok) {
+        Alert.alert('Notifications are off', 'Allow notifications for Thrive in your phone settings to get reminders.');
+        return;
+      }
+      await scheduleDailyReminder(reminderHour, 0);
+      setReminder(true, reminderHour);
+    } else {
+      await cancelReminders();
+      setReminder(false, reminderHour);
+    }
+  };
+
+  const pickReminderTime = async (hour: number) => {
+    setReminder(true, hour);
+    await scheduleDailyReminder(hour, 0);
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: spacing.lg,
+          paddingTop: insets.top + spacing.lg,
+          paddingBottom: insets.bottom + spacing.xl,
+          gap: spacing.lg,
+        }}
+      >
+        {/* Today's workout */}
+        <View style={styles.todayCard}>
+          <Text style={styles.todayEyebrow}>{todayWk.rest ? 'TODAY' : `TODAY · ${todayWk.focus.toUpperCase()}`}</Text>
+          <Text style={styles.todayTitle}>{todayWk.rest ? 'Rest day' : `${todayWk.items.length} moves today`}</Text>
+          {todayWk.rest ? (
+            <Text style={styles.restSub}>Recover well — back at it tomorrow.</Text>
+          ) : doneToday ? (
+            <View style={styles.doneRow}>
+              <Text style={styles.doneText}>✓ Completed today</Text>
+            </View>
+          ) : (
+            <Pressable style={styles.startBtn} onPress={() => router.push('/workout')}>
+              <Text style={styles.startText}>{"Start today's workout"}</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {/* Foundation progress */}
+        <View style={styles.foundation}>
+          <Text style={styles.foundationLabel}>
+            {atFoundation ? 'Foundation complete 🎉' : `Foundation · ${atL1Count} of ${CATEGORIES.length} at Level 1`}
+          </Text>
+          <View style={styles.barTrack}>
+            <View style={[styles.barFill, { width: `${(atL1Count / CATEGORIES.length) * 100}%` }]} />
+          </View>
+        </View>
+
+        {/* Six areas */}
+        <View style={{ gap: spacing.sm }}>
+          <Text style={styles.sectionLabel}>YOUR AREAS</Text>
+          {CATEGORIES.map((cat) => {
+            const lvl = completedLevel(progress, cat.id);
+            const ready = benchmarksFor(cat.id, nextLevel(progress, cat.id)).some((b) => isClaimable(progress, b));
+            return (
+              <Pressable key={cat.id} onPress={() => router.push(`/category/${cat.id}`)} style={styles.catRow}>
+                <View style={[styles.levelBox, lvl > 0 && styles.levelBoxOn]}>
+                  <Text style={[styles.levelText, lvl > 0 && styles.levelTextOn]}>L{lvl}</Text>
+                </View>
+                <Text style={styles.catName}>{cat.short}</Text>
+                {ready ? (
+                  <View style={styles.claimBadge}>
+                    <Text style={styles.claimBadgeText}>claim</Text>
+                  </View>
+                ) : null}
+                <Text style={styles.chevron}>›</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Daily reminder */}
+        <View style={styles.reminderCard}>
+          <View style={styles.reminderHead}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.reminderTitle}>Daily reminder</Text>
+              <Text style={styles.reminderSub}>A gentle nudge to do today&apos;s workout</Text>
+            </View>
+            <Switch
+              value={reminderEnabled}
+              onValueChange={toggleReminder}
+              trackColor={{ true: colors.primary, false: colors.track }}
+              thumbColor="#ffffff"
+            />
+          </View>
+          {reminderEnabled ? (
+            <View style={styles.timeRow}>
+              {REMINDER_TIMES.map((t) => (
+                <Pressable
+                  key={t.hour}
+                  onPress={() => pickReminderTime(t.hour)}
+                  style={[styles.timeChip, reminderHour === t.hour && styles.timeChipOn]}
+                >
+                  <Text style={[styles.timeChipText, reminderHour === t.hour && styles.timeChipTextOn]}>{t.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.devRow}>
+          <Pressable onPress={resetAll} style={styles.reset}>
+            <Text style={styles.resetText}>Reset (dev)</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+
+      {showCelebration ? (
+        <View style={styles.overlay}>
+          <View style={styles.celebrate}>
+            <Text style={styles.celebrateEmoji}>🎉</Text>
+            <Text style={styles.celebrateTitle}>Foundation Complete</Text>
+            <Text style={styles.celebrateBody}>
+              Level 1 in all four areas — the functional baseline for modern life. The next tier is now unlocked
+              everywhere.
+            </Text>
+            <Pressable onPress={markFoundationSeen} style={styles.celebrateBtn}>
+              <Text style={styles.celebrateBtnText}>Keep going</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  todayCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.xs },
+  todayEyebrow: { color: colors.primary, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
+  todayTitle: { color: colors.text, fontSize: font.h2, fontWeight: '800', marginTop: 2 },
+  restSub: { color: colors.muted, fontSize: font.small, marginTop: 4 },
+  startBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md + 2, alignItems: 'center', marginTop: spacing.md },
+  startText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
+  doneRow: { backgroundColor: '#EAF7F0', borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
+  doneText: { color: colors.primary, fontSize: font.body, fontWeight: '800' },
+
+  foundation: { gap: spacing.xs },
+  foundationLabel: { color: colors.text, fontSize: font.small, fontWeight: '700' },
+  barTrack: { height: 10, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden', marginTop: 2 },
+  barFill: { height: 10, backgroundColor: colors.primary, borderRadius: radius.pill },
+
+  sectionLabel: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5, marginBottom: spacing.xs },
+  catRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  levelBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: colors.track, alignItems: 'center', justifyContent: 'center' },
+  levelBoxOn: { backgroundColor: colors.primary },
+  levelText: { color: colors.muted, fontSize: font.small, fontWeight: '900' },
+  levelTextOn: { color: colors.primaryText },
+  catName: { color: colors.text, fontSize: font.body, fontWeight: '700', flex: 1 },
+  claimBadge: { backgroundColor: '#EAF7F0', borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: 2 },
+  claimBadgeText: { color: colors.primary, fontSize: 11, fontWeight: '800' },
+  chevron: { color: colors.muted, fontSize: 22 },
+
+  reminderCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.md },
+  reminderHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  reminderTitle: { color: colors.text, fontSize: font.body, fontWeight: '800' },
+  reminderSub: { color: colors.muted, fontSize: font.small, marginTop: 1 },
+  timeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  timeChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+  timeChipOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  timeChipText: { color: colors.text, fontSize: font.small, fontWeight: '700' },
+  timeChipTextOn: { color: colors.primaryText },
+
+  devRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.lg, paddingTop: spacing.sm },
+  reset: { alignItems: 'center', paddingVertical: spacing.sm },
+  resetText: { color: colors.muted, fontSize: font.small, textDecorationLine: 'underline' },
+
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
+  celebrate: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, alignItems: 'center', gap: spacing.md },
+  celebrateEmoji: { fontSize: 56 },
+  celebrateTitle: { color: colors.text, fontSize: font.title, fontWeight: '800', textAlign: 'center' },
+  celebrateBody: { color: colors.muted, fontSize: font.body, lineHeight: 22, textAlign: 'center' },
+  celebrateBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, marginTop: spacing.sm },
+  celebrateBtnText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
+});
