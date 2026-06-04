@@ -42,25 +42,25 @@ export interface Exercise {
 
 const EXERCISES: Exercise[] = [
   // Move Your Bodyweight
-  { key: 'squat', categoryId: 'move', name: 'Bodyweight Squat', why: 'Stand, sit, lower all day', sets: 3, targets: ['8 reps', '12 reps', '18 reps', '25 reps', '35 reps'] },
-  { key: 'lunge', categoryId: 'move', name: 'Reverse Lunge', why: 'Stairs, single-leg strength', sets: 3, targets: ['6 (3/leg)', '10 (5/leg)', '16 (8/leg)', '24 (12/leg)', '30 (15/leg)'] },
+  { key: 'squat', categoryId: 'move', name: 'Bodyweight Squat', why: 'Stand, sit, lower all day', sets: 3, targets: ['15', '22', '30', '40', '50'] },
+  { key: 'lunge', categoryId: 'move', name: 'Reverse Lunge', why: 'Stairs, single-leg strength (per leg)', sets: 3, targets: ['10 (5/leg)', '16 (8/leg)', '24 (12/leg)', '32 (16/leg)', '40 (20/leg)'] },
   { key: 'sittostand', categoryId: 'move', name: 'Sit-to-Stand from Floor', why: 'Get off the ground unaided', sets: null, targets: ['Hands OK', 'Fewer hands', 'One hand', 'One fingertip', 'No hands'] },
   { key: 'balance', categoryId: 'move', name: 'Single-leg Balance', why: "Don't fall", sets: 2, targets: ['10s/leg', '20s/leg', '30s/leg', '45s/leg', '60s/leg'] },
   { key: 'plank', categoryId: 'move', name: 'Plank', why: 'Stable trunk, protects back', sets: 3, targets: ['20s', '35s', '50s', '70s', '90s'] },
-  { key: 'sideplank', categoryId: 'move', name: 'Side Plank', why: 'Lateral / anti-rotation core', sets: 3, targets: ['knee 10s/side', 'knee 20s/side', 'full 30s/side', 'full 45s/side', 'full 60s/side'] },
-  { key: 'glutebridge', categoryId: 'move', name: 'Glute Bridge', why: 'Posterior chain', sets: 3, targets: ['8 reps', '12 reps', '20 reps', '30 reps', 'single-leg 10/leg'] },
-  { key: 'pronelegraise', categoryId: 'move', name: 'Prone Leg Raise', why: 'Glutes & hamstrings', sets: 2, targets: ['6/leg', '10/leg', '15/leg', '20/leg', '20/leg + 2s hold'] },
+  { key: 'sideplank', categoryId: 'move', name: 'Side Plank', why: 'Lateral/anti-rotation core', sets: 3, targets: ['knee 10s/side', 'knee 20s/side', 'full 30s/side', 'full 45s/side', 'full 60s/side'] },
+  { key: 'glutebridge', categoryId: 'move', name: 'Glute Bridge', why: 'Posterior chain (main)', sets: 3, targets: ['10', '16', '24', '34', 'single-leg 12/leg'] },
+  { key: 'pronelegraise', categoryId: 'move', name: 'Prone Leg Raise', why: 'Posterior chain (glutes/hamstrings)', sets: 2, targets: ['6/leg', '10/leg', '15/leg', '20/leg', '20/leg + 2s hold'] },
   // Push & Pull
-  { key: 'pushups', categoryId: 'pushpull', name: 'Push-ups', why: 'Push, catch a fall', sets: 3, targets: ['wall', 'high incline', 'low incline / knee', 'negative + few strict', '15 strict'] },
-  { key: 'barrow', categoryId: 'pushpull', name: 'Bar Row', why: 'Horizontal pull (doorway bar)', sets: 3, targets: ['tall angle 5', '8', 'lower angle 10', '12', 'near-horizontal 12–15'] },
+  { key: 'pushups', categoryId: 'pushpull', name: 'Push-ups', why: 'Push, catch a fall', sets: 3, targets: ['wall', 'high incline', 'low incline/knee', 'negative + few strict', '15 strict'] },
+  { key: 'barrow', categoryId: 'pushpull', name: 'Bar Row', why: 'Horizontal pull (doorway bar)', sets: 3, targets: ['tall angle 5', '8', 'lower angle 10', '12', 'near-horizontal 12-15'] },
   { key: 'deadhang', categoryId: 'pushpull', name: 'Dead Hang', why: 'Grip strength', sets: 3, targets: ['active 8s', '15s', '25s', '35s', '45s'] },
-  { key: 'pullup', categoryId: 'pushpull', name: 'Pull-up Progression', why: 'Pull bodyweight up', sets: 3, targets: ['hang + scap pulls', 'negative 5s', 'negative 10s', 'band-assisted 3–5', '3–5 strict'] },
+  { key: 'pullup', categoryId: 'pushpull', name: 'Pull-up Progression', why: 'Pull bodyweight up', sets: 3, targets: ['hang + scap pulls', 'negative 5s', 'negative 10s', 'band-assisted 3-5', '3-5 strict'] },
   // Keep Going (cardio)
-  { key: 'walkrun', categoryId: 'cardio', name: 'Walk / Run', why: 'Cover distance without gassing out', sets: null, targets: ['brisk walk 10min', 'brisk walk 20min', 'brisk walk 30min', 'walk-jog 20min', 'easy jog 20min+'] },
+  { key: 'walkrun', categoryId: 'cardio', name: 'Walk / Run (walk-first)', why: 'Cover distance without gassing out', sets: null, targets: ['brisk walk 10min', 'brisk walk 20min', 'brisk walk 30min', 'walk-jog 20min', 'easy jog 20min+'] },
   // Mobility (checkpoints)
   { key: 'deepsquat', categoryId: 'mobility', name: 'Deep Squat Hold', why: 'Rest, garden, floor play', sets: null, targets: ['support 15s', 'support 30s', 'free 60s', 'free 90s', 'free 120s'] },
-  { key: 'overhead', categoryId: 'mobility', name: 'Overhead Reach', why: 'Shelves, posture (wall test)', sets: null, targets: ['some rib flare', 'minimal flare', 'no flare', '+ light backbend', 'full, pain-free'] },
-  { key: 'ankle', categoryId: 'mobility', name: 'Ankle Mobility', why: 'Squat deep, descend safely', sets: null, targets: ['heel lifts', 'slight lift', 'knee over toes', 'knee well past', 'no heel lift'] },
+  { key: 'overhead', categoryId: 'mobility', name: 'Overhead Reach', why: 'Shelves, posture (wall test)', sets: null, targets: ['some rib flare', 'minimal flare', 'no flare', '+light backbend', 'full, pain-free'] },
+  { key: 'ankle', categoryId: 'mobility', name: 'Ankle Mobility', why: 'Squat deep, descend safely (knee-to-wall)', sets: null, targets: ['heel lifts', 'slight lift', 'knee over toes', 'knee well past', 'no heel lift'] },
 ];
 
 export const EXERCISE_BY_KEY = Object.fromEntries(EXERCISES.map((e) => [e.key, e])) as Record<string, Exercise>;

@@ -67,6 +67,7 @@ export default function Workout() {
                   <Text style={[styles.move, isChecked && styles.moveDone]}>{item.name}</Text>
                   <Text style={styles.target}>
                     {detail}
+                    {item.restSec != null ? ` · rest ${item.restSec}s` : ''}
                     {item.note ? ` · ${item.note}` : ''}
                   </Text>
                 </View>
