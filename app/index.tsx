@@ -1,5 +1,6 @@
+import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Redirect, useRouter } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
@@ -14,16 +15,14 @@ function todayNumber(): number {
   return Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
 }
 
-const REMINDER_HOURS = Array.from({ length: 24 }, (_, h) => h);
-const REMINDER_MINUTES = [0, 15, 30, 45];
-
-function hourLabel(h: number): string {
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${h12} ${h < 12 ? 'AM' : 'PM'}`;
-}
 function timeLabel(h: number, m: number): string {
   const h12 = h % 12 === 0 ? 12 : h % 12;
   return `${h12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+}
+function dateFromHM(h: number, m: number): Date {
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d;
 }
 
 export default function Home() {
@@ -69,6 +68,19 @@ export default function Home() {
   const changeReminder = async (hour: number, minute: number) => {
     setReminder(true, hour, minute);
     await scheduleDailyReminder(hour, minute);
+  };
+
+  const onPickTime = (event: DateTimePickerEvent, selected?: Date) => {
+    if (event.type === 'set' && selected) changeReminder(selected.getHours(), selected.getMinutes());
+  };
+
+  const openAndroidTimePicker = () => {
+    DateTimePickerAndroid.open({
+      value: dateFromHM(reminderHour, reminderMinute),
+      onChange: onPickTime,
+      mode: 'time',
+      is24Hour: false,
+    });
   };
 
   return (
@@ -146,31 +158,22 @@ export default function Home() {
             />
           </View>
           {reminderEnabled ? (
-            <View style={{ gap: spacing.sm }}>
-              <Text style={styles.reminderTimeValue}>{timeLabel(reminderHour, reminderMinute)}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hourScroll}>
-                {REMINDER_HOURS.map((h) => (
-                  <Pressable
-                    key={h}
-                    onPress={() => changeReminder(h, reminderMinute)}
-                    style={[styles.timeChip, reminderHour === h && styles.timeChipOn]}
-                  >
-                    <Text style={[styles.timeChipText, reminderHour === h && styles.timeChipTextOn]}>{hourLabel(h)}</Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-              <View style={styles.timeRow}>
-                {REMINDER_MINUTES.map((m) => (
-                  <Pressable
-                    key={m}
-                    onPress={() => changeReminder(reminderHour, m)}
-                    style={[styles.timeChip, reminderMinute === m && styles.timeChipOn]}
-                  >
-                    <Text style={[styles.timeChipText, reminderMinute === m && styles.timeChipTextOn]}>{`:${String(m).padStart(2, '0')}`}</Text>
-                  </Pressable>
-                ))}
+            Platform.OS === 'ios' ? (
+              <View style={styles.timeButton}>
+                <Text style={styles.timeButtonText}>Remind me at</Text>
+                <DateTimePicker
+                  value={dateFromHM(reminderHour, reminderMinute)}
+                  mode="time"
+                  display="compact"
+                  onChange={onPickTime}
+                />
               </View>
-            </View>
+            ) : (
+              <Pressable style={styles.timeButton} onPress={openAndroidTimePicker}>
+                <Text style={styles.timeButtonText}>{timeLabel(reminderHour, reminderMinute)}</Text>
+                <Text style={styles.timeButtonHint}>Change ›</Text>
+              </Pressable>
+            )
           ) : null}
         </View>
 
@@ -239,13 +242,19 @@ const styles = StyleSheet.create({
   reminderHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   reminderTitle: { color: colors.text, fontSize: font.body, fontWeight: '800' },
   reminderSub: { color: colors.muted, fontSize: font.small, marginTop: 1 },
-  timeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  timeChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
-  timeChipOn: { backgroundColor: colors.primary, borderColor: colors.primary },
-  timeChipText: { color: colors.text, fontSize: font.small, fontWeight: '700' },
-  timeChipTextOn: { color: colors.primaryText },
-  reminderTimeValue: { color: colors.primary, fontSize: font.body, fontWeight: '800' },
-  hourScroll: { gap: spacing.sm, paddingRight: spacing.lg },
+  timeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.bg,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  timeButtonText: { color: colors.text, fontSize: font.body, fontWeight: '800' },
+  timeButtonHint: { color: colors.primary, fontSize: font.small, fontWeight: '700' },
 
   devRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.lg, paddingTop: spacing.sm },
   reset: { alignItems: 'center', paddingVertical: spacing.sm },
