@@ -1,6 +1,7 @@
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Redirect, useRouter } from 'expo-router';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
@@ -39,6 +40,10 @@ export default function Home() {
   const reminderMinute = useAppStore((s) => s.reminderMinute);
   const setReminder = useAppStore((s) => s.setReminder);
   const resetAll = useAppStore((s) => s.resetAll);
+  const name = useAppStore((s) => s.name);
+  const setName = useAppStore((s) => s.setName);
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState('');
 
   const day = todayNumber();
   const doneToday = lastLoggedDay === day;
@@ -83,6 +88,15 @@ export default function Home() {
     });
   };
 
+  const startEditName = () => {
+    setDraftName(name);
+    setEditingName(true);
+  };
+  const saveName = () => {
+    setName(draftName.trim());
+    setEditingName(false);
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView
@@ -93,6 +107,27 @@ export default function Home() {
           gap: spacing.lg,
         }}
       >
+        {/* Greeting */}
+        {editingName ? (
+          <TextInput
+            value={draftName}
+            onChangeText={setDraftName}
+            placeholder="Your name"
+            placeholderTextColor={colors.muted}
+            autoFocus
+            maxLength={30}
+            returnKeyType="done"
+            onSubmitEditing={saveName}
+            onBlur={saveName}
+            style={styles.nameInput}
+          />
+        ) : (
+          <Pressable onPress={startEditName}>
+            <Text style={styles.greeting}>{name ? `Hi, ${name} 👋` : 'Welcome 👋'}</Text>
+            {name ? null : <Text style={styles.greetingHint}>Tap to add your name</Text>}
+          </Pressable>
+        )}
+
         {/* Today's workout */}
         <View style={styles.todayCard}>
           <Text style={styles.todayEyebrow}>{todayWk.rest ? 'TODAY' : `TODAY · ${todayWk.focus.toUpperCase()}`}</Text>
@@ -213,6 +248,9 @@ const styles = StyleSheet.create({
   doneRow: { backgroundColor: '#EAF7F0', borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
   doneText: { color: colors.primary, fontSize: font.body, fontWeight: '800' },
 
+  greeting: { color: colors.ink, fontSize: font.h2, fontWeight: '800' },
+  greetingHint: { color: colors.muted, fontSize: font.small, marginTop: 2 },
+  nameInput: { color: colors.ink, fontSize: font.h2, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs },
   foundation: { gap: spacing.xs },
   foundationLabel: { color: colors.text, fontSize: font.small, fontWeight: '700' },
   barTrack: { height: 10, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden', marginTop: 2 },

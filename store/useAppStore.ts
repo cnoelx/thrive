@@ -21,6 +21,7 @@ interface AppState {
   /** false until persisted state has loaded — screens wait on this before routing. */
   hydrated: boolean;
   onboarded: boolean;
+  name: string;
   profile: Profile | null;
   progress: ProgressState;
   /** Day-number of the last completed workout — drives the "completed today" state. */
@@ -39,6 +40,7 @@ interface AppState {
   markFoundationSeen: () => void;
   dismissNudge: (dayNumber: number) => void;
   setReminder: (enabled: boolean, hour: number, minute: number) => void;
+  setName: (name: string) => void;
   /** Dev/testing helper to wipe back to a clean first-launch state. */
   resetAll: () => void;
 }
@@ -48,6 +50,7 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       hydrated: false,
       onboarded: false,
+      name: '',
       profile: null,
       progress: emptyProgress(),
       lastLoggedDay: null,
@@ -82,9 +85,12 @@ export const useAppStore = create<AppState>()(
 
       setReminder: (enabled, hour, minute) => set({ reminderEnabled: enabled, reminderHour: hour, reminderMinute: minute }),
 
+      setName: (name) => set({ name }),
+
       resetAll: () =>
         set({
           onboarded: false,
+          name: '',
           profile: null,
           progress: emptyProgress(),
           lastLoggedDay: null,
@@ -101,6 +107,7 @@ export const useAppStore = create<AppState>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (s) => ({
         onboarded: s.onboarded,
+        name: s.name,
         profile: s.profile,
         progress: s.progress,
         lastLoggedDay: s.lastLoggedDay,

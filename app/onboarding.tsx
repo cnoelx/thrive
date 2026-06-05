@@ -1,6 +1,6 @@
 import { Redirect, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
@@ -11,10 +11,10 @@ import { progressFromPlacement } from '@/engine/progression';
 import type { ProgressState } from '@/engine/progression';
 import { useAppStore } from '@/store/useAppStore';
 
-type Step = 'welcome' | 'parq' | 'equipment' | 'goal' | 'experience';
+type Step = 'welcome' | 'name' | 'parq' | 'equipment' | 'goal' | 'experience';
 // NOTE: 'parq' (safety screen), 'equipment', and 'goal' are intentionally left out of the flow
 // for now. Their screens still live in the code below — re-add them to ORDER to switch them back on.
-const ORDER: Step[] = ['welcome', 'experience'];
+const ORDER: Step[] = ['welcome', 'name', 'experience'];
 
 type Experience = 'new' | 'experienced';
 
@@ -27,6 +27,7 @@ export default function Onboarding() {
   const router = useRouter();
   const onboarded = useAppStore((s) => s.onboarded);
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
+  const setName = useAppStore((s) => s.setName);
   const insets = useSafeAreaInsets();
 
   const [stepIndex, setStepIndex] = useState(0);
@@ -35,6 +36,7 @@ export default function Onboarding() {
   const [equipment, setEquipment] = useState<Equipment | null>('none');
   const [goal, setGoal] = useState<GoalId | null>('health');
   const [experience, setExperience] = useState<Experience | null>(null);
+  const [nameDraft, setNameDraft] = useState('');
 
   // Placement (only for "I already train").
   const [placing, setPlacing] = useState(false);
@@ -44,6 +46,7 @@ export default function Onboarding() {
 
   const finish = (initialProgress?: ProgressState) => {
     if (equipment && goal) {
+      setName(nameDraft.trim());
       completeOnboarding({ equipment, goal, healthFlag: parqYes }, initialProgress);
       router.replace('/');
     }
@@ -117,6 +120,7 @@ export default function Onboarding() {
 
   const canAdvance =
     step === 'welcome' ||
+    step === 'name' ||
     step === 'parq' ||
     (step === 'equipment' && equipment !== null) ||
     (step === 'goal' && goal !== null) ||
@@ -141,6 +145,7 @@ export default function Onboarding() {
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
       <ScrollView contentContainerStyle={styles.scroll}>
         {step === 'welcome' && <Welcome />}
+        {step === 'name' && <NameStep value={nameDraft} onChange={setNameDraft} />}
         {step === 'parq' && <Parq parqYes={parqYes} setParqYes={setParqYes} />}
         {step === 'equipment' && (
           <ChoiceStep
@@ -196,6 +201,25 @@ function Welcome() {
       <Image source={require('../assets/images/icon.png')} style={styles.logo} />
       <Text style={styles.wordmark}>Thrive</Text>
       <Text style={styles.tagline}>Strong for modern life</Text>
+    </View>
+  );
+}
+
+function NameStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <View style={{ gap: spacing.md }}>
+      <Text style={styles.h1}>What should we call you?</Text>
+      <Text style={styles.body}>We&apos;ll use it to greet you. You can change it anytime.</Text>
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        placeholder="Your name"
+        placeholderTextColor={colors.muted}
+        autoFocus
+        maxLength={30}
+        returnKeyType="done"
+        style={styles.nameInput}
+      />
     </View>
   );
 }
@@ -277,6 +301,15 @@ const styles = StyleSheet.create({
   kicker: { color: colors.primary, fontSize: font.small, fontWeight: '700', letterSpacing: 1 },
   h1: { color: colors.text, fontSize: font.title, fontWeight: '800' },
   body: { color: colors.muted, fontSize: font.body, lineHeight: 22 },
+  nameInput: {
+    color: colors.ink,
+    fontSize: font.title,
+    fontWeight: '800',
+    borderBottomWidth: 2,
+    borderBottomColor: colors.primary,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.sm,
+  },
 
   // Welcome (page 1, minimal: logo + text)
   welcomeWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
