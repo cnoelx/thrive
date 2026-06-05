@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
-import { CATEGORIES, benchmarksFor, isCheckpoint } from '@/data/benchmarks';
+import { CATEGORIES, benchmarksFor, formatTarget, isCheckpoint } from '@/data/benchmarks';
 import { RUNWAY, completedLevel, isClaimable, lockReason, nextLevel } from '@/engine/progression';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -85,7 +85,7 @@ export default function CategoryScreen() {
               <View key={b.id} style={[styles.benchRow, done && styles.benchRowDone]}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.benchTitle}>{b.exercise}</Text>
-                  <Text style={styles.benchTarget}>Target: {b.target}</Text>
+                  <Text style={styles.benchTarget}>Target: {formatTarget(b.target)}</Text>
                   <Text style={styles.benchWhy}>{b.why}</Text>
                 </View>
                 {done ? (

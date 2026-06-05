@@ -75,6 +75,12 @@ export function exerciseTarget(exKey: string, level: number): string {
   return ex ? (ex.targets[level - 1] ?? ex.targets[ex.targets.length - 1]!) : '';
 }
 
+/** Display helper: append "reps" to a bare numeric target ("15" -> "15 reps"). Targets that
+ *  already carry a unit or description ("20s", "wall", "15 strict") are returned unchanged. */
+export function formatTarget(target: string): string {
+  return /^\d+$/.test(target.trim()) ? `${target} reps` : target;
+}
+
 export interface Benchmark {
   id: string;
   exKey: string;

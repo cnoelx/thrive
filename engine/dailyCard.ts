@@ -18,6 +18,7 @@ export interface WorkoutItem {
   exKey: string;
   categoryId: CategoryId;
   name: string;
+  why: string;
   sets: number | null;
   restSec?: number; // rest between sets, in seconds
   target: string; // reps/time at the current level
@@ -41,6 +42,7 @@ export function todaysWorkout(state: ProgressState, date: Date): TodaysWorkout {
       exKey: it.exKey,
       categoryId: ex.categoryId,
       name: ex.name,
+      why: ex.why,
       sets: it.sets,
       restSec: it.restSec,
       target: exerciseTarget(it.exKey, level),
