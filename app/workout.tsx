@@ -2,11 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
 import { formatTarget } from '@/data/benchmarks';
+import { EXERCISE_IMAGES } from '@/data/exerciseImages';
 import { FORM_CUES } from '@/data/formCues';
 import { todaysWorkout, type WorkoutItem } from '@/engine/dailyCard';
 import { useAppStore } from '@/store/useAppStore';
@@ -42,11 +43,12 @@ export default function Workout() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const progress = useAppStore((s) => s.progress);
+  const pullUnlocked = useAppStore((s) => s.pullUnlocked);
   const logToday = useAppStore((s) => s.logToday);
   const lastLoggedDay = useAppStore((s) => s.lastLoggedDay);
 
   const day = todayNumber();
-  const workout = useMemo(() => todaysWorkout(progress, new Date()), [progress]);
+  const workout = useMemo(() => todaysWorkout(progress, pullUnlocked, new Date()), [progress, pullUnlocked]);
   const steps = useMemo(() => buildCircuit(workout.items), [workout.items]);
 
   const [stepIndex, setStepIndex] = useState(0);
@@ -54,6 +56,7 @@ export default function Workout() {
   const [restLeft, setRestLeft] = useState(0);
   const [finished, setFinished] = useState(false);
   const [showHowTo, setShowHowTo] = useState(false);
+  const [frame, setFrame] = useState(0);
 
   const goNext = () => {
     setResting(false);
@@ -80,6 +83,16 @@ export default function Workout() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resting, restLeft]);
+
+  const currentExKey = steps[stepIndex]?.item.exKey ?? '';
+
+  // Flip the start/finish demo frames while the how-to sheet is open (reads like an animation).
+  useEffect(() => {
+    if (!showHowTo || !EXERCISE_IMAGES[currentExKey]) return;
+    setFrame(0);
+    const id = setInterval(() => setFrame((f) => (f === 0 ? 1 : 0)), 700);
+    return () => clearInterval(id);
+  }, [showHowTo, currentExKey]);
 
   if (steps.length === 0) {
     return (
@@ -171,6 +184,9 @@ export default function Workout() {
           <Pressable style={styles.sheet} onPress={() => {}}>
             <Text style={styles.sheetSub}>HOW TO DO IT</Text>
             <Text style={styles.sheetTitle}>{step.item.name}</Text>
+            {EXERCISE_IMAGES[step.item.exKey] ? (
+              <Image source={EXERCISE_IMAGES[step.item.exKey][frame]} style={styles.howImg} resizeMode="contain" />
+            ) : null}
             {(FORM_CUES[step.item.exKey] ?? []).map((cue, i) => (
               <View key={i} style={styles.cueRow}>
                 <Text style={styles.cueDot}>•</Text>
@@ -219,6 +235,7 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm, width: '100%', maxWidth: 420 },
   sheetSub: { color: colors.primary, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1, marginBottom: spacing.xs },
   sheetTitle: { color: colors.text, fontSize: font.h2, fontWeight: '800' },
+  howImg: { width: '100%', height: 200, borderRadius: radius.md, backgroundColor: colors.track, marginTop: spacing.sm },
   cueRow: { flexDirection: 'row', gap: spacing.sm },
   cueDot: { color: colors.primary, fontSize: font.body, fontWeight: '900', lineHeight: 22 },
   cueText: { flex: 1, color: colors.text, fontSize: font.body, lineHeight: 22 },

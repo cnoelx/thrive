@@ -5,16 +5,23 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
 import type { CategoryId } from '@/data/benchmarks';
-import { EQUIPMENT_OPTIONS, GOAL_OPTIONS, PARQ_QUESTIONS, PLACEMENT_ANCHORS } from '@/data/onboarding';
+import { GOAL_OPTIONS, PARQ_QUESTIONS, PLACEMENT_ANCHORS } from '@/data/onboarding';
 import type { Equipment, GoalId, Option } from '@/data/onboarding';
 import { progressFromPlacement } from '@/engine/progression';
 import type { ProgressState } from '@/engine/progression';
 import { useAppStore } from '@/store/useAppStore';
 
 type Step = 'welcome' | 'name' | 'parq' | 'equipment' | 'goal' | 'experience';
-// NOTE: 'parq' (safety screen), 'equipment', and 'goal' are intentionally left out of the flow
-// for now. Their screens still live in the code below — re-add them to ORDER to switch them back on.
-const ORDER: Step[] = ['welcome', 'name', 'experience'];
+// NOTE: 'parq' (safety screen) and 'goal' are intentionally left out of the flow for now. Their
+// screens still live in the code below — re-add them to ORDER to switch them back on.
+const ORDER: Step[] = ['welcome', 'name', 'equipment', 'experience'];
+
+type PullEquipment = 'bar' | 'rings' | 'neither';
+const EQUIPMENT_CARDS: { id: PullEquipment; emoji: string; label: string; hint: string }[] = [
+  { id: 'bar', emoji: '🏋️', label: 'I have a pull-up bar', hint: 'Doorway, wall-mounted, or similar' },
+  { id: 'rings', emoji: '🪢', label: 'I have rings or TRX', hint: 'Gymnastic rings or suspension straps' },
+  { id: 'neither', emoji: '🤲', label: 'Neither right now', hint: "We'll give you a back substitute" },
+];
 
 type Experience = 'new' | 'experienced';
 
@@ -28,15 +35,18 @@ export default function Onboarding() {
   const onboarded = useAppStore((s) => s.onboarded);
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
   const setName = useAppStore((s) => s.setName);
+  const unlockPull = useAppStore((s) => s.unlockPull);
   const insets = useSafeAreaInsets();
 
   const [stepIndex, setStepIndex] = useState(0);
   const [parqYes, setParqYes] = useState(false);
-  // Equipment & goal screens are out of the flow for now, so these default quietly.
-  const [equipment, setEquipment] = useState<Equipment | null>('none');
+  // Goal screen is out of the flow for now, so it defaults quietly. Equipment is replaced by the
+  // new pullUnlocked-driven step; the legacy 'equipment' field on Profile stays defaulted.
+  const [equipment] = useState<Equipment | null>('none');
   const [goal, setGoal] = useState<GoalId | null>('health');
   const [experience, setExperience] = useState<Experience | null>(null);
   const [nameDraft, setNameDraft] = useState('');
+  const [pullEquip, setPullEquip] = useState<PullEquipment | null>(null);
 
   // Placement (only for "I already train").
   const [placing, setPlacing] = useState(false);
@@ -47,6 +57,7 @@ export default function Onboarding() {
   const finish = (initialProgress?: ProgressState) => {
     if (equipment && goal) {
       setName(nameDraft.trim());
+      if (pullEquip === 'bar' || pullEquip === 'rings') unlockPull();
       completeOnboarding({ equipment, goal, healthFlag: parqYes }, initialProgress);
       router.replace('/');
     }
@@ -122,7 +133,7 @@ export default function Onboarding() {
     step === 'welcome' ||
     step === 'name' ||
     step === 'parq' ||
-    (step === 'equipment' && equipment !== null) ||
+    (step === 'equipment' && pullEquip !== null) ||
     (step === 'goal' && goal !== null) ||
     (step === 'experience' && experience !== null);
 
@@ -147,15 +158,7 @@ export default function Onboarding() {
         {step === 'welcome' && <Welcome />}
         {step === 'name' && <NameStep value={nameDraft} onChange={setNameDraft} />}
         {step === 'parq' && <Parq parqYes={parqYes} setParqYes={setParqYes} />}
-        {step === 'equipment' && (
-          <ChoiceStep
-            title="What can you train with?"
-            subtitle="Just for your Pull exercises — change it anytime."
-            options={EQUIPMENT_OPTIONS}
-            value={equipment}
-            onChange={setEquipment}
-          />
-        )}
+        {step === 'equipment' && <EquipmentStep value={pullEquip} onChange={setPullEquip} />}
         {step === 'goal' && (
           <ChoiceStep
             title="What brings you here?"
@@ -201,6 +204,32 @@ function Welcome() {
       <Image source={require('../assets/images/icon.png')} style={styles.logo} />
       <Text style={styles.wordmark}>Thrive</Text>
       <Text style={styles.tagline}>Strong for modern life</Text>
+    </View>
+  );
+}
+
+function EquipmentStep({ value, onChange }: { value: PullEquipment | null; onChange: (v: PullEquipment) => void }) {
+  return (
+    <View style={{ gap: spacing.md }}>
+      <Text style={styles.h1}>What do you have at home?</Text>
+      <Text style={styles.body}>This sets up your Pull exercises. We&apos;ll only show the pull track if you have something to pull on.</Text>
+      <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
+        {EQUIPMENT_CARDS.map((card) => {
+          const selected = card.id === value;
+          return (
+            <Pressable key={card.id} onPress={() => onChange(card.id)} style={[styles.equipCard, selected && styles.equipCardSelected]}>
+              <Text style={styles.equipEmoji}>{card.emoji}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.equipLabel}>{card.label}</Text>
+                <Text style={styles.equipHint}>{card.hint}</Text>
+              </View>
+              <View style={[styles.check, selected && styles.checkOn]}>
+                {selected ? <Text style={styles.checkTick}>{'✓'}</Text> : null}
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -301,6 +330,20 @@ const styles = StyleSheet.create({
   kicker: { color: colors.primary, fontSize: font.small, fontWeight: '700', letterSpacing: 1 },
   h1: { color: colors.text, fontSize: font.title, fontWeight: '800' },
   body: { color: colors.muted, fontSize: font.body, lineHeight: 22 },
+  equipCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+  },
+  equipCardSelected: { borderColor: colors.primary, backgroundColor: '#F0FAF4' },
+  equipEmoji: { fontSize: 48, width: 64, textAlign: 'center' },
+  equipLabel: { color: colors.ink, fontSize: font.body, fontWeight: '800' },
+  equipHint: { color: colors.muted, fontSize: font.small, marginTop: 2 },
   nameInput: {
     color: colors.ink,
     fontSize: font.title,

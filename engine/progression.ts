@@ -46,14 +46,21 @@ export function completedLevel(state: ProgressState, c: CategoryId): number {
   return lvl;
 }
 
-/** Baseline = the level completed across ALL categories (the min). */
-export function baselineLevel(state: ProgressState): number {
-  return Math.min(...CATEGORY_IDS.map((c) => completedLevel(state, c)));
+/** Categories currently 'in play' for the multi-category math (baseline, foundation, lagging, the
+ *  runway cap). Pull is excluded until the user confirms they have a bar/rings — otherwise it would
+ *  sit at L0 forever and cap every other category at L2. */
+export function effectiveCategoryIds(pullUnlocked: boolean): CategoryId[] {
+  return pullUnlocked ? CATEGORY_IDS : CATEGORY_IDS.filter((c) => c !== 'pull');
+}
+
+/** Baseline = the level completed across all UNLOCKED categories (the min). */
+export function baselineLevel(state: ProgressState, pullUnlocked: boolean): number {
+  return Math.min(...effectiveCategoryIds(pullUnlocked).map((c) => completedLevel(state, c)));
 }
 
 /** The highest level any category is currently allowed to work toward (runway-of-one). */
-export function levelCap(state: ProgressState): number {
-  return baselineLevel(state) + RUNWAY;
+export function levelCap(state: ProgressState, pullUnlocked: boolean): number {
+  return baselineLevel(state, pullUnlocked) + RUNWAY;
 }
 
 /** The level a category is currently working toward (its next uncompleted level). */
@@ -61,25 +68,27 @@ export function nextLevel(state: ProgressState, c: CategoryId): number {
   return completedLevel(state, c) + 1;
 }
 
-export type LockReason = 'none' | 'runway' | 'maxed';
+export type LockReason = 'none' | 'runway' | 'maxed' | 'noEquipment';
 
-export function lockReason(state: ProgressState, c: CategoryId): LockReason {
+export function lockReason(state: ProgressState, pullUnlocked: boolean, c: CategoryId): LockReason {
+  if (c === 'pull' && !pullUnlocked) return 'noEquipment';
   const next = nextLevel(state, c);
   if (next > MAX_LEVEL) return 'maxed';
-  if (next > levelCap(state)) return 'runway';
+  if (next > levelCap(state, pullUnlocked)) return 'runway';
   return 'none';
 }
 
-export function isCategoryLocked(state: ProgressState, c: CategoryId): boolean {
-  return lockReason(state, c) !== 'none';
+export function isCategoryLocked(state: ProgressState, pullUnlocked: boolean, c: CategoryId): boolean {
+  return lockReason(state, pullUnlocked, c) !== 'none';
 }
 
 /** A benchmark is claimable iff: not already claimed, it's the category's current working level,
- *  and within the runway cap. Claims are self-reported — no training requirement. */
-export function isClaimable(state: ProgressState, b: Benchmark): boolean {
+ *  within the runway cap, and its category isn't equipment-locked. Self-reported — no training gate. */
+export function isClaimable(state: ProgressState, pullUnlocked: boolean, b: Benchmark): boolean {
+  if (b.categoryId === 'pull' && !pullUnlocked) return false;
   if (state.claimed[b.id]) return false;
   if (b.level !== nextLevel(state, b.categoryId)) return false;
-  if (b.level > levelCap(state)) return false;
+  if (b.level > levelCap(state, pullUnlocked)) return false;
   return true;
 }
 
@@ -89,22 +98,22 @@ export function claim(state: ProgressState, benchmarkId: string): ProgressState 
 }
 
 /** Claim a benchmark if allowed; otherwise return the same state reference (no-op). */
-export function applyClaim(state: ProgressState, b: Benchmark): ProgressState {
-  if (!isClaimable(state, b)) return state;
+export function applyClaim(state: ProgressState, pullUnlocked: boolean, b: Benchmark): ProgressState {
+  if (!isClaimable(state, pullUnlocked, b)) return state;
   return claim(state, b.id);
 }
 
-/** The marquee milestone: Level 1 complete across all categories ("Foundation Complete"). */
-export function foundationComplete(state: ProgressState): boolean {
-  return baselineLevel(state) >= 1;
+/** The marquee milestone: Level 1 complete across all unlocked categories ("Foundation Complete"). */
+export function foundationComplete(state: ProgressState, pullUnlocked: boolean): boolean {
+  return baselineLevel(state, pullUnlocked) >= 1;
 }
 
-/** Categories lagging behind the others — those at the lowest completed level while some category
- *  is ahead. Returns [] when every category is level. */
-export function laggingCategories(state: ProgressState): CategoryId[] {
-  const levels = CATEGORY_IDS.map((c) => completedLevel(state, c));
+/** Categories lagging behind the others (only among unlocked ones). Returns [] when level. */
+export function laggingCategories(state: ProgressState, pullUnlocked: boolean): CategoryId[] {
+  const cats = effectiveCategoryIds(pullUnlocked);
+  const levels = cats.map((c) => completedLevel(state, c));
   const min = Math.min(...levels);
   const max = Math.max(...levels);
   if (min === max) return [];
-  return CATEGORY_IDS.filter((c) => completedLevel(state, c) === min);
+  return cats.filter((c) => completedLevel(state, c) === min);
 }

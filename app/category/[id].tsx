@@ -13,6 +13,7 @@ export default function CategoryScreen() {
   const insets = useSafeAreaInsets();
   const progress = useAppStore((s) => s.progress);
   const profile = useAppStore((s) => s.profile);
+  const pullUnlocked = useAppStore((s) => s.pullUnlocked);
   const claimBenchmark = useAppStore((s) => s.claimBenchmark);
 
   const category = CATEGORIES.find((cat) => cat.id === id);
@@ -30,10 +31,10 @@ export default function CategoryScreen() {
   const c = category.id;
   const completed = completedLevel(progress, c);
   const next = nextLevel(progress, c);
-  const reason = lockReason(progress, c);
+  const reason = lockReason(progress, pullUnlocked, c);
   const checkpoint = isCheckpoint(c);
 
-  const benches = reason === 'maxed' ? [] : benchmarksFor(c, next);
+  const benches = reason === 'maxed' || reason === 'noEquipment' ? [] : benchmarksFor(c, next);
   const claimedCount = benches.filter((b) => progress.claimed[b.id]).length;
 
   return (
@@ -52,16 +53,22 @@ export default function CategoryScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>{category.short}</Text>
             <Text style={styles.sub}>
-              {reason === 'maxed'
-                ? 'All levels complete 🎉'
-                : `Working toward Level ${next} · ${claimedCount}/${benches.length}`}
+              {reason === 'noEquipment'
+                ? 'Locked — needs a bar or rings'
+                : reason === 'maxed'
+                  ? 'All levels complete 🎉'
+                  : `Working toward Level ${next} · ${claimedCount}/${benches.length}`}
             </Text>
           </View>
         </View>
 
-        {reason === 'runway' ? (
+        {reason === 'noEquipment' ? (
           <View style={[styles.banner, styles.bannerLock]}>
-            <Text style={styles.bannerText}>🔒 Get all four areas to Level {next - RUNWAY} to unlock Level {next} here.</Text>
+            <Text style={styles.bannerText}>🔒 Pull needs a bar or rings. Unlock it from the Pull tile on the home screen.</Text>
+          </View>
+        ) : reason === 'runway' ? (
+          <View style={[styles.banner, styles.bannerLock]}>
+            <Text style={styles.bannerText}>🔒 Get all areas to Level {next - RUNWAY} to unlock Level {next} here.</Text>
           </View>
         ) : reason === 'maxed' ? (
           <View style={[styles.banner, styles.bannerGood]}>
@@ -80,7 +87,7 @@ export default function CategoryScreen() {
         <View style={{ gap: spacing.sm }}>
           {benches.map((b) => {
             const done = !!progress.claimed[b.id];
-            const claimable = isClaimable(progress, b);
+            const claimable = isClaimable(progress, pullUnlocked, b);
             return (
               <View key={b.id} style={[styles.benchRow, done && styles.benchRowDone]}>
                 <View style={{ flex: 1 }}>

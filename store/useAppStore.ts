@@ -31,8 +31,12 @@ interface AppState {
   reminderEnabled: boolean;
   reminderHour: number;
   reminderMinute: number;
+  /** Set during onboarding (or later via the locked-Pull tile) when the user confirms they have a
+   *  bar/rings. Once true, Pull joins category math and the schedule includes real pull moves. */
+  pullUnlocked: boolean;
 
   completeOnboarding: (profile: Profile, initialProgress?: ProgressState) => void;
+  unlockPull: () => void;
   /** Mark today's workout complete. */
   logToday: (dayNumber: number) => void;
   /** Claim a benchmark (validated by the engine). */
@@ -59,6 +63,7 @@ export const useAppStore = create<AppState>()(
       reminderEnabled: false,
       reminderHour: 8,
       reminderMinute: 0,
+      pullUnlocked: false,
 
       completeOnboarding: (profile, initialProgress) =>
         set({
@@ -76,7 +81,7 @@ export const useAppStore = create<AppState>()(
         set((s) => {
           const b = BENCHMARK_BY_ID[benchmarkId];
           if (!b) return s;
-          return { progress: applyClaim(s.progress, b) };
+          return { progress: applyClaim(s.progress, s.pullUnlocked, b) };
         }),
 
       markFoundationSeen: () => set({ foundationSeen: true }),
@@ -86,6 +91,8 @@ export const useAppStore = create<AppState>()(
       setReminder: (enabled, hour, minute) => set({ reminderEnabled: enabled, reminderHour: hour, reminderMinute: minute }),
 
       setName: (name) => set({ name }),
+
+      unlockPull: () => set({ pullUnlocked: true }),
 
       resetAll: () =>
         set({
@@ -99,6 +106,7 @@ export const useAppStore = create<AppState>()(
           reminderEnabled: false,
           reminderHour: 8,
           reminderMinute: 0,
+          pullUnlocked: false,
         }),
     }),
     {
@@ -116,6 +124,7 @@ export const useAppStore = create<AppState>()(
         reminderEnabled: s.reminderEnabled,
         reminderHour: s.reminderHour,
         reminderMinute: s.reminderMinute,
+        pullUnlocked: s.pullUnlocked,
       }),
     },
   ),

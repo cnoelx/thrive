@@ -4,7 +4,7 @@
 // at any time (no training-gate) within the runway-of-one cap. The weekly schedule (data/schedule.ts)
 // decides what you actually do each day; "sets" are fixed, "reps" come from your current level.
 
-export type CategoryId = 'move' | 'pushpull' | 'cardio' | 'mobility';
+export type CategoryId = 'move' | 'push' | 'pull' | 'cardio' | 'mobility';
 export type CategoryKind = 'trained' | 'checkpoint';
 
 export const MAX_LEVEL = 5;
@@ -18,7 +18,8 @@ export interface Category {
 
 export const CATEGORIES: Category[] = [
   { id: 'move', name: 'Move Your Bodyweight', short: 'Move', kind: 'trained' },
-  { id: 'pushpull', name: 'Push & Pull', short: 'Push & Pull', kind: 'trained' },
+  { id: 'push', name: 'Push', short: 'Push', kind: 'trained' },
+  { id: 'pull', name: 'Pull', short: 'Pull', kind: 'trained' },
   { id: 'cardio', name: 'Keep Going', short: 'Cardio', kind: 'trained' },
   { id: 'mobility', name: 'Mobility', short: 'Mobility', kind: 'checkpoint' },
 ];
@@ -51,10 +52,10 @@ const EXERCISES: Exercise[] = [
   { key: 'glutebridge', categoryId: 'move', name: 'Glute Bridge', why: 'Posterior chain (main)', sets: 3, targets: ['10', '16', '24', '34', 'single-leg 12/leg'] },
   { key: 'pronelegraise', categoryId: 'move', name: 'Prone Leg Raise', why: 'Posterior chain (glutes/hamstrings)', sets: 2, targets: ['6/leg', '10/leg', '15/leg', '20/leg', '20/leg + 2s hold'] },
   // Push & Pull
-  { key: 'pushups', categoryId: 'pushpull', name: 'Push-ups', why: 'Push, catch a fall', sets: 3, targets: ['wall', 'high incline', 'low incline/knee', 'negative + few strict', '15 strict'] },
-  { key: 'barrow', categoryId: 'pushpull', name: 'Bar Row', why: 'Horizontal pull (doorway bar)', sets: 3, targets: ['tall angle 5', '8', 'lower angle 10', '12', 'near-horizontal 12-15'] },
-  { key: 'deadhang', categoryId: 'pushpull', name: 'Dead Hang', why: 'Grip strength', sets: 3, targets: ['active 8s', '15s', '25s', '35s', '45s'] },
-  { key: 'pullup', categoryId: 'pushpull', name: 'Pull-up Progression', why: 'Pull bodyweight up', sets: 3, targets: ['hang + scap pulls', 'negative 5s', 'negative 10s', 'band-assisted 3-5', '3-5 strict'] },
+  { key: 'pushups', categoryId: 'push', name: 'Push-ups', why: 'Push, catch a fall', sets: 3, targets: ['wall', 'high incline', 'low incline/knee', 'negative + few strict', '15 strict'] },
+  { key: 'barrow', categoryId: 'pull', name: 'Inverted Row', why: 'Horizontal pull (rings/TRX, or bar set low). Angle = difficulty.', sets: 3, targets: ['tall angle 5', '8', 'lower angle 10', '12', 'near-horizontal 12-15'] },
+  { key: 'deadhang', categoryId: 'pull', name: 'Dead Hang', why: 'Grip strength (needs bar or rings)', sets: 3, targets: ['active 8s', '15s', '25s', '35s', '45s'] },
+  { key: 'pullup', categoryId: 'pull', name: 'Pull-up Progression', why: 'Pull bodyweight up (needs bar or rings)', sets: 3, targets: ['hang + scap pulls', 'negative 5s', 'negative 10s', 'band-assisted 3-5', '3-5 strict'] },
   // Keep Going (cardio)
   { key: 'walkrun', categoryId: 'cardio', name: 'Walk / Run (walk-first)', why: 'Cover distance without gassing out', sets: null, targets: ['brisk walk 10min', 'brisk walk 20min', 'brisk walk 30min', 'walk-jog 20min', 'easy jog 20min+'] },
   // Mobility (checkpoints)

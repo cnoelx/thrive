@@ -1,13 +1,13 @@
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Redirect, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, benchmarksFor } from '@/data/benchmarks';
 import { todaysWorkout } from '@/engine/dailyCard';
-import { completedLevel, foundationComplete, isClaimable, nextLevel } from '@/engine/progression';
+import { completedLevel, effectiveCategoryIds, foundationComplete, isClaimable, nextLevel } from '@/engine/progression';
 import { cancelReminders, requestNotificationPermission, scheduleDailyReminder } from '@/lib/notifications';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -42,18 +42,22 @@ export default function Home() {
   const resetAll = useAppStore((s) => s.resetAll);
   const name = useAppStore((s) => s.name);
   const setName = useAppStore((s) => s.setName);
+  const pullUnlocked = useAppStore((s) => s.pullUnlocked);
+  const unlockPull = useAppStore((s) => s.unlockPull);
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState('');
+  const [pullStep, setPullStep] = useState<'closed' | 'explain' | 'confirm'>('closed');
 
   const day = todayNumber();
   const doneToday = lastLoggedDay === day;
 
   if (!onboarded || !profile) return <Redirect href="/onboarding" />;
 
-  const atFoundation = foundationComplete(progress);
-  const atL1Count = CATEGORIES.filter((cat) => completedLevel(progress, cat.id) >= 1).length;
+  const atFoundation = foundationComplete(progress, pullUnlocked);
+  const activeCats = effectiveCategoryIds(pullUnlocked);
+  const atL1Count = activeCats.filter((c) => completedLevel(progress, c) >= 1).length;
   const showCelebration = atFoundation && !foundationSeen;
-  const todayWk = todaysWorkout(progress, new Date());
+  const todayWk = todaysWorkout(progress, pullUnlocked, new Date());
 
   const toggleReminder = async (value: boolean) => {
     if (value) {
@@ -148,10 +152,10 @@ export default function Home() {
         {/* Foundation progress */}
         <View style={styles.foundation}>
           <Text style={styles.foundationLabel}>
-            {atFoundation ? 'Foundation complete 🎉' : `Foundation · ${atL1Count} of ${CATEGORIES.length} at Level 1`}
+            {atFoundation ? 'Foundation complete 🎉' : `Foundation · ${atL1Count} of ${activeCats.length} at Level 1`}
           </Text>
           <View style={styles.barTrack}>
-            <View style={[styles.barFill, { width: `${(atL1Count / CATEGORIES.length) * 100}%` }]} />
+            <View style={[styles.barFill, { width: `${(atL1Count / activeCats.length) * 100}%` }]} />
           </View>
         </View>
 
@@ -159,12 +163,17 @@ export default function Home() {
         <View style={{ gap: spacing.sm }}>
           <Text style={styles.sectionLabel}>YOUR AREAS</Text>
           {CATEGORIES.map((cat) => {
+            const locked = cat.id === 'pull' && !pullUnlocked;
             const lvl = completedLevel(progress, cat.id);
-            const ready = benchmarksFor(cat.id, nextLevel(progress, cat.id)).some((b) => isClaimable(progress, b));
+            const ready = !locked && benchmarksFor(cat.id, nextLevel(progress, cat.id)).some((b) => isClaimable(progress, pullUnlocked, b));
             return (
-              <Pressable key={cat.id} onPress={() => router.push(`/category/${cat.id}`)} style={styles.catRow}>
-                <View style={[styles.levelBox, lvl > 0 && styles.levelBoxOn]}>
-                  <Text style={[styles.levelText, lvl > 0 && styles.levelTextOn]}>L{lvl}</Text>
+              <Pressable
+                key={cat.id}
+                onPress={() => (locked ? setPullStep('explain') : router.push(`/category/${cat.id}`))}
+                style={styles.catRow}
+              >
+                <View style={[styles.levelBox, !locked && lvl > 0 && styles.levelBoxOn]}>
+                  <Text style={[styles.levelText, !locked && lvl > 0 && styles.levelTextOn]}>{locked ? '🔒' : `L${lvl}`}</Text>
                 </View>
                 <Text style={styles.catName}>{cat.short}</Text>
                 {ready ? (
@@ -225,8 +234,8 @@ export default function Home() {
             <Text style={styles.celebrateEmoji}>🎉</Text>
             <Text style={styles.celebrateTitle}>Foundation Complete</Text>
             <Text style={styles.celebrateBody}>
-              Level 1 in all four areas — the functional baseline for modern life. The next tier is now unlocked
-              everywhere.
+              Level 1 in all {activeCats.length} areas — the functional baseline for modern life. The next tier is now
+              unlocked everywhere.
             </Text>
             <Pressable onPress={markFoundationSeen} style={styles.celebrateBtn}>
               <Text style={styles.celebrateBtnText}>Keep going</Text>
@@ -234,6 +243,50 @@ export default function Home() {
           </View>
         </View>
       ) : null}
+
+      <Modal visible={pullStep !== 'closed'} transparent animationType="fade" onRequestClose={() => setPullStep('closed')}>
+        <Pressable style={styles.overlay} onPress={() => setPullStep('closed')}>
+          <Pressable style={styles.pullSheet} onPress={() => {}}>
+            {pullStep === 'explain' ? (
+              <>
+                <Text style={styles.pullEmoji}>🔒</Text>
+                <Text style={styles.pullTitle}>Pull is locked</Text>
+                <Text style={styles.pullBody}>
+                  Pulling needs something to pull on — a bar or rings. Bodyweight alone can&apos;t fake it, so we keep
+                  Pull out of your progress until you can train it for real.
+                </Text>
+                <Text style={styles.pullBody}>Your workouts include Superman for back and posture in the meantime.</Text>
+                <Pressable onPress={() => setPullStep('confirm')} style={styles.pullPrimary}>
+                  <Text style={styles.pullPrimaryText}>I have a bar or rings</Text>
+                </Pressable>
+                <Pressable onPress={() => setPullStep('closed')} style={styles.pullSecondary}>
+                  <Text style={styles.pullSecondaryText}>Not yet</Text>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <Text style={styles.pullTitle}>Unlock Pull?</Text>
+                <Text style={styles.pullBody}>
+                  Pull starts at Level 1 — you haven&apos;t trained it yet. Your other categories stay exactly as earned,
+                  but your overall level will reflect the new starting point.
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    unlockPull();
+                    setPullStep('closed');
+                  }}
+                  style={styles.pullPrimary}
+                >
+                  <Text style={styles.pullPrimaryText}>Unlock Pull</Text>
+                </Pressable>
+                <Pressable onPress={() => setPullStep('explain')} style={styles.pullSecondary}>
+                  <Text style={styles.pullSecondaryText}>Back</Text>
+                </Pressable>
+              </>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -305,4 +358,13 @@ const styles = StyleSheet.create({
   celebrateBody: { color: colors.muted, fontSize: font.body, lineHeight: 22, textAlign: 'center' },
   celebrateBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, marginTop: spacing.sm },
   celebrateBtnText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
+
+  pullSheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm, width: '100%', maxWidth: 420, alignItems: 'center' },
+  pullEmoji: { fontSize: 44 },
+  pullTitle: { color: colors.text, fontSize: font.title, fontWeight: '800', textAlign: 'center' },
+  pullBody: { color: colors.muted, fontSize: font.body, lineHeight: 22, textAlign: 'center' },
+  pullPrimary: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, paddingHorizontal: spacing.xl, alignItems: 'center', marginTop: spacing.sm, alignSelf: 'stretch' },
+  pullPrimaryText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
+  pullSecondary: { paddingVertical: spacing.sm, alignItems: 'center', alignSelf: 'stretch' },
+  pullSecondaryText: { color: colors.muted, fontSize: font.body, fontWeight: '700' },
 });

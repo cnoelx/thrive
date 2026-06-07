@@ -94,6 +94,12 @@ export const FORM_CUES: Record<string, string[]> = {
     "Keep your low back flat against the wall.",
     "Only go as far as stays pain-free.",
   ],
+  superman: [
+    'Lie face down with arms reaching forward.',
+    'Lift your chest, arms, and legs together off the floor.',
+    'Squeeze your back and glutes at the top, then hold briefly.',
+    'Lower slowly with control.',
+  ],
   ankle: [
     "Face a wall with your foot a few inches back.",
     "Drive your knee toward the wall, keeping your heel down.",
