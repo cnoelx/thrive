@@ -59,10 +59,10 @@ export const FORM_CUES: Record<string, string[]> = {
     "Use a wall or incline to match your level.",
   ],
   barrow: [
-    "Grip the bar and lean back with a straight body.",
-    "Pull your chest toward the bar, squeeze shoulder blades.",
-    "Stay rigid — no sagging hips.",
-    "Lower under control.",
+    "Set a bar (or rings/TRX) and get under it, body in a straight line.",
+    "Pull your chest to the bar, squeezing your shoulder blades.",
+    "Stay rigid — no sagging hips. Lower under control.",
+    "Easier: stay more upright. Harder: walk your feet forward so your body is closer to parallel with the floor.",
   ],
   deadhang: [
     "Grip the bar with arms straight.",

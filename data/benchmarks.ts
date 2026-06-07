@@ -53,7 +53,7 @@ const EXERCISES: Exercise[] = [
   { key: 'pronelegraise', categoryId: 'move', name: 'Prone Leg Raise', why: 'Posterior chain (glutes/hamstrings)', sets: 2, targets: ['6/leg', '10/leg', '15/leg', '20/leg', '20/leg + 2s hold'] },
   // Push & Pull
   { key: 'pushups', categoryId: 'push', name: 'Push-ups', why: 'Push, catch a fall', sets: 3, targets: ['wall', 'high incline', 'low incline/knee', 'negative + few strict', '15 strict'] },
-  { key: 'barrow', categoryId: 'pull', name: 'Inverted Row', why: 'Horizontal pull (rings/TRX, or bar set low). Angle = difficulty.', sets: 3, targets: ['tall angle 5', '8', 'lower angle 10', '12', 'near-horizontal 12-15'] },
+  { key: 'barrow', categoryId: 'pull', name: 'Inverted Row', why: 'Horizontal pull (rings/TRX, or bar set low). Angle = difficulty.', sets: 3, targets: ['upright, 5 reps', 'upright, 8 reps', 'leaned back, 10 reps', 'leaned back, 12 reps', 'near-horizontal, 12-15 reps'] },
   { key: 'deadhang', categoryId: 'pull', name: 'Dead Hang', why: 'Grip strength (needs bar or rings)', sets: 3, targets: ['active 8s', '15s', '25s', '35s', '45s'] },
   { key: 'pullup', categoryId: 'pull', name: 'Pull-up Progression', why: 'Pull bodyweight up (needs bar or rings)', sets: 3, targets: ['hang + scap pulls', 'negative 5s', 'negative 10s', 'band-assisted 3-5', '3-5 strict'] },
   // Keep Going (cardio)
