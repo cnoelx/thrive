@@ -5,9 +5,9 @@ import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
-import { CATEGORIES, benchmarksFor } from '@/data/benchmarks';
+import { CATEGORIES, MAX_LEVEL, benchmarksFor } from '@/data/benchmarks';
 import { todaysWorkout } from '@/engine/dailyCard';
-import { completedLevel, effectiveCategoryIds, foundationComplete, isClaimable, nextLevel } from '@/engine/progression';
+import { baselineLevel, completedLevel, effectiveCategoryIds, isClaimable, nextLevel } from '@/engine/progression';
 import { cancelReminders, requestNotificationPermission, scheduleDailyReminder } from '@/lib/notifications';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -33,8 +33,8 @@ export default function Home() {
   const profile = useAppStore((s) => s.profile);
   const progress = useAppStore((s) => s.progress);
   const lastLoggedDay = useAppStore((s) => s.lastLoggedDay);
-  const foundationSeen = useAppStore((s) => s.foundationSeen);
-  const markFoundationSeen = useAppStore((s) => s.markFoundationSeen);
+  const overallLevelSeen = useAppStore((s) => s.overallLevelSeen);
+  const markOverallLevelSeen = useAppStore((s) => s.markOverallLevelSeen);
   const reminderEnabled = useAppStore((s) => s.reminderEnabled);
   const reminderHour = useAppStore((s) => s.reminderHour);
   const reminderMinute = useAppStore((s) => s.reminderMinute);
@@ -53,10 +53,12 @@ export default function Home() {
 
   if (!onboarded || !profile) return <Redirect href="/onboarding" />;
 
-  const atFoundation = foundationComplete(progress, pullUnlocked);
   const activeCats = effectiveCategoryIds(pullUnlocked);
-  const atL1Count = activeCats.filter((c) => completedLevel(progress, c) >= 1).length;
-  const showCelebration = atFoundation && !foundationSeen;
+  const overall = baselineLevel(progress, pullUnlocked);
+  const nextOverall = Math.min(overall + 1, MAX_LEVEL);
+  const atNextCount = activeCats.filter((c) => completedLevel(progress, c) >= nextOverall).length;
+  const atMax = overall >= MAX_LEVEL;
+  const showCelebration = overall > overallLevelSeen;
   const todayWk = todaysWorkout(progress, pullUnlocked, new Date());
 
   const toggleReminder = async (value: boolean) => {
@@ -149,14 +151,20 @@ export default function Home() {
           )}
         </View>
 
-        {/* Foundation progress */}
-        <View style={styles.foundation}>
-          <Text style={styles.foundationLabel}>
-            {atFoundation ? 'Foundation complete 🎉' : `Foundation · ${atL1Count} of ${activeCats.length} at Level 1`}
+        {/* Overall level */}
+        <View style={styles.overallBox}>
+          <Text style={styles.overallEyebrow}>OVERALL</Text>
+          <Text style={styles.overallLevel}>Level {overall}</Text>
+          <Text style={styles.overallSub}>
+            {atMax
+              ? `All ${activeCats.length} areas at Level ${MAX_LEVEL} 🎉`
+              : `${atNextCount} of ${activeCats.length} at Level ${nextOverall}`}
           </Text>
-          <View style={styles.barTrack}>
-            <View style={[styles.barFill, { width: `${(atL1Count / activeCats.length) * 100}%` }]} />
-          </View>
+          {!atMax ? (
+            <View style={styles.barTrack}>
+              <View style={[styles.barFill, { width: `${(atNextCount / activeCats.length) * 100}%` }]} />
+            </View>
+          ) : null}
         </View>
 
         {/* Six areas */}
@@ -232,12 +240,15 @@ export default function Home() {
         <View style={styles.overlay}>
           <View style={styles.celebrate}>
             <Text style={styles.celebrateEmoji}>🎉</Text>
-            <Text style={styles.celebrateTitle}>Foundation Complete</Text>
+            <Text style={styles.celebrateTitle}>Level {overall} reached</Text>
             <Text style={styles.celebrateBody}>
-              Level 1 in all {activeCats.length} areas — the functional baseline for modern life. The next tier is now
-              unlocked everywhere.
+              {overall === 1
+                ? `Every area at Level 1 — your baseline is in. The next tier is now within reach everywhere.`
+                : overall >= MAX_LEVEL
+                  ? `Every area at Level ${MAX_LEVEL}. You've maxed out the program — outstanding.`
+                  : `Every area at Level ${overall}. The next tier is now within reach everywhere.`}
             </Text>
-            <Pressable onPress={markFoundationSeen} style={styles.celebrateBtn}>
+            <Pressable onPress={() => markOverallLevelSeen(overall)} style={styles.celebrateBtn}>
               <Text style={styles.celebrateBtnText}>Keep going</Text>
             </Pressable>
           </View>
@@ -304,8 +315,10 @@ const styles = StyleSheet.create({
   greeting: { color: colors.ink, fontSize: font.h2, fontWeight: '800' },
   greetingHint: { color: colors.muted, fontSize: font.small, marginTop: 2 },
   nameInput: { color: colors.ink, fontSize: font.h2, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs },
-  foundation: { gap: spacing.xs },
-  foundationLabel: { color: colors.text, fontSize: font.small, fontWeight: '700' },
+  overallBox: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.xs },
+  overallEyebrow: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
+  overallLevel: { color: colors.ink, fontSize: font.title, fontWeight: '900' },
+  overallSub: { color: colors.muted, fontSize: font.small, marginTop: 2 },
   barTrack: { height: 10, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden', marginTop: 2 },
   barFill: { height: 10, backgroundColor: colors.primary, borderRadius: radius.pill },
 

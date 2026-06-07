@@ -46,7 +46,7 @@ export function completedLevel(state: ProgressState, c: CategoryId): number {
   return lvl;
 }
 
-/** Categories currently 'in play' for the multi-category math (baseline, foundation, lagging, the
+/** Categories currently 'in play' for the multi-category math (baseline, overall level, lagging, the
  *  runway cap). Pull is excluded until the user confirms they have a bar/rings — otherwise it would
  *  sit at L0 forever and cap every other category at L2. */
 export function effectiveCategoryIds(pullUnlocked: boolean): CategoryId[] {
@@ -101,11 +101,6 @@ export function claim(state: ProgressState, benchmarkId: string): ProgressState 
 export function applyClaim(state: ProgressState, pullUnlocked: boolean, b: Benchmark): ProgressState {
   if (!isClaimable(state, pullUnlocked, b)) return state;
   return claim(state, b.id);
-}
-
-/** The marquee milestone: Level 1 complete across all unlocked categories ("Foundation Complete"). */
-export function foundationComplete(state: ProgressState, pullUnlocked: boolean): boolean {
-  return baselineLevel(state, pullUnlocked) >= 1;
 }
 
 /** Categories lagging behind the others (only among unlocked ones). Returns [] when level. */

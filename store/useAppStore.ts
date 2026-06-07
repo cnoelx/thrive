@@ -26,7 +26,9 @@ interface AppState {
   progress: ProgressState;
   /** Day-number of the last completed workout — drives the "completed today" state. */
   lastLoggedDay: number | null;
-  foundationSeen: boolean;
+  /** Highest overall level the user has acknowledged (dismissed the celebration for). The next
+   *  level-up celebration fires when their current overall exceeds this. */
+  overallLevelSeen: number;
   nudgeDismissedDay: number | null;
   reminderEnabled: boolean;
   reminderHour: number;
@@ -41,7 +43,7 @@ interface AppState {
   logToday: (dayNumber: number) => void;
   /** Claim a benchmark (validated by the engine). */
   claimBenchmark: (benchmarkId: string) => void;
-  markFoundationSeen: () => void;
+  markOverallLevelSeen: (level: number) => void;
   dismissNudge: (dayNumber: number) => void;
   setReminder: (enabled: boolean, hour: number, minute: number) => void;
   setName: (name: string) => void;
@@ -58,7 +60,7 @@ export const useAppStore = create<AppState>()(
       profile: null,
       progress: emptyProgress(),
       lastLoggedDay: null,
-      foundationSeen: false,
+      overallLevelSeen: 0,
       nudgeDismissedDay: null,
       reminderEnabled: false,
       reminderHour: 8,
@@ -71,7 +73,7 @@ export const useAppStore = create<AppState>()(
           profile,
           progress: initialProgress ?? emptyProgress(),
           lastLoggedDay: null,
-          foundationSeen: false,
+          overallLevelSeen: 0,
           nudgeDismissedDay: null,
         }),
 
@@ -84,7 +86,7 @@ export const useAppStore = create<AppState>()(
           return { progress: applyClaim(s.progress, s.pullUnlocked, b) };
         }),
 
-      markFoundationSeen: () => set({ foundationSeen: true }),
+      markOverallLevelSeen: (level) => set({ overallLevelSeen: level }),
 
       dismissNudge: (dayNumber) => set({ nudgeDismissedDay: dayNumber }),
 
@@ -101,7 +103,7 @@ export const useAppStore = create<AppState>()(
           profile: null,
           progress: emptyProgress(),
           lastLoggedDay: null,
-          foundationSeen: false,
+          overallLevelSeen: 0,
           nudgeDismissedDay: null,
           reminderEnabled: false,
           reminderHour: 8,
@@ -111,7 +113,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       // Bumped key so older, differently-shaped data is discarded.
-      name: 'thrive-state-v4',
+      name: 'thrive-state-v5',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (s) => ({
         onboarded: s.onboarded,
@@ -119,7 +121,7 @@ export const useAppStore = create<AppState>()(
         profile: s.profile,
         progress: s.progress,
         lastLoggedDay: s.lastLoggedDay,
-        foundationSeen: s.foundationSeen,
+        overallLevelSeen: s.overallLevelSeen,
         nudgeDismissedDay: s.nudgeDismissedDay,
         reminderEnabled: s.reminderEnabled,
         reminderHour: s.reminderHour,

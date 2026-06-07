@@ -10,7 +10,6 @@ import {
   completedLevel,
   effectiveCategoryIds,
   emptyProgress,
-  foundationComplete,
   isClaimable,
   laggingCategories,
   levelCap,
@@ -65,7 +64,6 @@ describe('starting state (baseline L0)', () => {
     expect(RUNWAY).toBe(2);
     expect(levelCap(s, true)).toBe(2);
   });
-  it('not Foundation-complete', () => expect(foundationComplete(s, true)).toBe(false));
 });
 
 describe('claiming (anytime within the runway)', () => {
@@ -100,7 +98,6 @@ describe('runway-of-one', () => {
     let s = completeEverywhere(emptyProgress(), 1);
     expect(baselineLevel(s, true)).toBe(1);
     expect(levelCap(s, true)).toBe(3);
-    expect(foundationComplete(s, true)).toBe(true);
     s = claimLevel(s, 'move', 2);
     expect(lockReason(s, true, 'move')).toBe('none');
     expect(isClaimable(s, true, firstBenchmark('move', 3))).toBe(true);
@@ -132,10 +129,10 @@ describe('placement', () => {
     expect(completedLevel(s, 'cardio')).toBe(1);
     expect(completedLevel(s, 'push')).toBe(0);
   });
-  it('placing Level 1 everywhere completes the Foundation', () => {
+  it('placing Level 1 everywhere makes overall level 1', () => {
     const placed: Partial<Record<CategoryId, number>> = {};
     for (const c of CATEGORY_IDS) placed[c] = 1;
-    expect(foundationComplete(progressFromPlacement(placed), true)).toBe(true);
+    expect(baselineLevel(progressFromPlacement(placed), true)).toBe(1);
   });
 });
 
@@ -152,7 +149,7 @@ describe('lagging categories', () => {
 });
 
 // Pull is locked when the user hasn't said they have a bar/rings. While locked, Pull is excluded
-// from baseline/foundation/runway math (so other categories aren't capped at L2 forever), Pull
+// from baseline/overall/runway math (so other categories aren't capped at L2 forever), Pull
 // benchmarks are never claimable, and the category reports lockReason 'noEquipment'.
 describe('locked Pull (no equipment)', () => {
   it('effectiveCategoryIds drops "pull" when locked', () => {
@@ -166,13 +163,6 @@ describe('locked Pull (no equipment)', () => {
     for (const c of effectiveCategoryIds(false)) s = claimLevel(s, c, 1);
     expect(baselineLevel(s, false)).toBe(1);
     expect(baselineLevel(s, true)).toBe(0); // unlocked, but Pull still at L0 drags it down
-  });
-
-  it('foundationComplete needs only the unlocked categories at L1', () => {
-    let s = emptyProgress();
-    for (const c of effectiveCategoryIds(false)) s = claimLevel(s, c, 1);
-    expect(foundationComplete(s, false)).toBe(true);
-    expect(foundationComplete(s, true)).toBe(false);
   });
 
   it('lockReason for Pull is "noEquipment" when locked', () => {
