@@ -9,7 +9,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { BENCHMARK_BY_ID } from '@/data/benchmarks';
 import { Equipment, GoalId } from '@/data/onboarding';
-import { ProgressState, applyClaim, emptyProgress } from '@/engine/progression';
+import { ProgressState, applyClaim, emptyProgress, unclaim } from '@/engine/progression';
 
 export interface Profile {
   equipment: Equipment; // currently defaulted (equipment screen deferred)
@@ -43,6 +43,7 @@ interface AppState {
   logToday: (dayNumber: number) => void;
   /** Claim a benchmark (validated by the engine). */
   claimBenchmark: (benchmarkId: string) => void;
+  unclaimBenchmark: (benchmarkId: string) => void;
   markOverallLevelSeen: (level: number) => void;
   dismissNudge: (dayNumber: number) => void;
   setReminder: (enabled: boolean, hour: number, minute: number) => void;
@@ -85,6 +86,8 @@ export const useAppStore = create<AppState>()(
           if (!b) return s;
           return { progress: applyClaim(s.progress, s.pullUnlocked, b) };
         }),
+
+      unclaimBenchmark: (benchmarkId) => set((s) => ({ progress: unclaim(s.progress, benchmarkId) })),
 
       markOverallLevelSeen: (level) => set({ overallLevelSeen: level }),
 

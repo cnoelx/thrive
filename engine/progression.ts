@@ -97,6 +97,13 @@ export function claim(state: ProgressState, benchmarkId: string): ProgressState 
   return { ...state, claimed: { ...state.claimed, [benchmarkId]: true } };
 }
 
+/** Pure: returns a new state with the benchmark un-claimed (lets the user undo a mis-tap). */
+export function unclaim(state: ProgressState, benchmarkId: string): ProgressState {
+  const claimed = { ...state.claimed };
+  delete claimed[benchmarkId];
+  return { ...state, claimed };
+}
+
 /** Claim a benchmark if allowed; otherwise return the same state reference (no-op). */
 export function applyClaim(state: ProgressState, pullUnlocked: boolean, b: Benchmark): ProgressState {
   if (!isClaimable(state, pullUnlocked, b)) return state;

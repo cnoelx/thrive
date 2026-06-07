@@ -60,6 +60,10 @@ export default function Home() {
   const atMax = overall >= MAX_LEVEL;
   const showCelebration = overall > overallLevelSeen;
   const todayWk = todaysWorkout(progress, pullUnlocked, new Date());
+  // A locked Pull sinks to the bottom of the areas list (stable sort keeps the rest in order).
+  const orderedCats = [...CATEGORIES].sort(
+    (a, b) => Number(a.id === 'pull' && !pullUnlocked) - Number(b.id === 'pull' && !pullUnlocked),
+  );
 
   const toggleReminder = async (value: boolean) => {
     if (value) {
@@ -170,7 +174,7 @@ export default function Home() {
         {/* Six areas */}
         <View style={{ gap: spacing.sm }}>
           <Text style={styles.sectionLabel}>YOUR AREAS</Text>
-          {CATEGORIES.map((cat) => {
+          {orderedCats.map((cat) => {
             const locked = cat.id === 'pull' && !pullUnlocked;
             const lvl = completedLevel(progress, cat.id);
             const ready = !locked && benchmarksFor(cat.id, nextLevel(progress, cat.id)).some((b) => isClaimable(progress, pullUnlocked, b));
@@ -186,7 +190,7 @@ export default function Home() {
                 <Text style={styles.catName}>{cat.short}</Text>
                 {ready ? (
                   <View style={styles.claimBadge}>
-                    <Text style={styles.claimBadgeText}>claim</Text>
+                    <Text style={styles.claimBadgeText}>Level up</Text>
                   </View>
                 ) : null}
                 <Text style={styles.chevron}>›</Text>

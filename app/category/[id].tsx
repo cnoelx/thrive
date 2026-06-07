@@ -15,6 +15,7 @@ export default function CategoryScreen() {
   const profile = useAppStore((s) => s.profile);
   const pullUnlocked = useAppStore((s) => s.pullUnlocked);
   const claimBenchmark = useAppStore((s) => s.claimBenchmark);
+  const unclaimBenchmark = useAppStore((s) => s.unclaimBenchmark);
 
   const category = CATEGORIES.find((cat) => cat.id === id);
   if (!category || !profile) {
@@ -78,8 +79,8 @@ export default function CategoryScreen() {
           <View style={[styles.banner, styles.bannerGood]}>
             <Text style={styles.bannerText}>
               {checkpoint
-                ? 'Certify each hold you can genuinely do right now.'
-                : 'Claim each one you can genuinely do with good form.'}
+                ? 'Hold each one with good form to level up.'
+                : 'Do each one with good form to level up.'}
             </Text>
           </View>
         )}
@@ -96,9 +97,9 @@ export default function CategoryScreen() {
                   <Text style={styles.benchWhy}>{b.why}</Text>
                 </View>
                 {done ? (
-                  <View style={styles.doneCircle}>
+                  <Pressable onPress={() => unclaimBenchmark(b.id)} hitSlop={8} style={styles.doneCircle}>
                     <Text style={styles.doneTick}>{'✓'}</Text>
-                  </View>
+                  </Pressable>
                 ) : (
                   <Pressable
                     onPress={() => claimBenchmark(b.id)}

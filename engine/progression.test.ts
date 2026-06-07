@@ -16,6 +16,7 @@ import {
   lockReason,
   nextLevel,
   progressFromPlacement,
+  unclaim,
 } from '@/engine/progression';
 
 function claimLevel(state: ProgressState, c: CategoryId, level: number): ProgressState {
@@ -119,6 +120,12 @@ describe('applyClaim', () => {
   it('is a no-op when the benchmark is beyond the runway', () => {
     const s = emptyProgress();
     expect(applyClaim(s, true, firstBenchmark('move', 3))).toBe(s);
+  });
+  it('unclaim reverses a claim', () => {
+    const all = claimLevel(emptyProgress(), 'move', 1);
+    expect(completedLevel(all, 'move')).toBe(1);
+    const b = firstBenchmark('move', 1);
+    expect(completedLevel(unclaim(all, b.id), 'move')).toBe(0);
   });
 });
 
