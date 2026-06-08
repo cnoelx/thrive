@@ -212,7 +212,7 @@ function EquipmentStep({ value, onChange }: { value: PullEquipment | null; onCha
   return (
     <View style={{ gap: spacing.md }}>
       <Text style={styles.h1}>What do you have at home?</Text>
-      <Text style={styles.body}>This sets up your Pull exercises. We&apos;ll only show the pull track if you have something to pull on.</Text>
+      <Text style={styles.body}>This sets up your Pull training — we&apos;ll only include it if you have something to pull on.</Text>
       <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
         {EQUIPMENT_CARDS.map((card) => {
           const selected = card.id === value;
@@ -328,7 +328,7 @@ function Chip({ label, selected, onPress }: { label: string; selected: boolean; 
 const styles = StyleSheet.create({
   scroll: { padding: spacing.lg, paddingBottom: spacing.xl, gap: spacing.md, flexGrow: 1 },
   kicker: { color: colors.primary, fontSize: font.small, fontWeight: '700', letterSpacing: 1 },
-  h1: { color: colors.text, fontSize: font.title, fontWeight: '800' },
+  h1: { color: colors.ink, fontSize: font.title, fontWeight: '800' },
   body: { color: colors.muted, fontSize: font.body, lineHeight: 22 },
   equipCard: {
     flexDirection: 'row',

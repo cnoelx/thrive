@@ -12,12 +12,7 @@ export const colors = {
   warnBg: '#FEF3C7',
   warnText: '#92400E',
 
-  // bold & energetic additions
-  ink: '#0C1410', // near-black base for bold blocks + big headings
-  inkCard: '#10211A', // dark hero-card background (deep green-black)
-  accent: '#22C55E', // vivid green for CTAs / highlights on dark
-  onInk: '#FFFFFF', // text on dark blocks
-  onInkMuted: '#9FB3A8', // muted text on dark blocks
+  ink: '#0C1410', // near-black for bold headings
 } as const;
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;

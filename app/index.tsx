@@ -1,7 +1,7 @@
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Redirect, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Animated, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
@@ -60,6 +60,12 @@ export default function Home() {
   const atNextCount = activeCats.filter((c) => completedLevel(progress, c) >= nextOverall).length;
   const atMax = overall >= MAX_LEVEL;
   const showCelebration = overall > overallLevelSeen;
+  const celebrateBody =
+    overall >= MAX_LEVEL
+      ? `Every area at Level ${MAX_LEVEL} — you've maxed the program. Outstanding.`
+      : overall === 1
+        ? `Every area at Level 1. Your baseline is in — the next tier is now in reach everywhere.`
+        : `Every area at Level ${overall}. The next tier is now in reach everywhere.`;
   const todayWk = todaysWorkout(progress, pullUnlocked, new Date());
   // A locked Pull sinks to the bottom of the areas list (stable sort keeps the rest in order).
   const orderedCats = [...CATEGORIES].sort(
@@ -243,24 +249,7 @@ export default function Home() {
         </View>
       </ScrollView>
 
-      {showCelebration ? (
-        <View style={styles.overlay}>
-          <View style={styles.celebrate}>
-            <Text style={styles.celebrateEmoji}>🎉</Text>
-            <Text style={styles.celebrateTitle}>Level {overall} reached</Text>
-            <Text style={styles.celebrateBody}>
-              {overall === 1
-                ? `Every area at Level 1 — your baseline is in. The next tier is now within reach everywhere.`
-                : overall >= MAX_LEVEL
-                  ? `Every area at Level ${MAX_LEVEL}. You've maxed out the program — outstanding.`
-                  : `Every area at Level ${overall}. The next tier is now within reach everywhere.`}
-            </Text>
-            <Pressable onPress={() => markOverallLevelSeen(overall)} style={styles.celebrateBtn}>
-              <Text style={styles.celebrateBtnText}>Keep going</Text>
-            </Pressable>
-          </View>
-        </View>
-      ) : null}
+      {showCelebration ? <Celebration overall={overall} body={celebrateBody} onSeen={markOverallLevelSeen} /> : null}
 
       <Modal visible={pullStep !== 'closed'} transparent animationType="fade" onRequestClose={() => setPullStep('closed')}>
         <Pressable style={styles.overlay} onPress={() => setPullStep('closed')}>
@@ -344,10 +333,46 @@ export default function Home() {
   );
 }
 
+// Level-up celebration: a real Modal (so Back dismisses it, never under system UI) that fades +
+// pops in, then auto-closes after a beat. Tap anywhere or Back also closes it early.
+function Celebration({ overall, body, onSeen }: { overall: number; body: string; onSeen: (n: number) => void }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0.92)).current;
+  const done = useRef(false);
+
+  const finish = useCallback(() => {
+    if (done.current) return;
+    done.current = true;
+    Animated.timing(opacity, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => onSeen(overall));
+  }, [opacity, onSeen, overall]);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 1, friction: 6, tension: 80, useNativeDriver: true }),
+    ]).start();
+    const t = setTimeout(finish, 2600);
+    return () => clearTimeout(t);
+  }, [finish, scale]);
+
+  return (
+    <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={finish}>
+      <Animated.View style={[styles.overlay, { opacity }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={finish} />
+        <Animated.View style={[styles.celebrate, { transform: [{ scale }] }]} pointerEvents="none">
+          <Text style={styles.celebrateEmoji}>🎉</Text>
+          <Text style={styles.celebrateTitle}>Level {overall} reached</Text>
+          <Text style={styles.celebrateBody}>{body}</Text>
+        </Animated.View>
+      </Animated.View>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
   todayCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.xs },
   todayEyebrow: { color: colors.primary, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
-  todayTitle: { color: colors.text, fontSize: font.h2, fontWeight: '800', marginTop: 2 },
+  todayTitle: { color: colors.ink, fontSize: font.h2, fontWeight: '800', marginTop: 2 },
   restSub: { color: colors.muted, fontSize: font.small, marginTop: 4 },
   startBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md + 2, alignItems: 'center', marginTop: spacing.md },
   startText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
@@ -424,14 +449,12 @@ const styles = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   celebrate: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, alignItems: 'center', gap: spacing.md },
   celebrateEmoji: { fontSize: 56 },
-  celebrateTitle: { color: colors.text, fontSize: font.title, fontWeight: '800', textAlign: 'center' },
+  celebrateTitle: { color: colors.ink, fontSize: font.title, fontWeight: '800', textAlign: 'center' },
   celebrateBody: { color: colors.muted, fontSize: font.body, lineHeight: 22, textAlign: 'center' },
-  celebrateBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, marginTop: spacing.sm },
-  celebrateBtnText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
 
   pullSheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm, width: '100%', maxWidth: 420, alignItems: 'center' },
   pullEmoji: { fontSize: 44 },
-  pullTitle: { color: colors.text, fontSize: font.title, fontWeight: '800', textAlign: 'center' },
+  pullTitle: { color: colors.ink, fontSize: font.title, fontWeight: '800', textAlign: 'center' },
   pullBody: { color: colors.muted, fontSize: font.body, lineHeight: 22, textAlign: 'center' },
   pullPrimary: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, paddingHorizontal: spacing.xl, alignItems: 'center', marginTop: spacing.sm, alignSelf: 'stretch' },
   pullPrimaryText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },

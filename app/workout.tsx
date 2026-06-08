@@ -207,7 +207,7 @@ export default function Workout() {
 const styles = StyleSheet.create({
   screenCenter: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.md },
   bigEmoji: { fontSize: 56 },
-  completeTitle: { color: colors.text, fontSize: font.title, fontWeight: '800', textAlign: 'center' },
+  completeTitle: { color: colors.ink, fontSize: font.title, fontWeight: '800', textAlign: 'center' },
   completeBody: { color: colors.muted, fontSize: font.body, textAlign: 'center', lineHeight: 22 },
 
   header: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
 
   body: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.xs },
 
-  exerciseName: { color: colors.text, fontSize: 30, fontWeight: '900', textAlign: 'center', marginTop: 2, flexShrink: 1 },
+  exerciseName: { color: colors.ink, fontSize: 30, fontWeight: '900', textAlign: 'center', marginTop: 2, flexShrink: 1 },
   targetBig: { color: colors.primary, fontSize: 40, fontWeight: '900', marginTop: spacing.sm },
   note: { color: colors.muted, fontSize: font.small, textAlign: 'center', fontStyle: 'italic' },
   primaryBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md + 2, paddingHorizontal: spacing.xl, alignItems: 'center', marginTop: spacing.xxl, minWidth: 200 },
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm, width: '100%', maxWidth: 420 },
   sheetSub: { color: colors.primary, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1, marginBottom: spacing.xs },
-  sheetTitle: { color: colors.text, fontSize: font.h2, fontWeight: '800' },
+  sheetTitle: { color: colors.ink, fontSize: font.h2, fontWeight: '800' },
   howImg: { width: '100%', height: 200, borderRadius: radius.md, backgroundColor: colors.track, marginTop: spacing.sm },
   cueRow: { flexDirection: 'row', gap: spacing.sm },
   cueDot: { color: colors.primary, fontSize: font.body, fontWeight: '900', lineHeight: 22 },

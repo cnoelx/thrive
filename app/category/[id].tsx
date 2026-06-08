@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   levelBoxOn: { backgroundColor: colors.primary },
   levelBoxText: { color: colors.muted, fontSize: font.body, fontWeight: '900' },
   levelBoxTextOn: { color: colors.primaryText },
-  title: { color: colors.text, fontSize: font.title, fontWeight: '800' },
+  title: { color: colors.ink, fontSize: font.title, fontWeight: '800' },
   sub: { color: colors.muted, fontSize: font.small, marginTop: 2 },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   stepArrow: { color: colors.primary, fontSize: 30, fontWeight: '800', paddingHorizontal: spacing.xs },
