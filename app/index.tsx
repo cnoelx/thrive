@@ -171,7 +171,7 @@ export default function Home() {
           )}
         </View>
 
-        {/* Six areas */}
+        {/* Training areas */}
         <View style={{ gap: spacing.sm }}>
           <Text style={styles.sectionLabel}>WHAT YOU&apos;RE BUILDING</Text>
           <View style={styles.overallSummary}>

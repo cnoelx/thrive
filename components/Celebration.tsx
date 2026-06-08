@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, Text } from 'react-native';
 
@@ -18,6 +19,7 @@ export function Celebration({ title, body, onDone }: { title: string; body: stri
   }, [opacity, onDone]);
 
   useEffect(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Animated.parallel([
       Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
       Animated.spring(scale, { toValue: 1, friction: 6, tension: 80, useNativeDriver: true }),
