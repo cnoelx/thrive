@@ -47,6 +47,7 @@ export default function Home() {
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState('');
   const [pullStep, setPullStep] = useState<'closed' | 'explain' | 'confirm'>('closed');
+  const [levelsOpen, setLevelsOpen] = useState(false);
 
   const day = todayNumber();
   const doneToday = lastLoggedDay === day;
@@ -117,26 +118,34 @@ export default function Home() {
           gap: spacing.lg,
         }}
       >
-        {/* Greeting */}
-        {editingName ? (
-          <TextInput
-            value={draftName}
-            onChangeText={setDraftName}
-            placeholder="Your name"
-            placeholderTextColor={colors.muted}
-            autoFocus
-            maxLength={30}
-            returnKeyType="done"
-            onSubmitEditing={saveName}
-            onBlur={saveName}
-            style={styles.nameInput}
-          />
-        ) : (
-          <Pressable onPress={startEditName}>
-            <Text style={styles.greeting}>{name ? `Hi, ${name} 👋` : 'Welcome 👋'}</Text>
-            {name ? null : <Text style={styles.greetingHint}>Tap to add your name</Text>}
+        {/* Greeting + level badge */}
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            {editingName ? (
+              <TextInput
+                value={draftName}
+                onChangeText={setDraftName}
+                placeholder="Your name"
+                placeholderTextColor={colors.muted}
+                autoFocus
+                maxLength={30}
+                returnKeyType="done"
+                onSubmitEditing={saveName}
+                onBlur={saveName}
+                style={styles.nameInput}
+              />
+            ) : (
+              <Pressable onPress={startEditName}>
+                <Text style={styles.greeting}>{name ? `Hi, ${name} 👋` : 'Welcome 👋'}</Text>
+                {name ? null : <Text style={styles.greetingHint}>Tap to add your name</Text>}
+              </Pressable>
+            )}
+          </View>
+          <Pressable onPress={() => setLevelsOpen(true)} hitSlop={8} style={styles.levelBadge}>
+            <Text style={styles.levelBadgeLabel}>LEVEL</Text>
+            <Text style={styles.levelBadgeNum}>{overall}</Text>
           </Pressable>
-        )}
+        </View>
 
         {/* Today's workout */}
         <View style={styles.todayCard}>
@@ -155,35 +164,29 @@ export default function Home() {
           )}
         </View>
 
-        {/* Overall level */}
-        <View style={styles.overallBox}>
-          <Text style={styles.overallEyebrow}>OVERALL</Text>
-          <Text style={styles.overallLevel}>Level {overall}</Text>
-          <Text style={styles.overallSub}>
-            {atMax
-              ? `All ${activeCats.length} areas at Level ${MAX_LEVEL} 🎉`
-              : `${atNextCount} of ${activeCats.length} at Level ${nextOverall}`}
-          </Text>
-          {!atMax ? (
-            <View style={styles.barTrack}>
-              <View style={[styles.barFill, { width: `${(atNextCount / activeCats.length) * 100}%` }]} />
-            </View>
-          ) : null}
-        </View>
-
         {/* Six areas */}
         <View style={{ gap: spacing.sm }}>
           <Text style={styles.sectionLabel}>YOUR AREAS</Text>
+          <View style={styles.overallSummary}>
+            <Text style={styles.overallSummaryTitle}>Overall · Level {overall}</Text>
+            <View style={styles.barTrack}>
+              <View style={[styles.barFill, { width: `${atMax ? 100 : (atNextCount / activeCats.length) * 100}%` }]} />
+            </View>
+          </View>
           {orderedCats.map((cat) => {
             const locked = cat.id === 'pull' && !pullUnlocked;
             const lvl = completedLevel(progress, cat.id);
-            const ready = !locked && benchmarksFor(cat.id, nextLevel(progress, cat.id)).some((b) => isClaimable(progress, pullUnlocked, b));
+            const nextBenches = locked || lvl >= MAX_LEVEL ? [] : benchmarksFor(cat.id, nextLevel(progress, cat.id));
+            const ready = nextBenches.some((b) => isClaimable(progress, pullUnlocked, b));
+            const claimedNext = nextBenches.filter((b) => progress.claimed[b.id]).length;
+            const fillPct = locked ? 0 : lvl >= MAX_LEVEL ? 100 : nextBenches.length ? (claimedNext / nextBenches.length) * 100 : 0;
             return (
               <Pressable
                 key={cat.id}
                 onPress={() => (locked ? setPullStep('explain') : router.push(`/category/${cat.id}`))}
                 style={styles.catRow}
               >
+                {fillPct > 0 ? <View style={[styles.tileFill, { width: `${fillPct}%` }]} /> : null}
                 <View style={[styles.levelBox, !locked && lvl > 0 && styles.levelBoxOn]}>
                   <Text style={[styles.levelText, !locked && lvl > 0 && styles.levelTextOn]}>{locked ? '🔒' : `L${lvl}`}</Text>
                 </View>
@@ -302,6 +305,41 @@ export default function Home() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <Modal visible={levelsOpen} transparent animationType="fade" onRequestClose={() => setLevelsOpen(false)}>
+        <Pressable style={styles.overlay} onPress={() => setLevelsOpen(false)}>
+          <Pressable style={styles.levelsSheet} onPress={() => {}}>
+            <Text style={styles.overallEyebrow}>YOUR LEVELS</Text>
+            <Text style={styles.overallLevel}>Overall · Level {overall}</Text>
+            <Text style={styles.overallSub}>
+              {atMax
+                ? `Every area at Level ${MAX_LEVEL} — you've maxed the program. 🎉`
+                : `The level you've reached in every area. ${atNextCount} of ${activeCats.length} now at Level ${nextOverall} — your overall rises once the lowest catches up.`}
+            </Text>
+            {!atMax ? (
+              <View style={styles.barTrack}>
+                <View style={[styles.barFill, { width: `${(atNextCount / activeCats.length) * 100}%` }]} />
+              </View>
+            ) : null}
+            <View style={styles.levelsList}>
+              {orderedCats.map((cat) => {
+                const locked = cat.id === 'pull' && !pullUnlocked;
+                return (
+                  <View key={cat.id} style={styles.levelsRow}>
+                    <Text style={styles.levelsCat}>{cat.short}</Text>
+                    <Text style={[styles.levelsVal, locked && styles.levelsValLocked]}>
+                      {locked ? '🔒 Locked' : `Level ${completedLevel(progress, cat.id)}`}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+            <Pressable onPress={() => setLevelsOpen(false)} style={styles.pullPrimary}>
+              <Text style={styles.pullPrimaryText}>Got it</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -319,7 +357,6 @@ const styles = StyleSheet.create({
   greeting: { color: colors.ink, fontSize: font.h2, fontWeight: '800' },
   greetingHint: { color: colors.muted, fontSize: font.small, marginTop: 2 },
   nameInput: { color: colors.ink, fontSize: font.h2, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs },
-  overallBox: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.xs },
   overallEyebrow: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
   overallLevel: { color: colors.ink, fontSize: font.title, fontWeight: '900' },
   overallSub: { color: colors.muted, fontSize: font.small, marginTop: 2 },
@@ -336,7 +373,9 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
+    overflow: 'hidden',
   },
+  tileFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: 'rgba(22,163,74,0.12)' },
   levelBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: colors.track, alignItems: 'center', justifyContent: 'center' },
   levelBoxOn: { backgroundColor: colors.primary },
   levelText: { color: colors.muted, fontSize: font.small, fontWeight: '900' },
@@ -345,6 +384,20 @@ const styles = StyleSheet.create({
   claimBadge: { backgroundColor: '#EAF7F0', borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: 2 },
   claimBadgeText: { color: colors.primary, fontSize: 11, fontWeight: '800' },
   chevron: { color: colors.muted, fontSize: 22 },
+
+  overallSummary: { gap: spacing.xs, marginBottom: spacing.xs },
+  overallSummaryTitle: { color: colors.ink, fontSize: font.body, fontWeight: '900' },
+
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  levelBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  levelBadgeLabel: { color: colors.primaryText, fontSize: font.small, fontWeight: '800', letterSpacing: 0.5, opacity: 0.9 },
+  levelBadgeNum: { color: colors.primaryText, fontSize: font.h2, fontWeight: '900' },
+  levelsSheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm, width: '100%', maxWidth: 420 },
+  levelsList: { marginTop: spacing.sm },
+  levelsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
+  levelsCat: { color: colors.text, fontSize: font.body, fontWeight: '700' },
+  levelsVal: { color: colors.primary, fontSize: font.body, fontWeight: '800' },
+  levelsValLocked: { color: colors.muted },
 
   reminderCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.md },
   reminderHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
