@@ -10,6 +10,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { BENCHMARK_BY_ID } from '@/data/benchmarks';
 import { Equipment, GoalId } from '@/data/onboarding';
 import { ProgressState, applyClaim, emptyProgress, unclaim } from '@/engine/progression';
+import { nextStreak } from '@/engine/streak';
 
 export interface Profile {
   equipment: Equipment; // currently defaulted (equipment screen deferred)
@@ -26,6 +27,10 @@ interface AppState {
   progress: ProgressState;
   /** Day-number of the last completed workout — drives the "completed today" state. */
   lastLoggedDay: number | null;
+  /** Consecutive-completed-workout streak as of lastLoggedDay (rest days don't break it). */
+  streak: number;
+  /** Highest streak milestone the user has seen the celebration for; cleared when the streak resets. */
+  streakMilestoneSeen: number;
   /** Highest overall level the user has acknowledged (dismissed the celebration for). The next
    *  level-up celebration fires when their current overall exceeds this. */
   overallLevelSeen: number;
@@ -45,6 +50,7 @@ interface AppState {
   claimBenchmark: (benchmarkId: string) => void;
   unclaimBenchmark: (benchmarkId: string) => void;
   markOverallLevelSeen: (level: number) => void;
+  markStreakMilestoneSeen: (milestone: number) => void;
   dismissNudge: (dayNumber: number) => void;
   setReminder: (enabled: boolean, hour: number, minute: number) => void;
   setName: (name: string) => void;
@@ -61,6 +67,8 @@ export const useAppStore = create<AppState>()(
       profile: null,
       progress: emptyProgress(),
       lastLoggedDay: null,
+      streak: 0,
+      streakMilestoneSeen: 0,
       overallLevelSeen: 0,
       nudgeDismissedDay: null,
       reminderEnabled: false,
@@ -74,11 +82,19 @@ export const useAppStore = create<AppState>()(
           profile,
           progress: initialProgress ?? emptyProgress(),
           lastLoggedDay: null,
+          streak: 0,
+          streakMilestoneSeen: 0,
           overallLevelSeen: 0,
           nudgeDismissedDay: null,
         }),
 
-      logToday: (dayNumber) => set((s) => (s.lastLoggedDay === dayNumber ? s : { lastLoggedDay: dayNumber })),
+      logToday: (dayNumber) =>
+        set((s) => {
+          if (s.lastLoggedDay === dayNumber) return s;
+          const streak = nextStreak(s.streak, s.lastLoggedDay, dayNumber);
+          // A fresh run (streak back to 1) re-arms all milestone celebrations.
+          return { lastLoggedDay: dayNumber, streak, streakMilestoneSeen: streak === 1 ? 0 : s.streakMilestoneSeen };
+        }),
 
       claimBenchmark: (benchmarkId) =>
         set((s) => {
@@ -90,6 +106,8 @@ export const useAppStore = create<AppState>()(
       unclaimBenchmark: (benchmarkId) => set((s) => ({ progress: unclaim(s.progress, benchmarkId) })),
 
       markOverallLevelSeen: (level) => set({ overallLevelSeen: level }),
+
+      markStreakMilestoneSeen: (milestone) => set({ streakMilestoneSeen: milestone }),
 
       dismissNudge: (dayNumber) => set({ nudgeDismissedDay: dayNumber }),
 
@@ -106,6 +124,8 @@ export const useAppStore = create<AppState>()(
           profile: null,
           progress: emptyProgress(),
           lastLoggedDay: null,
+          streak: 0,
+          streakMilestoneSeen: 0,
           overallLevelSeen: 0,
           nudgeDismissedDay: null,
           reminderEnabled: false,
@@ -124,6 +144,8 @@ export const useAppStore = create<AppState>()(
         profile: s.profile,
         progress: s.progress,
         lastLoggedDay: s.lastLoggedDay,
+        streak: s.streak,
+        streakMilestoneSeen: s.streakMilestoneSeen,
         overallLevelSeen: s.overallLevelSeen,
         nudgeDismissedDay: s.nudgeDismissedDay,
         reminderEnabled: s.reminderEnabled,

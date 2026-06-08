@@ -9,6 +9,7 @@ import { colors, font, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, MAX_LEVEL, benchmarksFor } from '@/data/benchmarks';
 import { todaysWorkout } from '@/engine/dailyCard';
 import { baselineLevel, completedLevel, effectiveCategoryIds, isClaimable, nextLevel } from '@/engine/progression';
+import { currentStreak, pendingStreakMilestone } from '@/engine/streak';
 import { cancelReminders, requestNotificationPermission, scheduleDailyReminder } from '@/lib/notifications';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -27,6 +28,16 @@ function dateFromHM(h: number, m: number): Date {
   return d;
 }
 
+// Friendly streak line — a few variations, picked deterministically by streak length so it's stable
+// for a given value but varies as the streak grows.
+const STREAK_MESSAGES: ((n: number) => string)[] = [
+  (n) => `🔥 You're on a ${n}-day streak — awesome!`,
+  (n) => `🔥 ${n} days in a row. You're on fire!`,
+  (n) => `🔥 ${n}-day streak — keep it rolling!`,
+  (n) => `🔥 ${n} days straight. Look at you go!`,
+  (n) => `🔥 ${n}-day streak. Unstoppable!`,
+];
+
 export default function Home() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -34,6 +45,9 @@ export default function Home() {
   const profile = useAppStore((s) => s.profile);
   const progress = useAppStore((s) => s.progress);
   const lastLoggedDay = useAppStore((s) => s.lastLoggedDay);
+  const streak = useAppStore((s) => s.streak);
+  const streakMilestoneSeen = useAppStore((s) => s.streakMilestoneSeen);
+  const markStreakMilestoneSeen = useAppStore((s) => s.markStreakMilestoneSeen);
   const overallLevelSeen = useAppStore((s) => s.overallLevelSeen);
   const markOverallLevelSeen = useAppStore((s) => s.markOverallLevelSeen);
   const reminderEnabled = useAppStore((s) => s.reminderEnabled);
@@ -52,6 +66,8 @@ export default function Home() {
 
   const day = todayNumber();
   const doneToday = lastLoggedDay === day;
+  const streakNow = currentStreak(streak, lastLoggedDay, day);
+  const streakMilestone = pendingStreakMilestone(streakNow, streakMilestoneSeen);
 
   if (!onboarded || !profile) return <Redirect href="/onboarding" />;
 
@@ -154,6 +170,10 @@ export default function Home() {
           </Pressable>
         </View>
 
+        {streakNow >= 2 ? (
+          <Text style={styles.streakLine}>{STREAK_MESSAGES[streakNow % STREAK_MESSAGES.length](streakNow)}</Text>
+        ) : null}
+
         {/* Today's workout */}
         <View style={styles.todayCard}>
           <Text style={styles.todayEyebrow}>{todayWk.rest ? 'TODAY' : `TODAY · ${todayWk.focus.toUpperCase()}`}</Text>
@@ -252,6 +272,14 @@ export default function Home() {
 
       {showCelebration ? (
         <Celebration title={`You hit Level ${overall}!`} body={celebrateBody} onDone={() => markOverallLevelSeen(overall)} />
+      ) : null}
+
+      {!showCelebration && streakMilestone ? (
+        <Celebration
+          title={`🔥 ${streakMilestone}-day streak!`}
+          body={`${streakMilestone} workouts in a row — keep the fire going!`}
+          onDone={() => markStreakMilestoneSeen(streakMilestone)}
+        />
       ) : null}
 
       <Modal visible={pullStep !== 'closed'} transparent animationType="fade" onRequestClose={() => setPullStep('closed')}>
@@ -381,6 +409,7 @@ const styles = StyleSheet.create({
   overallSummaryTitle: { color: colors.ink, fontSize: font.body, fontWeight: '900' },
 
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  streakLine: { color: colors.warnText, fontSize: font.body, fontWeight: '800' },
   levelBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   levelBadgeLabel: { color: colors.primaryText, fontSize: font.small, fontWeight: '800', letterSpacing: 0.5, opacity: 0.9 },
   levelBadgeNum: { color: colors.primaryText, fontSize: font.h2, fontWeight: '900' },
