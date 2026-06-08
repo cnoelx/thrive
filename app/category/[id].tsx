@@ -1,10 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
-import { CATEGORIES, benchmarksFor, formatTarget, isCheckpoint } from '@/data/benchmarks';
-import { RUNWAY, completedLevel, isClaimable, lockReason, nextLevel } from '@/engine/progression';
+import { CATEGORIES, MAX_LEVEL, benchmarksFor, formatTarget, isCheckpoint } from '@/data/benchmarks';
+import { RUNWAY, completedLevel, isClaimable, lockReason } from '@/engine/progression';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function CategoryScreen() {
@@ -18,6 +19,12 @@ export default function CategoryScreen() {
   const unclaimBenchmark = useAppStore((s) => s.unclaimBenchmark);
 
   const category = CATEGORIES.find((cat) => cat.id === id);
+  // Which level the screen is showing. Initialised to the level you're working on, and — crucially —
+  // NOT auto-advanced when you complete a level, so the just-claimed move stays on screen and its ✓
+  // can be tapped to undo. The ‹ › stepper moves between levels (up to the one you're working on).
+  const initialWorking = category ? Math.min(completedLevel(progress, category.id) + 1, MAX_LEVEL) : 1;
+  const [viewLevel, setViewLevel] = useState(initialWorking);
+
   if (!category || !profile) {
     return (
       <View style={[styles.center, { paddingTop: insets.top }]}>
@@ -31,12 +38,17 @@ export default function CategoryScreen() {
 
   const c = category.id;
   const completed = completedLevel(progress, c);
-  const next = nextLevel(progress, c);
+  const workingLevel = Math.min(completed + 1, MAX_LEVEL);
   const reason = lockReason(progress, pullUnlocked, c);
   const checkpoint = isCheckpoint(c);
 
-  const benches = reason === 'maxed' || reason === 'noEquipment' ? [] : benchmarksFor(c, next);
+  const vLevel = reason === 'noEquipment' ? 1 : Math.min(Math.max(viewLevel, 1), workingLevel);
+  const benches = reason === 'noEquipment' ? [] : benchmarksFor(c, vLevel);
   const claimedCount = benches.filter((b) => progress.claimed[b.id]).length;
+  const levelDone = benches.length > 0 && claimedCount === benches.length;
+  const runwayLocked = reason === 'runway' && vLevel >= workingLevel;
+  const canPrev = reason !== 'noEquipment' && vLevel > 1;
+  const canNext = reason !== 'noEquipment' && vLevel < workingLevel;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -48,39 +60,53 @@ export default function CategoryScreen() {
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl, gap: spacing.lg }}>
         <View style={styles.titleRow}>
-          <View style={[styles.levelBox, completed > 0 && styles.levelBoxOn]}>
-            <Text style={[styles.levelBoxText, completed > 0 && styles.levelBoxTextOn]}>L{completed}</Text>
+          <View style={[styles.levelBox, levelDone && styles.levelBoxOn]}>
+            <Text style={[styles.levelBoxText, levelDone && styles.levelBoxTextOn]}>L{vLevel}</Text>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>{category.short}</Text>
             <Text style={styles.sub}>
               {reason === 'noEquipment'
                 ? 'Locked — needs a bar or rings'
-                : reason === 'maxed'
-                  ? 'All levels complete 🎉'
-                  : `Working toward Level ${next} · ${claimedCount}/${benches.length}`}
+                : runwayLocked
+                  ? 'Locked for now'
+                  : levelDone
+                    ? `Level ${vLevel} complete ✓`
+                    : `Level ${vLevel} · ${claimedCount}/${benches.length} done`}
             </Text>
           </View>
+          {reason !== 'noEquipment' ? (
+            <View style={styles.stepper}>
+              <Pressable disabled={!canPrev} onPress={() => setViewLevel(vLevel - 1)} hitSlop={8}>
+                <Text style={[styles.stepArrow, !canPrev && styles.stepArrowOff]}>‹</Text>
+              </Pressable>
+              <Pressable disabled={!canNext} onPress={() => setViewLevel(vLevel + 1)} hitSlop={8}>
+                <Text style={[styles.stepArrow, !canNext && styles.stepArrowOff]}>›</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
 
         {reason === 'noEquipment' ? (
           <View style={[styles.banner, styles.bannerLock]}>
             <Text style={styles.bannerText}>🔒 Pull needs a bar or rings. Unlock it from the Pull tile on the home screen.</Text>
           </View>
-        ) : reason === 'runway' ? (
+        ) : runwayLocked ? (
           <View style={[styles.banner, styles.bannerLock]}>
-            <Text style={styles.bannerText}>🔒 Get all areas to Level {next - RUNWAY} to unlock Level {next} here.</Text>
+            <Text style={styles.bannerText}>🔒 Get all areas to Level {vLevel - RUNWAY} to unlock Level {vLevel} here.</Text>
           </View>
-        ) : reason === 'maxed' ? (
+        ) : levelDone ? (
           <View style={[styles.banner, styles.bannerGood]}>
-            <Text style={styles.bannerText}>You&apos;ve completed every level here. Outstanding. 🎉</Text>
+            <Text style={styles.bannerText}>
+              {vLevel >= MAX_LEVEL
+                ? "You've completed every level here. Outstanding. 🎉"
+                : 'Level complete. Tap › for the next level — or tap a ✓ to undo.'}
+            </Text>
           </View>
         ) : (
           <View style={[styles.banner, styles.bannerGood]}>
             <Text style={styles.bannerText}>
-              {checkpoint
-                ? 'Hold each one with good form to level up.'
-                : 'Do each one with good form to level up.'}
+              {checkpoint ? 'Hold each one with good form to level up.' : 'Do each one with good form to level up.'}
             </Text>
           </View>
         )}
@@ -130,6 +156,9 @@ const styles = StyleSheet.create({
   levelBoxTextOn: { color: colors.primaryText },
   title: { color: colors.text, fontSize: font.title, fontWeight: '800' },
   sub: { color: colors.muted, fontSize: font.small, marginTop: 2 },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  stepArrow: { color: colors.primary, fontSize: 30, fontWeight: '800', paddingHorizontal: spacing.xs },
+  stepArrowOff: { color: colors.border },
 
   banner: { borderRadius: radius.md, padding: spacing.md },
   bannerLock: { backgroundColor: colors.warnBg },
