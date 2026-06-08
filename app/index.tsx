@@ -1,9 +1,10 @@
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Redirect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Celebration } from '@/components/Celebration';
 import { colors, font, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, MAX_LEVEL, benchmarksFor } from '@/data/benchmarks';
 import { todaysWorkout } from '@/engine/dailyCard';
@@ -249,7 +250,9 @@ export default function Home() {
         </View>
       </ScrollView>
 
-      {showCelebration ? <Celebration overall={overall} body={celebrateBody} onSeen={markOverallLevelSeen} /> : null}
+      {showCelebration ? (
+        <Celebration title={`You hit Level ${overall}!`} body={celebrateBody} onDone={() => markOverallLevelSeen(overall)} />
+      ) : null}
 
       <Modal visible={pullStep !== 'closed'} transparent animationType="fade" onRequestClose={() => setPullStep('closed')}>
         <Pressable style={styles.overlay} onPress={() => setPullStep('closed')}>
@@ -333,42 +336,6 @@ export default function Home() {
   );
 }
 
-// Level-up celebration: a real Modal (so Back dismisses it, never under system UI) that fades +
-// pops in, then auto-closes after a beat. Tap anywhere or Back also closes it early.
-function Celebration({ overall, body, onSeen }: { overall: number; body: string; onSeen: (n: number) => void }) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(0.92)).current;
-  const done = useRef(false);
-
-  const finish = useCallback(() => {
-    if (done.current) return;
-    done.current = true;
-    Animated.timing(opacity, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => onSeen(overall));
-  }, [opacity, onSeen, overall]);
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-      Animated.spring(scale, { toValue: 1, friction: 6, tension: 80, useNativeDriver: true }),
-    ]).start();
-    const t = setTimeout(finish, 2600);
-    return () => clearTimeout(t);
-  }, [finish, scale]);
-
-  return (
-    <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={finish}>
-      <Animated.View style={[styles.overlay, { opacity }]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={finish} />
-        <Animated.View style={[styles.celebrate, { transform: [{ scale }] }]} pointerEvents="none">
-          <Text style={styles.celebrateEmoji}>🎉</Text>
-          <Text style={styles.celebrateTitle}>You hit Level {overall}!</Text>
-          <Text style={styles.celebrateBody}>{body}</Text>
-        </Animated.View>
-      </Animated.View>
-    </Modal>
-  );
-}
-
 const styles = StyleSheet.create({
   todayCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.xs },
   todayEyebrow: { color: colors.primary, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
@@ -447,10 +414,6 @@ const styles = StyleSheet.create({
   resetText: { color: colors.muted, fontSize: font.small, textDecorationLine: 'underline' },
 
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
-  celebrate: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, alignItems: 'center', gap: spacing.md },
-  celebrateEmoji: { fontSize: 56 },
-  celebrateTitle: { color: colors.ink, fontSize: font.title, fontWeight: '800', textAlign: 'center' },
-  celebrateBody: { color: colors.muted, fontSize: font.body, lineHeight: 22, textAlign: 'center' },
 
   pullSheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm, width: '100%', maxWidth: 420, alignItems: 'center' },
   pullEmoji: { fontSize: 44 },

@@ -3,9 +3,10 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Celebration } from '@/components/Celebration';
 import { colors, font, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, MAX_LEVEL, benchmarksFor, formatTarget, isCheckpoint } from '@/data/benchmarks';
-import { RUNWAY, completedLevel, isClaimable, lockReason } from '@/engine/progression';
+import { RUNWAY, completedLevel, isClaimable, levelCap, lockReason } from '@/engine/progression';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function CategoryScreen() {
@@ -19,11 +20,13 @@ export default function CategoryScreen() {
   const unclaimBenchmark = useAppStore((s) => s.unclaimBenchmark);
 
   const category = CATEGORIES.find((cat) => cat.id === id);
-  // Which level the screen is showing. Initialised to the level you're working on, and — crucially —
-  // NOT auto-advanced when you complete a level, so the just-claimed move stays on screen and its ✓
-  // can be tapped to undo. The ‹ › stepper moves between levels (up to the one you're working on).
+  // Which level the screen shows. Starts at the level you're working on and only ever moves FORWARD,
+  // via the "Start Level N" button once the current level is complete — there's no going back to old
+  // levels. It's NOT auto-advanced on the final claim, so a just-completed level stays on screen and
+  // its ✓ can be tapped to undo before you move on.
   const initialWorking = category ? Math.min(completedLevel(progress, category.id) + 1, MAX_LEVEL) : 1;
   const [viewLevel, setViewLevel] = useState(initialWorking);
+  const [celebrateLevel, setCelebrateLevel] = useState<number | null>(null);
 
   if (!category || !profile) {
     return (
@@ -47,8 +50,7 @@ export default function CategoryScreen() {
   const claimedCount = benches.filter((b) => progress.claimed[b.id]).length;
   const levelDone = benches.length > 0 && claimedCount === benches.length;
   const runwayLocked = reason === 'runway' && vLevel >= workingLevel;
-  const canPrev = reason !== 'noEquipment' && vLevel > 1;
-  const canNext = reason !== 'noEquipment' && vLevel < workingLevel;
+  const nextLevelUnlocked = vLevel < MAX_LEVEL && vLevel + 1 <= levelCap(progress, pullUnlocked);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -72,20 +74,16 @@ export default function CategoryScreen() {
                   ? 'Locked for now'
                   : levelDone
                     ? `Level ${vLevel} complete ✓`
-                    : `Level ${vLevel} · ${claimedCount}/${benches.length} done`}
+                    : `Level ${vLevel}`}
             </Text>
           </View>
-          {reason !== 'noEquipment' ? (
-            <View style={styles.stepper}>
-              <Pressable disabled={!canPrev} onPress={() => setViewLevel(vLevel - 1)} hitSlop={8}>
-                <Text style={[styles.stepArrow, !canPrev && styles.stepArrowOff]}>‹</Text>
-              </Pressable>
-              <Pressable disabled={!canNext} onPress={() => setViewLevel(vLevel + 1)} hitSlop={8}>
-                <Text style={[styles.stepArrow, !canNext && styles.stepArrowOff]}>›</Text>
-              </Pressable>
-            </View>
-          ) : null}
         </View>
+
+        {reason !== 'noEquipment' && benches.length > 0 ? (
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${(claimedCount / benches.length) * 100}%` }]} />
+          </View>
+        ) : null}
 
         {reason === 'noEquipment' ? (
           <View style={[styles.banner, styles.bannerLock]}>
@@ -100,7 +98,7 @@ export default function CategoryScreen() {
             <Text style={styles.bannerText}>
               {vLevel >= MAX_LEVEL
                 ? "You've finished every level here. Amazing work. 🎉"
-                : "Level done! Tap › for the next one — or tap a ✓ to undo."}
+                : `Nice — all checked off! Tap Unlock below — or tap a ✓ to undo.`}
             </Text>
           </View>
         ) : (
@@ -139,7 +137,34 @@ export default function CategoryScreen() {
             );
           })}
         </View>
+
+        {reason === 'none' && vLevel < MAX_LEVEL ? (
+          nextLevelUnlocked ? (
+            <Pressable
+              onPress={() => setCelebrateLevel(vLevel)}
+              disabled={!levelDone}
+              style={[styles.advanceBtn, !levelDone && styles.advanceBtnOff]}
+            >
+              <Text style={[styles.advanceText, !levelDone && styles.advanceTextOff]}>Unlock Level {vLevel + 1} →</Text>
+            </Pressable>
+          ) : (
+            <View style={[styles.banner, styles.bannerLock]}>
+              <Text style={styles.bannerText}>🔒 Level {vLevel + 1} unlocks once every area reaches Level {vLevel + 1 - RUNWAY}.</Text>
+            </View>
+          )
+        ) : null}
       </ScrollView>
+
+      {celebrateLevel !== null ? (
+        <Celebration
+          title={`Level ${celebrateLevel + 1} unlocked!`}
+          body={`${category.short}: Level ${celebrateLevel} complete — time for Level ${celebrateLevel + 1}!`}
+          onDone={() => {
+            setViewLevel(celebrateLevel + 1);
+            setCelebrateLevel(null);
+          }}
+        />
+      ) : null}
     </View>
   );
 }
@@ -156,9 +181,13 @@ const styles = StyleSheet.create({
   levelBoxTextOn: { color: colors.primaryText },
   title: { color: colors.ink, fontSize: font.title, fontWeight: '800' },
   sub: { color: colors.muted, fontSize: font.small, marginTop: 2 },
-  stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  stepArrow: { color: colors.primary, fontSize: 30, fontWeight: '800', paddingHorizontal: spacing.xs },
-  stepArrowOff: { color: colors.border },
+  progressTrack: { height: 8, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden' },
+  progressFill: { height: 8, backgroundColor: colors.primary, borderRadius: radius.pill },
+
+  advanceBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md + 2, alignItems: 'center' },
+  advanceBtnOff: { backgroundColor: colors.track },
+  advanceText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
+  advanceTextOff: { color: colors.muted },
 
   banner: { borderRadius: radius.md, padding: spacing.md },
   bannerLock: { backgroundColor: colors.warnBg },
