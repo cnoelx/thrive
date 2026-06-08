@@ -89,24 +89,24 @@ export default function CategoryScreen() {
 
         {reason === 'noEquipment' ? (
           <View style={[styles.banner, styles.bannerLock]}>
-            <Text style={styles.bannerText}>🔒 Pull needs a bar or rings. Unlock it from the Pull tile on the home screen.</Text>
+            <Text style={styles.bannerText}>🔒 Pull needs a bar or rings. You can unlock it from the Pull tile on the home screen.</Text>
           </View>
         ) : runwayLocked ? (
           <View style={[styles.banner, styles.bannerLock]}>
-            <Text style={styles.bannerText}>🔒 Get all areas to Level {vLevel - RUNWAY} to unlock Level {vLevel} here.</Text>
+            <Text style={styles.bannerText}>🔒 Get every area to Level {vLevel - RUNWAY} to unlock Level {vLevel} here.</Text>
           </View>
         ) : levelDone ? (
           <View style={[styles.banner, styles.bannerGood]}>
             <Text style={styles.bannerText}>
               {vLevel >= MAX_LEVEL
-                ? "You've completed every level here. Outstanding. 🎉"
-                : 'Level complete. Tap › for the next level — or tap a ✓ to undo.'}
+                ? "You've finished every level here. Amazing work. 🎉"
+                : "Level done! Tap › for the next one — or tap a ✓ to undo."}
             </Text>
           </View>
         ) : (
           <View style={[styles.banner, styles.bannerGood]}>
             <Text style={styles.bannerText}>
-              {checkpoint ? 'Hold each one with good form to level up.' : 'Do each one with good form to level up.'}
+              {checkpoint ? "Hold each one with good form and you'll level up." : "Do each one with good form — that's your level up."}
             </Text>
           </View>
         )}

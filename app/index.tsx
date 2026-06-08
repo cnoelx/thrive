@@ -62,10 +62,10 @@ export default function Home() {
   const showCelebration = overall > overallLevelSeen;
   const celebrateBody =
     overall >= MAX_LEVEL
-      ? `Every area at Level ${MAX_LEVEL} — you've maxed the program. Outstanding.`
+      ? `Every area at Level ${MAX_LEVEL} — you've maxed the whole program. Outstanding work. 👏`
       : overall === 1
-        ? `Every area at Level 1. Your baseline is in — the next tier is now in reach everywhere.`
-        : `Every area at Level ${overall}. The next tier is now in reach everywhere.`;
+        ? `Every area's at Level 1 — your foundation's set. The next tier's within reach everywhere now.`
+        : `Every area's at Level ${overall} — the next tier's within reach everywhere. Keep going!`;
   const todayWk = todaysWorkout(progress, pullUnlocked, new Date());
   // A locked Pull sinks to the bottom of the areas list (stable sort keeps the rest in order).
   const orderedCats = [...CATEGORIES].sort(
@@ -142,8 +142,8 @@ export default function Home() {
               />
             ) : (
               <Pressable onPress={startEditName}>
-                <Text style={styles.greeting}>{name ? `Hi, ${name} 👋` : 'Welcome 👋'}</Text>
-                {name ? null : <Text style={styles.greetingHint}>Tap to add your name</Text>}
+                <Text style={styles.greeting}>{name ? `Hi, ${name} 👋` : 'Hi there 👋'}</Text>
+                {name ? null : <Text style={styles.greetingHint}>Tap to tell us your name</Text>}
               </Pressable>
             )}
           </View>
@@ -158,10 +158,10 @@ export default function Home() {
           <Text style={styles.todayEyebrow}>{todayWk.rest ? 'TODAY' : `TODAY · ${todayWk.focus.toUpperCase()}`}</Text>
           <Text style={styles.todayTitle}>{todayWk.rest ? 'Rest day' : `${todayWk.items.length} moves today`}</Text>
           {todayWk.rest ? (
-            <Text style={styles.restSub}>Recover well — back at it tomorrow.</Text>
+            <Text style={styles.restSub}>Take it easy today — you&apos;ve earned it.</Text>
           ) : doneToday ? (
             <View style={styles.doneRow}>
-              <Text style={styles.doneText}>✓ Completed today</Text>
+              <Text style={styles.doneText}>✓ Done for today — nice</Text>
             </View>
           ) : (
             <Pressable style={styles.startBtn} onPress={() => router.push('/workout')}>
@@ -172,7 +172,7 @@ export default function Home() {
 
         {/* Six areas */}
         <View style={{ gap: spacing.sm }}>
-          <Text style={styles.sectionLabel}>YOUR AREAS</Text>
+          <Text style={styles.sectionLabel}>WHAT YOU&apos;RE BUILDING</Text>
           <View style={styles.overallSummary}>
             <Text style={styles.overallSummaryTitle}>Overall · Level {overall}</Text>
             <View style={styles.barTrack}>
@@ -213,7 +213,7 @@ export default function Home() {
           <View style={styles.reminderHead}>
             <View style={{ flex: 1 }}>
               <Text style={styles.reminderTitle}>Daily reminder</Text>
-              <Text style={styles.reminderSub}>A gentle nudge to do today&apos;s workout</Text>
+              <Text style={styles.reminderSub}>A friendly nudge to get moving today</Text>
             </View>
             <Switch
               value={reminderEnabled}
@@ -257,14 +257,14 @@ export default function Home() {
             {pullStep === 'explain' ? (
               <>
                 <Text style={styles.pullEmoji}>🔒</Text>
-                <Text style={styles.pullTitle}>Pull is locked</Text>
+                <Text style={styles.pullTitle}>Pull&apos;s locked for now</Text>
                 <Text style={styles.pullBody}>
-                  Pulling needs something to pull on — a bar or rings. Bodyweight alone can&apos;t fake it, so we keep
-                  Pull out of your progress until you can train it for real.
+                  Pulling needs something to pull on — a bar or rings. There&apos;s no faking it with bodyweight, so
+                  we&apos;ll leave Pull out of your progress until you can train it properly.
                 </Text>
-                <Text style={styles.pullBody}>Your workouts include Superman for back and posture in the meantime.</Text>
+                <Text style={styles.pullBody}>In the meantime, your workouts include Superman to look after your back and posture.</Text>
                 <Pressable onPress={() => setPullStep('confirm')} style={styles.pullPrimary}>
-                  <Text style={styles.pullPrimaryText}>I have a bar or rings</Text>
+                  <Text style={styles.pullPrimaryText}>I&apos;ve got a bar or rings</Text>
                 </Pressable>
                 <Pressable onPress={() => setPullStep('closed')} style={styles.pullSecondary}>
                   <Text style={styles.pullSecondaryText}>Not yet</Text>
@@ -274,8 +274,8 @@ export default function Home() {
               <>
                 <Text style={styles.pullTitle}>Unlock Pull?</Text>
                 <Text style={styles.pullBody}>
-                  Pull starts at Level 1 — you haven&apos;t trained it yet. Your other categories stay exactly as earned,
-                  but your overall level will reflect the new starting point.
+                  Pull starts at Level 1 — you haven&apos;t trained it yet. Everything else stays exactly as you earned
+                  it, but your overall level will reflect the new starting point.
                 </Text>
                 <Pressable
                   onPress={() => {
@@ -298,12 +298,12 @@ export default function Home() {
       <Modal visible={levelsOpen} transparent animationType="fade" onRequestClose={() => setLevelsOpen(false)}>
         <Pressable style={styles.overlay} onPress={() => setLevelsOpen(false)}>
           <Pressable style={styles.levelsSheet} onPress={() => {}}>
-            <Text style={styles.overallEyebrow}>YOUR LEVELS</Text>
+            <Text style={styles.overallEyebrow}>WHERE YOU&apos;RE AT</Text>
             <Text style={styles.overallLevel}>Overall · Level {overall}</Text>
             <Text style={styles.overallSub}>
               {atMax
-                ? `Every area at Level ${MAX_LEVEL} — you've maxed the program. 🎉`
-                : `The level you've reached in every area. ${atNextCount} of ${activeCats.length} now at Level ${nextOverall} — your overall rises once the lowest catches up.`}
+                ? `Every area at Level ${MAX_LEVEL} — you've maxed the whole program. 🎉`
+                : `The level you've hit across the board. ${atNextCount} of ${activeCats.length} areas are at Level ${nextOverall} now — your overall goes up once the rest catch up.`}
             </Text>
             {!atMax ? (
               <View style={styles.barTrack}>
@@ -361,7 +361,7 @@ function Celebration({ overall, body, onSeen }: { overall: number; body: string;
         <Pressable style={StyleSheet.absoluteFill} onPress={finish} />
         <Animated.View style={[styles.celebrate, { transform: [{ scale }] }]} pointerEvents="none">
           <Text style={styles.celebrateEmoji}>🎉</Text>
-          <Text style={styles.celebrateTitle}>Level {overall} reached</Text>
+          <Text style={styles.celebrateTitle}>You hit Level {overall}!</Text>
           <Text style={styles.celebrateBody}>{body}</Text>
         </Animated.View>
       </Animated.View>

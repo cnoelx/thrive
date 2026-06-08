@@ -99,7 +99,7 @@ export default function Workout() {
       <View style={styles.screenCenter}>
         <Text style={styles.bigEmoji}>🌿</Text>
         <Text style={styles.completeTitle}>Rest day</Text>
-        <Text style={styles.completeBody}>Nothing scheduled today. Recover well.</Text>
+        <Text style={styles.completeBody}>Nothing scheduled today — take the rest, you&apos;ve earned it.</Text>
         <Pressable onPress={() => router.back()} style={styles.primaryBtn}>
           <Text style={styles.primaryText}>Back</Text>
         </Pressable>
@@ -111,8 +111,8 @@ export default function Workout() {
     return (
       <View style={styles.screenCenter}>
         <Text style={styles.bigEmoji}>🎉</Text>
-        <Text style={styles.completeTitle}>Workout complete</Text>
-        <Text style={styles.completeBody}>Nice work — that&apos;s today done.</Text>
+        <Text style={styles.completeTitle}>Nice work! 👏</Text>
+        <Text style={styles.completeBody}>That&apos;s today done. See you tomorrow.</Text>
         <Pressable onPress={() => router.back()} style={styles.primaryBtn}>
           <Text style={styles.primaryText}>Done</Text>
         </Pressable>
@@ -152,7 +152,7 @@ export default function Workout() {
           <>
             <Text style={styles.restLabel}>REST</Text>
             <Text style={styles.countdown}>{clock(restLeft)}</Text>
-            {next ? <Text style={styles.upNext}>Up next: {next.item.name}</Text> : null}
+            {next ? <Text style={styles.upNext}>Next up: {next.item.name}</Text> : null}
             <View style={styles.btnRow}>
               <Pressable onPress={() => setRestLeft((s) => s + 15)} style={styles.secondaryBtn}>
                 <Text style={styles.secondaryText}>+15s</Text>

@@ -18,16 +18,16 @@ const ORDER: Step[] = ['welcome', 'name', 'equipment', 'experience'];
 
 type PullEquipment = 'bar' | 'rings' | 'neither';
 const EQUIPMENT_CARDS: { id: PullEquipment; emoji: string; label: string; hint: string }[] = [
-  { id: 'bar', emoji: '🏋️', label: 'I have a pull-up bar', hint: 'Doorway, wall-mounted, or similar' },
-  { id: 'rings', emoji: '🪢', label: 'I have rings or TRX', hint: 'Gymnastic rings or suspension straps' },
-  { id: 'neither', emoji: '🤲', label: 'Neither right now', hint: "We'll give you a back substitute" },
+  { id: 'bar', emoji: '🏋️', label: "I've got a pull-up bar", hint: 'Doorway, wall-mounted, or similar' },
+  { id: 'rings', emoji: '🪢', label: "I've got rings or TRX", hint: 'Gymnastic rings or suspension straps' },
+  { id: 'neither', emoji: '🤲', label: 'Neither right now', hint: "We'll swap in a back exercise instead" },
 ];
 
 type Experience = 'new' | 'experienced';
 
 const EXPERIENCE_OPTIONS: Option<Experience>[] = [
-  { id: 'new', label: "I'm new to this", hint: 'Start at the beginning' },
-  { id: 'experienced', label: 'Find my level', hint: 'A quick quiz sets where you start' },
+  { id: 'new', label: "I'm new to this", hint: "We'll start you at the beginning" },
+  { id: 'experienced', label: 'Find my level', hint: 'A few quick taps set where you start' },
 ];
 
 export default function Onboarding() {
@@ -79,7 +79,7 @@ export default function Onboarding() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <Text style={styles.kicker}>FIND YOUR LEVEL</Text>
           <Text style={styles.h1}>What can you do today?</Text>
-          <Text style={styles.body}>Tap the most you can do. Skip anything you can&apos;t.</Text>
+          <Text style={styles.body}>Tap the most you can do — skip anything you can&apos;t yet.</Text>
 
           <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
             {PLACEMENT_ANCHORS.map((a) => {
@@ -171,7 +171,7 @@ export default function Onboarding() {
         {step === 'experience' && (
           <ChoiceStep
             title="Where should we start you?"
-            subtitle="Either way, you'll level up as you train."
+            subtitle="Either way works — you'll level up as you go."
             options={EXPERIENCE_OPTIONS}
             value={experience}
             onChange={setExperience}
@@ -212,7 +212,7 @@ function EquipmentStep({ value, onChange }: { value: PullEquipment | null; onCha
   return (
     <View style={{ gap: spacing.md }}>
       <Text style={styles.h1}>What do you have at home?</Text>
-      <Text style={styles.body}>This sets up your Pull training — we&apos;ll only include it if you have something to pull on.</Text>
+      <Text style={styles.body}>This sets up your Pull training — we&apos;ll only include it if you&apos;ve got something to pull on.</Text>
       <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
         {EQUIPMENT_CARDS.map((card) => {
           const selected = card.id === value;
@@ -238,7 +238,7 @@ function NameStep({ value, onChange }: { value: string; onChange: (v: string) =>
   return (
     <View style={{ gap: spacing.md }}>
       <Text style={styles.h1}>What should we call you?</Text>
-      <Text style={styles.body}>We&apos;ll use it to greet you. You can change it anytime.</Text>
+      <Text style={styles.body}>Just so we can say hi. Change it whenever you like.</Text>
       <TextInput
         value={value}
         onChangeText={onChange}
