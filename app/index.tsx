@@ -8,7 +8,7 @@ import { Celebration } from '@/components/Celebration';
 import { colors, font, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, MAX_LEVEL, benchmarksFor } from '@/data/benchmarks';
 import { todaysWorkout } from '@/engine/dailyCard';
-import { baselineLevel, completedLevel, effectiveCategoryIds, isClaimable, nextLevel } from '@/engine/progression';
+import { baselineLevel, completedLevel, effectiveCategoryIds, nextLevel } from '@/engine/progression';
 import { currentStreak, pendingStreakMilestone } from '@/engine/streak';
 import { cancelReminders, requestNotificationPermission, scheduleDailyReminder } from '@/lib/notifications';
 import { useAppStore } from '@/store/useAppStore';
@@ -76,6 +76,7 @@ export default function Home() {
   const nextOverall = Math.min(overall + 1, MAX_LEVEL);
   const atNextCount = activeCats.filter((c) => completedLevel(progress, c) >= nextOverall).length;
   const atMax = overall >= MAX_LEVEL;
+  const overallPct = atMax ? 100 : (atNextCount / activeCats.length) * 100;
   const showCelebration = overall > overallLevelSeen;
   const celebrateBody =
     overall >= MAX_LEVEL
@@ -84,6 +85,7 @@ export default function Home() {
         ? `Every area's at Level 1 — your foundation's set. The next tier's within reach everywhere now.`
         : `Every area's at Level ${overall} — the next tier's within reach everywhere. Keep going!`;
   const todayWk = todaysWorkout(progress, pullUnlocked, new Date());
+  const movePreview = todayWk.rest ? '' : `${todayWk.items.length} moves`;
   // A locked Pull sinks to the bottom of the areas list (stable sort keeps the rest in order).
   const orderedCats = [...CATEGORIES].sort(
     (a, b) => Number(a.id === 'pull' && !pullUnlocked) - Number(b.id === 'pull' && !pullUnlocked),
@@ -133,140 +135,134 @@ export default function Home() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView
-        contentContainerStyle={{
-          padding: spacing.lg,
-          paddingTop: insets.top + spacing.lg,
-          paddingBottom: insets.bottom + spacing.xl,
-          gap: spacing.lg,
-        }}
-      >
-        {/* Greeting + level badge */}
-        <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            {editingName ? (
-              <TextInput
-                value={draftName}
-                onChangeText={setDraftName}
-                placeholder="Your name"
-                placeholderTextColor={colors.muted}
-                autoFocus
-                maxLength={30}
-                returnKeyType="done"
-                onSubmitEditing={saveName}
-                onBlur={saveName}
-                style={styles.nameInput}
-              />
-            ) : (
-              <Pressable onPress={startEditName}>
-                <Text style={styles.greeting}>{name ? `Hi, ${name} 👋` : 'Hi there 👋'}</Text>
-                {name ? null : <Text style={styles.greetingHint}>Tap to tell us your name</Text>}
-              </Pressable>
-            )}
-          </View>
-          <Pressable onPress={() => setLevelsOpen(true)} hitSlop={8} style={styles.levelBadge}>
-            <Text style={styles.levelBadgeLabel}>LEVEL</Text>
-            <Text style={styles.levelBadgeNum}>{overall}</Text>
-          </Pressable>
-        </View>
-
-        {streakNow >= 2 ? (
-          <Text style={styles.streakLine}>{STREAK_MESSAGES[streakNow % STREAK_MESSAGES.length](streakNow)}</Text>
-        ) : null}
-
-        {/* Today's workout */}
-        <View style={styles.todayCard}>
-          <Text style={styles.todayEyebrow}>{todayWk.rest ? 'TODAY' : `TODAY · ${todayWk.focus.toUpperCase()}`}</Text>
-          <Text style={styles.todayTitle}>{todayWk.rest ? 'Rest day' : `${todayWk.items.length} moves today`}</Text>
-          {todayWk.rest ? (
-            <Text style={styles.restSub}>Take it easy today — you&apos;ve earned it.</Text>
-          ) : doneToday ? (
-            <View style={styles.doneRow}>
-              <Text style={styles.doneText}>✓ Done for today — nice</Text>
-            </View>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top, paddingBottom: insets.bottom + spacing.xl }}>
+        {/* Dark hero — greeting, streak, overall level */}
+        <View style={styles.hero}>
+          {editingName ? (
+            <TextInput
+              value={draftName}
+              onChangeText={setDraftName}
+              placeholder="Your name"
+              placeholderTextColor={colors.onInkMuted}
+              autoFocus
+              maxLength={30}
+              returnKeyType="done"
+              onSubmitEditing={saveName}
+              onBlur={saveName}
+              style={styles.heroNameInput}
+            />
           ) : (
-            <Pressable style={styles.startBtn} onPress={() => router.push('/workout')}>
-              <Text style={styles.startText}>{"Start today's workout"}</Text>
+            <Pressable onPress={startEditName}>
+              <Text style={styles.heroGreeting}>{name ? `Hi, ${name} 👋` : 'Hi there 👋'}</Text>
+              {name ? null : <Text style={styles.heroGreetingHint}>Tap to tell us your name</Text>}
             </Pressable>
           )}
-        </View>
 
-        {/* Training areas */}
-        <View style={{ gap: spacing.sm }}>
-          <Text style={styles.sectionLabel}>WHAT YOU&apos;RE BUILDING</Text>
-          <View style={styles.overallSummary}>
-            <Text style={styles.overallSummaryTitle}>Overall · Level {overall}</Text>
-            <View style={styles.barTrack}>
-              <View style={[styles.barFill, { width: `${atMax ? 100 : (atNextCount / activeCats.length) * 100}%` }]} />
-            </View>
-          </View>
-          {orderedCats.map((cat) => {
-            const locked = cat.id === 'pull' && !pullUnlocked;
-            const lvl = completedLevel(progress, cat.id);
-            const nextBenches = locked || lvl >= MAX_LEVEL ? [] : benchmarksFor(cat.id, nextLevel(progress, cat.id));
-            const ready = nextBenches.some((b) => isClaimable(progress, pullUnlocked, b));
-            const claimedNext = nextBenches.filter((b) => progress.claimed[b.id]).length;
-            const fillPct = locked ? 0 : lvl >= MAX_LEVEL ? 100 : nextBenches.length ? (claimedNext / nextBenches.length) * 100 : 0;
-            return (
-              <Pressable
-                key={cat.id}
-                onPress={() => (locked ? setPullStep('explain') : router.push(`/category/${cat.id}`))}
-                style={styles.catRow}
-              >
-                {fillPct > 0 ? <View style={[styles.tileFill, { width: `${fillPct}%` }]} /> : null}
-                <View style={[styles.levelBox, !locked && lvl > 0 && styles.levelBoxOn]}>
-                  <Text style={[styles.levelText, !locked && lvl > 0 && styles.levelTextOn]}>{locked ? '🔒' : `L${lvl}`}</Text>
-                </View>
-                <Text style={styles.catName}>{cat.short}</Text>
-                {ready ? (
-                  <View style={styles.claimBadge}>
-                    <Text style={styles.claimBadgeText}>Level up</Text>
-                  </View>
-                ) : null}
-                <Text style={styles.chevron}>›</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Daily reminder */}
-        <View style={styles.reminderCard}>
-          <View style={styles.reminderHead}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.reminderTitle}>Daily reminder</Text>
-              <Text style={styles.reminderSub}>A friendly nudge to get moving today</Text>
-            </View>
-            <Switch
-              value={reminderEnabled}
-              onValueChange={toggleReminder}
-              trackColor={{ true: colors.primary, false: colors.track }}
-              thumbColor="#ffffff"
-            />
-          </View>
-          {reminderEnabled ? (
-            Platform.OS === 'ios' ? (
-              <View style={styles.timeButton}>
-                <Text style={styles.timeButtonText}>Remind me at</Text>
-                <DateTimePicker
-                  value={dateFromHM(reminderHour, reminderMinute)}
-                  mode="time"
-                  display="compact"
-                  onChange={onPickTime}
-                />
-              </View>
-            ) : (
-              <Pressable style={styles.timeButton} onPress={openAndroidTimePicker}>
-                <Text style={styles.timeButtonText}>{timeLabel(reminderHour, reminderMinute)}</Text>
-                <Text style={styles.timeButtonHint}>Change ›</Text>
-              </Pressable>
-            )
+          {streakNow >= 2 ? (
+            <Text style={styles.heroStreak}>{STREAK_MESSAGES[streakNow % STREAK_MESSAGES.length](streakNow)}</Text>
           ) : null}
+
+          <Pressable onPress={() => setLevelsOpen(true)} style={styles.heroOverall}>
+            <Text style={styles.heroOverallEyebrow}>OVERALL</Text>
+            <Text style={styles.heroLevel}>Level {overall}</Text>
+            <View style={styles.heroBarTrack}>
+              <View style={[styles.heroBarFill, { width: `${overallPct}%` }]} />
+            </View>
+          </Pressable>
         </View>
 
-        <View style={styles.devRow}>
-          <Pressable onPress={resetAll} style={styles.reset}>
-            <Text style={styles.resetText}>Reset (dev)</Text>
-          </Pressable>
+        <View style={styles.content}>
+          {/* Today */}
+          {todayWk.rest ? (
+            <View style={styles.restCard}>
+              <Text style={styles.restEyebrow}>TODAY</Text>
+              <Text style={styles.restTitle}>Rest day</Text>
+              <Text style={styles.restSub}>Take it easy today — you&apos;ve earned it.</Text>
+            </View>
+          ) : (
+            <View style={styles.todayHero}>
+              <Text style={styles.todayHeroEyebrow}>TODAY&apos;S WORKOUT</Text>
+              <Text style={styles.todayHeroTitle}>{todayWk.focus}</Text>
+              <Text style={styles.todayHeroSub}>{movePreview}</Text>
+              {doneToday ? (
+                <View style={styles.todayDonePill}>
+                  <Text style={styles.todayDoneText}>✓ Done for today</Text>
+                </View>
+              ) : (
+                <Pressable style={styles.todayHeroBtn} onPress={() => router.push('/workout')}>
+                  <Text style={styles.todayHeroBtnText}>Start workout →</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+
+          {/* Training areas — one grouped card, per-row progress */}
+          <View style={[styles.groupCard, styles.sectionGap]}>
+            {orderedCats.map((cat, i) => {
+              const locked = cat.id === 'pull' && !pullUnlocked;
+              const lvl = completedLevel(progress, cat.id);
+              const nextBenches = locked || lvl >= MAX_LEVEL ? [] : benchmarksFor(cat.id, nextLevel(progress, cat.id));
+              const claimedNext = nextBenches.filter((b) => progress.claimed[b.id]).length;
+              const fillPct = locked ? 0 : lvl >= MAX_LEVEL ? 100 : nextBenches.length ? (claimedNext / nextBenches.length) * 100 : 0;
+              return (
+                <Pressable
+                  key={cat.id}
+                  onPress={() => (locked ? setPullStep('explain') : router.push(`/category/${cat.id}`))}
+                  style={[styles.areaRow, i > 0 && styles.areaRowDivider]}
+                >
+                  <View style={[styles.levelBox, !locked && lvl > 0 && styles.levelBoxOn]}>
+                    <Text style={[styles.levelText, !locked && lvl > 0 && styles.levelTextOn]}>{locked ? '🔒' : `L${lvl}`}</Text>
+                  </View>
+                  <View style={{ flex: 1, gap: 7 }}>
+                    <Text style={styles.areaName}>{cat.short}</Text>
+                    {locked ? (
+                      <Text style={styles.areaLockHint}>Tap to unlock</Text>
+                    ) : (
+                      <View style={styles.rowBarTrack}>
+                        <View style={[styles.rowBarFill, { width: `${fillPct}%` }]} />
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.chevron}>›</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Daily reminder */}
+          <View style={[styles.reminderCard, styles.sectionGap]}>
+            <View style={styles.reminderHead}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.reminderTitle}>Daily reminder</Text>
+                <Text style={styles.reminderSub}>A friendly nudge to get moving today</Text>
+              </View>
+              <Switch
+                value={reminderEnabled}
+                onValueChange={toggleReminder}
+                trackColor={{ true: colors.primary, false: colors.track }}
+                thumbColor="#ffffff"
+              />
+            </View>
+            {reminderEnabled ? (
+              Platform.OS === 'ios' ? (
+                <View style={styles.timeButton}>
+                  <Text style={styles.timeButtonText}>Remind me at</Text>
+                  <DateTimePicker value={dateFromHM(reminderHour, reminderMinute)} mode="time" display="compact" onChange={onPickTime} />
+                </View>
+              ) : (
+                <Pressable style={styles.timeButton} onPress={openAndroidTimePicker}>
+                  <Text style={styles.timeButtonText}>{timeLabel(reminderHour, reminderMinute)}</Text>
+                  <Text style={styles.timeButtonHint}>Change ›</Text>
+                </Pressable>
+              )
+            ) : null}
+          </View>
+
+          <View style={styles.devRow}>
+            <Pressable onPress={resetAll} style={styles.reset}>
+              <Text style={styles.resetText}>Reset (dev)</Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
 
@@ -364,62 +360,55 @@ export default function Home() {
   );
 }
 
+const SECTION_GAP = spacing.xl + spacing.xs; // ~28: breathe between sections
+
 const styles = StyleSheet.create({
-  todayCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.xs },
-  todayEyebrow: { color: colors.primary, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
-  todayTitle: { color: colors.ink, fontSize: font.h2, fontWeight: '800', marginTop: 2 },
+  // Dark hero
+  hero: { backgroundColor: colors.inkCard, paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xxl },
+  heroGreeting: { color: colors.primaryText, fontSize: 24, fontWeight: '900' },
+  heroGreetingHint: { color: colors.onInkMuted, fontSize: font.small, marginTop: 2 },
+  heroNameInput: { color: colors.primaryText, fontSize: 24, fontWeight: '900', borderBottomWidth: 2, borderBottomColor: colors.accent, paddingVertical: spacing.xs },
+  heroStreak: { color: colors.streakInk, fontSize: font.body, fontWeight: '800', marginTop: spacing.md },
+  heroOverall: { marginTop: spacing.xl + spacing.xs },
+  heroOverallEyebrow: { color: colors.onInkMuted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
+  heroLevel: { color: colors.primaryText, fontSize: font.h2, fontWeight: '900', marginTop: spacing.xs },
+  heroBarTrack: { height: 8, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: radius.pill, overflow: 'hidden', marginTop: spacing.md },
+  heroBarFill: { height: 8, backgroundColor: colors.accent, borderRadius: radius.pill },
+
+  content: { padding: spacing.lg },
+  sectionGap: { marginTop: SECTION_GAP },
+
+  // Today — green action hero
+  todayHero: { backgroundColor: colors.primary, borderRadius: radius.lg, padding: spacing.xl },
+  todayHeroEyebrow: { color: 'rgba(255,255,255,0.85)', fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1 },
+  todayHeroTitle: { color: colors.primaryText, fontSize: font.title, fontWeight: '900', marginTop: spacing.xs },
+  todayHeroSub: { color: 'rgba(255,255,255,0.85)', fontSize: font.small, marginTop: spacing.xs },
+  todayHeroBtn: { backgroundColor: colors.surface, borderRadius: radius.pill, paddingVertical: spacing.md + 2, alignItems: 'center', marginTop: spacing.lg },
+  todayHeroBtnText: { color: colors.primary, fontSize: font.body, fontWeight: '800' },
+  todayDonePill: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: radius.pill, paddingVertical: spacing.md + 2, alignItems: 'center', marginTop: spacing.lg },
+  todayDoneText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
+
+  // Today — rest day (calm, not green)
+  restCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.xs },
+  restEyebrow: { color: colors.primary, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1 },
+  restTitle: { color: colors.ink, fontSize: font.h2, fontWeight: '800', marginTop: 2 },
   restSub: { color: colors.muted, fontSize: font.small, marginTop: 4 },
-  startBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md + 2, alignItems: 'center', marginTop: spacing.md },
-  startText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
-  doneRow: { backgroundColor: '#EAF7F0', borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
-  doneText: { color: colors.primary, fontSize: font.body, fontWeight: '800' },
 
-  greeting: { color: colors.ink, fontSize: font.h2, fontWeight: '800' },
-  greetingHint: { color: colors.muted, fontSize: font.small, marginTop: 2 },
-  nameInput: { color: colors.ink, fontSize: font.h2, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs },
-  overallEyebrow: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
-  overallLevel: { color: colors.ink, fontSize: font.title, fontWeight: '900' },
-  overallSub: { color: colors.muted, fontSize: font.small, marginTop: 2 },
-  barTrack: { height: 10, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden', marginTop: 2 },
-  barFill: { height: 10, backgroundColor: colors.primary, borderRadius: radius.pill },
-
-  sectionLabel: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5, marginBottom: spacing.xs },
-  catRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-  },
-  tileFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: 'rgba(22,163,74,0.12)' },
-  levelBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: colors.track, alignItems: 'center', justifyContent: 'center' },
+  // Areas grouped card
+  groupCard: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md },
+  areaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
+  areaRowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
+  levelBox: { width: 38, height: 38, borderRadius: 10, backgroundColor: colors.track, alignItems: 'center', justifyContent: 'center' },
   levelBoxOn: { backgroundColor: colors.primary },
   levelText: { color: colors.muted, fontSize: font.small, fontWeight: '900' },
   levelTextOn: { color: colors.primaryText },
-  catName: { color: colors.text, fontSize: font.body, fontWeight: '700', flex: 1 },
-  claimBadge: { backgroundColor: '#EAF7F0', borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: 2 },
-  claimBadgeText: { color: colors.primary, fontSize: 11, fontWeight: '800' },
+  areaName: { color: colors.text, fontSize: font.body, fontWeight: '700' },
+  areaLockHint: { color: colors.muted, fontSize: font.small },
+  rowBarTrack: { height: 6, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden' },
+  rowBarFill: { height: 6, backgroundColor: colors.primary, borderRadius: radius.pill },
   chevron: { color: colors.muted, fontSize: 22 },
 
-  overallSummary: { gap: spacing.xs, marginBottom: spacing.xs },
-  overallSummaryTitle: { color: colors.ink, fontSize: font.body, fontWeight: '900' },
-
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  streakLine: { color: colors.warnText, fontSize: font.body, fontWeight: '800' },
-  levelBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  levelBadgeLabel: { color: colors.primaryText, fontSize: font.small, fontWeight: '800', letterSpacing: 0.5, opacity: 0.9 },
-  levelBadgeNum: { color: colors.primaryText, fontSize: font.h2, fontWeight: '900' },
-  levelsSheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm, width: '100%', maxWidth: 420 },
-  levelsList: { marginTop: spacing.sm },
-  levelsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
-  levelsCat: { color: colors.text, fontSize: font.body, fontWeight: '700' },
-  levelsVal: { color: colors.primary, fontSize: font.body, fontWeight: '800' },
-  levelsValLocked: { color: colors.muted },
-
+  // Reminder
   reminderCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.md },
   reminderHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   reminderTitle: { color: colors.text, fontSize: font.body, fontWeight: '800' },
@@ -438,11 +427,25 @@ const styles = StyleSheet.create({
   timeButtonText: { color: colors.text, fontSize: font.body, fontWeight: '800' },
   timeButtonHint: { color: colors.primary, fontSize: font.small, fontWeight: '700' },
 
-  devRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.lg, paddingTop: spacing.sm },
+  devRow: { flexDirection: 'row', justifyContent: 'center', paddingTop: spacing.lg },
   reset: { alignItems: 'center', paddingVertical: spacing.sm },
   resetText: { color: colors.muted, fontSize: font.small, textDecorationLine: 'underline' },
 
+  // Modals / sheets
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
+
+  overallEyebrow: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
+  overallLevel: { color: colors.ink, fontSize: font.title, fontWeight: '900' },
+  overallSub: { color: colors.muted, fontSize: font.small, marginTop: 2 },
+  barTrack: { height: 10, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden', marginTop: 2 },
+  barFill: { height: 10, backgroundColor: colors.primary, borderRadius: radius.pill },
+
+  levelsSheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm, width: '100%', maxWidth: 420 },
+  levelsList: { marginTop: spacing.sm },
+  levelsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
+  levelsCat: { color: colors.text, fontSize: font.body, fontWeight: '700' },
+  levelsVal: { color: colors.primary, fontSize: font.body, fontWeight: '800' },
+  levelsValLocked: { color: colors.muted },
 
   pullSheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm, width: '100%', maxWidth: 420, alignItems: 'center' },
   pullEmoji: { fontSize: 44 },

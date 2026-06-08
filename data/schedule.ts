@@ -22,7 +22,7 @@ export const DAY_KEYS: DayKey[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sa
 
 export const WEEKLY_SCHEDULE: Record<DayKey, DaySchedule> = {
   mon: {
-    focus: 'Strength A',
+    focus: 'Full Body',
     items: [
       { exKey: 'squat', sets: 3, restSec: 60 },
       { exKey: 'pushups', sets: 3, restSec: 60 },
@@ -31,7 +31,7 @@ export const WEEKLY_SCHEDULE: Record<DayKey, DaySchedule> = {
     ],
   },
   tue: {
-    focus: 'Cardio + mobility checks',
+    focus: 'Cardio & Mobility',
     items: [
       { exKey: 'walkrun', sets: null, note: '20–30 min, conversational pace' },
       { exKey: 'deepsquat', sets: 2, restSec: 30, note: 'check' },
@@ -40,7 +40,7 @@ export const WEEKLY_SCHEDULE: Record<DayKey, DaySchedule> = {
     ],
   },
   wed: {
-    focus: 'Strength B',
+    focus: 'Legs & Core',
     items: [
       { exKey: 'lunge', sets: 3, restSec: 60 },
       { exKey: 'glutebridge', sets: 3, restSec: 45 },
@@ -49,7 +49,7 @@ export const WEEKLY_SCHEDULE: Record<DayKey, DaySchedule> = {
     ],
   },
   thu: {
-    focus: 'Strength C',
+    focus: 'Upper Body',
     items: [
       { exKey: 'deadhang', sets: 3, restSec: 60 },
       { exKey: 'pullup', sets: 3, restSec: 90 },
@@ -58,7 +58,7 @@ export const WEEKLY_SCHEDULE: Record<DayKey, DaySchedule> = {
     ],
   },
   fri: {
-    focus: 'Strength D',
+    focus: 'Strength & Core',
     items: [
       { exKey: 'squat', sets: 3, restSec: 60 },
       { exKey: 'barrow', sets: 3, restSec: 60 },

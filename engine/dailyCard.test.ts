@@ -24,9 +24,9 @@ describe('weekly schedule', () => {
     expect(w.items.length).toBe(0);
   });
 
-  it('Monday is Strength A with four items', () => {
+  it('Monday is Full Body with four items', () => {
     const w = todaysWorkout(emptyProgress(), true, dateForDay(1));
-    expect(w.focus).toBe('Strength A');
+    expect(w.focus).toBe('Full Body');
     expect(w.items.length).toBe(4);
   });
 
@@ -60,7 +60,7 @@ describe('Superman fallback (no equipment)', () => {
   });
 
   it('days with no pull items do NOT add Superman', () => {
-    const w = todaysWorkout(emptyProgress(), false, dateForDay(3)); // Wednesday — Strength B
+    const w = todaysWorkout(emptyProgress(), false, dateForDay(3)); // Wednesday — Legs & Core
     expect(w.items.some((i) => i.exKey === SUPERMAN_KEY)).toBe(false);
   });
 

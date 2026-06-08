@@ -13,6 +13,12 @@ export const colors = {
   warnText: '#92400E',
 
   ink: '#0C1410', // near-black for bold headings
+
+  // Dark hero block on the home screen
+  inkCard: '#14532D', // deep-green hero background
+  onInkMuted: '#9FB3A8', // muted text on the dark hero
+  accent: '#22C55E', // vivid green highlight on dark
+  streakInk: '#FBBF24', // amber streak text on dark
 } as const;
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
