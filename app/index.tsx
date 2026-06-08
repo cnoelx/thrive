@@ -234,7 +234,7 @@ export default function Home() {
             <View style={styles.reminderHead}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.reminderTitle}>Daily reminder</Text>
-                <Text style={styles.reminderSub}>A friendly nudge to get moving today</Text>
+                <Text style={styles.reminderSub}>Pick a time and we&apos;ll remind you each day</Text>
               </View>
               <Switch
                 value={reminderEnabled}
