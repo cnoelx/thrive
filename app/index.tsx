@@ -1,7 +1,7 @@
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Redirect, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Celebration } from '@/components/Celebration';
@@ -59,11 +59,8 @@ export default function Home() {
   const setReminder = useAppStore((s) => s.setReminder);
   const resetAll = useAppStore((s) => s.resetAll);
   const name = useAppStore((s) => s.name);
-  const setName = useAppStore((s) => s.setName);
   const pullUnlocked = useAppStore((s) => s.pullUnlocked);
   const unlockPull = useAppStore((s) => s.unlockPull);
-  const [editingName, setEditingName] = useState(false);
-  const [draftName, setDraftName] = useState('');
   const [pullStep, setPullStep] = useState<'closed' | 'explain' | 'confirm'>('closed');
   const [levelsOpen, setLevelsOpen] = useState(false);
 
@@ -128,39 +125,12 @@ export default function Home() {
     });
   };
 
-  const startEditName = () => {
-    setDraftName(name);
-    setEditingName(true);
-  };
-  const saveName = () => {
-    setName(draftName.trim());
-    setEditingName(false);
-  };
-
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top, paddingBottom: insets.bottom + spacing.xl }}>
         {/* Dark hero — greeting, streak, overall level */}
         <View style={styles.hero}>
-          {editingName ? (
-            <TextInput
-              value={draftName}
-              onChangeText={setDraftName}
-              placeholder="Your name"
-              placeholderTextColor={colors.onInkMuted}
-              autoFocus
-              maxLength={30}
-              returnKeyType="done"
-              onSubmitEditing={saveName}
-              onBlur={saveName}
-              style={styles.heroNameInput}
-            />
-          ) : (
-            <Pressable onPress={startEditName}>
-              <Text style={styles.heroGreeting}>{name ? `Hi, ${name} 👋` : 'Hi there 👋'}</Text>
-              {name ? null : <Text style={styles.heroGreetingHint}>Tap to tell us your name</Text>}
-            </Pressable>
-          )}
+          <Text style={styles.heroGreeting}>{name ? `Hi, ${name} 👋` : 'Hi there 👋'}</Text>
 
           {streakNow >= 2 ? (
             <Text style={styles.heroStreak}>{STREAK_MESSAGES[streakNow % STREAK_MESSAGES.length](streakNow)}</Text>
@@ -404,8 +374,6 @@ const styles = StyleSheet.create({
   // Dark hero
   hero: { backgroundColor: colors.inkCard, paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xxl },
   heroGreeting: { color: colors.primaryText, fontSize: 24, fontWeight: '900' },
-  heroGreetingHint: { color: colors.onInkMuted, fontSize: font.small, marginTop: 2 },
-  heroNameInput: { color: colors.primaryText, fontSize: 24, fontWeight: '900', borderBottomWidth: 2, borderBottomColor: colors.accent, paddingVertical: spacing.xs },
   heroStreak: { color: colors.streakInk, fontSize: font.body, fontWeight: '800', marginTop: spacing.md },
   heroOverall: { marginTop: spacing.xl + spacing.xs },
   heroOverallEyebrow: { color: colors.onInkMuted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
