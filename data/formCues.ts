@@ -18,7 +18,7 @@ export const FORM_CUES: Record<string, string[]> = {
   ],
   sittostand: [
     "Start seated on the floor.",
-    "Stand up using as little hand support as your level allows.",
+    "Stand up using as little hand support as you can.",
     "Move slowly and under control — no momentum.",
     "Lower back down the same way.",
   ],
@@ -56,7 +56,7 @@ export const FORM_CUES: Record<string, string[]> = {
     "Hands about shoulder-width, body in a straight line.",
     "Lower your chest under control, elbows about 45°.",
     "Press back up without letting your hips sag.",
-    "Use a wall or incline to match your level.",
+    "Easier: hands higher (wall/counter). Harder: hands lower or on the floor.",
   ],
   barrow: [
     "Set a bar (or rings/TRX) and get under it, body in a straight line.",
@@ -68,7 +68,7 @@ export const FORM_CUES: Record<string, string[]> = {
     "Start from a dead or active hang.",
     "Pull your shoulder blades down and lead with your chest.",
     "Control the way down — slow negatives count.",
-    "Use a band or assistance to match your level.",
+    "Easier: more band or foot help. Harder: less help.",
   ],
   walkrun: [
     "Keep an easy, conversational pace.",
@@ -95,7 +95,7 @@ export const FORM_CUES: Record<string, string[]> = {
     'Lower slowly with control.',
   ],
   ankle: [
-    "Face a wall with your foot a few inches back.",
+    "Face a wall with your foot about a hand's width back.",
     "Drive your knee toward the wall, keeping your heel down.",
     "Find the furthest distance where the heel stays planted.",
     "Test both sides.",

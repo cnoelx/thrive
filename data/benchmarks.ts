@@ -38,13 +38,14 @@ export interface Exercise {
   name: string;
   why: string;
   sets: number | null; // fixed sets; null = not set-based (cardio / checkpoints / sit-to-stand)
+  check?: boolean; // a one-time form/position check, not reps (Sit-to-Stand, Overhead, Ankle)
   targets: string[]; // L1..; array length = this exercise's ceiling (< 10 if it caps early)
 }
 
 const EXERCISES: Exercise[] = [
   { key: "squat", categoryId: "move", name: "Bodyweight Squat", why: "Stand, sit, lower all day", sets: 3, targets: ["15", "22", "30", "40", "50", "tempo (4s lower) ×8", "paused (3s bottom) ×8", "split squat ×8/leg", "Bulgarian split ×6/leg", "pistol progression ×3/leg"] },
   { key: "lunge", categoryId: "move", name: "Reverse Lunge", why: "Stairs, single-leg strength (per leg)", sets: 3, targets: ["10 (5/leg)", "16 (8/leg)", "24 (12/leg)", "32 (16/leg)", "40 (20/leg)", "walking ×12/leg", "deficit ×8/leg", "Bulgarian split ×8/leg", "jumping lunge ×6/leg", "pistol progression ×3/leg"] },
-  { key: "sittostand", categoryId: "move", name: "Sit-to-Stand from Floor", why: "Get off the ground unaided", sets: null, targets: ["Hands OK", "Fewer hands", "One hand", "One fingertip", "No hands"] },
+  { key: "sittostand", categoryId: "move", name: "Sit-to-Stand from Floor", why: "Get off the ground unaided", sets: null, check: true, targets: ["Hands OK", "Fewer hands", "One hand", "One fingertip", "No hands"] },
   { key: "balance", categoryId: "move", name: "Single-leg Balance", why: "Don't fall", sets: 2, targets: ["10s/leg", "20s/leg", "30s/leg", "45s/leg", "60s/leg", "eyes-closed 20s", "eyes-closed 40s", "unstable surface 30s"] },
   { key: "plank", categoryId: "move", name: "Plank", why: "Stable trunk, protects back", sets: 3, targets: ["20s", "35s", "50s", "70s", "90s", "120s", "RKC tension 30s", "single-arm 20s", "single-arm+leg 15s"] },
   { key: "sideplank", categoryId: "move", name: "Side Plank", why: "Side core — resists twisting", sets: 3, targets: ["knee 10s/side", "knee 20s/side", "full 30s/side", "full 45s/side", "full 60s/side", "full 75s/side", "star side plank 20s", "+reach-through ×10", "single-leg side plank 20s"] },
@@ -55,8 +56,8 @@ const EXERCISES: Exercise[] = [
   { key: "pullup", categoryId: "pull", name: "Pulling", why: "Pull your bodyweight up — hang, then pull (needs bar or rings)", sets: 3, targets: ["active hang 15s → 5 shoulder-blade pulls", "lower down slowly (5s) ×3", "lower down slowly (10s) ×3", "5 with a band", "3–5 pull-ups", "6 pull-ups", "10 pull-ups", "chest-to-bar ×5", "archer ×3/side", "one-arm progression / weighted"] },
   { key: "walkrun", categoryId: "cardio", name: "Walk / Run (walk-first)", why: "Cover distance without gassing out", sets: null, targets: ["brisk walk 10min", "brisk walk 20min", "brisk walk 30min", "walk-jog 20min", "easy jog 20min+", "jog 30min", "jog 5km", "intervals (speed)", "5km steady pace", "10km / sustained"] },
   { key: "deepsquat", categoryId: "mobility", name: "Deep Squat Hold", why: "Rest, garden, floor play", sets: null, targets: ["support 15s", "support 30s", "free 60s", "free 90s", "free 120s"] },
-  { key: "overhead", categoryId: "mobility", name: "Overhead Reach", why: "Shelves, posture (wall test)", sets: null, targets: ["ribs stick out a lot", "ribs stick out a little", "ribs stay down", "ribs down + slight backbend", "full, pain-free"] },
-  { key: "ankle", categoryId: "mobility", name: "Ankle Mobility", why: "Squat deep, descend safely (knee-to-wall)", sets: null, targets: ["heel lifts", "slight lift", "knee over toes", "knee well past", "no heel lift"] },
+  { key: "overhead", categoryId: "mobility", name: "Overhead Reach", why: "Shelves, posture (wall test)", sets: null, check: true, targets: ["ribs stick out a lot", "ribs stick out a little", "ribs stay down", "ribs down + slight backbend", "full, pain-free"] },
+  { key: "ankle", categoryId: "mobility", name: "Ankle Mobility", why: "Squat deep, descend safely (knee-to-wall)", sets: null, check: true, targets: ["heel lifts", "slight lift", "knee over toes", "knee well past", "no heel lift"] },
 ];
 
 export const EXERCISE_BY_KEY = Object.fromEntries(EXERCISES.map((e) => [e.key, e])) as Record<string, Exercise>;

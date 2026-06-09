@@ -6,7 +6,7 @@ import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
-import { formatTarget } from '@/data/benchmarks';
+import { EXERCISE_BY_KEY, formatTarget } from '@/data/benchmarks';
 import { EXERCISE_IMAGES } from '@/data/exerciseImages';
 import { FORM_CUES } from '@/data/formCues';
 import { todaysWorkout, type WorkoutItem } from '@/engine/dailyCard';
@@ -170,6 +170,7 @@ export default function Workout() {
                 <Ionicons name="information-circle-outline" size={22} color={colors.muted} />
               </Pressable>
             </View>
+            {EXERCISE_BY_KEY[step.item.exKey]?.check ? <Text style={styles.checkEyebrow}>ONE-TIME CHECK</Text> : null}
             <Text style={styles.targetBig}>{formatTarget(step.item.target)}</Text>
             {step.item.note ? <Text style={styles.note}>{step.item.note}</Text> : null}
             <Pressable onPress={onDoneSet} style={styles.primaryBtn}>
@@ -218,7 +219,8 @@ const styles = StyleSheet.create({
   body: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.xs },
 
   exerciseName: { color: colors.ink, fontSize: 30, fontWeight: '900', textAlign: 'center', marginTop: 2, flexShrink: 1 },
-  targetBig: { color: colors.primary, fontSize: 40, fontWeight: '900', marginTop: spacing.sm },
+  checkEyebrow: { color: colors.muted, fontSize: font.small, fontWeight: '800', letterSpacing: 1.5, marginTop: spacing.sm },
+  targetBig: { color: colors.primary, fontSize: 40, fontWeight: '900', marginTop: spacing.xs },
   note: { color: colors.muted, fontSize: font.small, textAlign: 'center', fontStyle: 'italic' },
   primaryBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md + 2, paddingHorizontal: spacing.xl, alignItems: 'center', marginTop: spacing.xxl, minWidth: 200 },
   primaryText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },

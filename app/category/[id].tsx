@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Celebration } from '@/components/Celebration';
 import { colors, font, radius, spacing } from '@/constants/theme';
-import { CATEGORIES, benchmarksFor, categoryCeiling, formatTarget, isCheckpoint } from '@/data/benchmarks';
+import { CATEGORIES, EXERCISE_BY_KEY, benchmarksFor, categoryCeiling, formatTarget, isCheckpoint } from '@/data/benchmarks';
 import { RUNWAY, completedLevel, isClaimable, levelCap, lockReason } from '@/engine/progression';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -118,7 +118,7 @@ export default function CategoryScreen() {
               <View key={b.id} style={[styles.benchRow, done && styles.benchRowDone]}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.benchTitle}>{b.exercise}</Text>
-                  <Text style={styles.benchTarget}>Target: {formatTarget(b.target)}</Text>
+                  <Text style={styles.benchTarget}>{EXERCISE_BY_KEY[b.exKey]?.check ? 'Check:' : 'Target:'} {formatTarget(b.target)}</Text>
                   <Text style={styles.benchWhy}>{b.why}</Text>
                 </View>
                 {done ? (

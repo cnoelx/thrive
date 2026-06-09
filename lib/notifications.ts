@@ -30,7 +30,7 @@ export async function scheduleDailyReminder(hour: number, minute: number): Promi
   await Notifications.scheduleNotificationAsync({
     content: {
       title: 'Time to move 💪',
-      body: "A few quick moves — you've got this.",
+      body: "Your quick workout's ready — let's go.",
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,
