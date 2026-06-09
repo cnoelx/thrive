@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.thrive.fitness",
       "adaptiveIcon": {
         "backgroundColor": "#16A34A",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
@@ -43,6 +44,19 @@
     "experiments": {
       "typedRoutes": false,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2ff05dfd-3c93-45a8-9141-38a3089ff9d2"
+      }
+    },
+    "owner": "cnoelx",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/2ff05dfd-3c93-45a8-9141-38a3089ff9d2"
     }
   }
 }
