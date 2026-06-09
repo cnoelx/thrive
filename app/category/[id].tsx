@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Celebration } from '@/components/Celebration';
 import { colors, font, radius, spacing } from '@/constants/theme';
-import { CATEGORIES, MAX_LEVEL, benchmarksFor, formatTarget, isCheckpoint } from '@/data/benchmarks';
+import { CATEGORIES, benchmarksFor, categoryCeiling, formatTarget, isCheckpoint } from '@/data/benchmarks';
 import { RUNWAY, completedLevel, isClaimable, levelCap, lockReason } from '@/engine/progression';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -24,7 +24,7 @@ export default function CategoryScreen() {
   // via the "Start Level N" button once the current level is complete — there's no going back to old
   // levels. It's NOT auto-advanced on the final claim, so a just-completed level stays on screen and
   // its ✓ can be tapped to undo before you move on.
-  const initialWorking = category ? Math.min(completedLevel(progress, category.id) + 1, MAX_LEVEL) : 1;
+  const initialWorking = category ? Math.min(completedLevel(progress, category.id) + 1, categoryCeiling(category.id)) : 1;
   const [viewLevel, setViewLevel] = useState(initialWorking);
   const [celebrateLevel, setCelebrateLevel] = useState<number | null>(null);
 
@@ -41,7 +41,8 @@ export default function CategoryScreen() {
 
   const c = category.id;
   const completed = completedLevel(progress, c);
-  const workingLevel = Math.min(completed + 1, MAX_LEVEL);
+  const ceiling = categoryCeiling(c);
+  const workingLevel = Math.min(completed + 1, ceiling);
   const reason = lockReason(progress, pullUnlocked, c);
   const checkpoint = isCheckpoint(c);
 
@@ -50,7 +51,7 @@ export default function CategoryScreen() {
   const claimedCount = benches.filter((b) => progress.claimed[b.id]).length;
   const levelDone = benches.length > 0 && claimedCount === benches.length;
   const runwayLocked = reason === 'runway' && vLevel >= workingLevel;
-  const nextLevelUnlocked = vLevel < MAX_LEVEL && vLevel + 1 <= levelCap(progress, pullUnlocked);
+  const nextLevelUnlocked = vLevel < ceiling && vLevel + 1 <= levelCap(progress, pullUnlocked);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -96,7 +97,7 @@ export default function CategoryScreen() {
         ) : levelDone ? (
           <View style={[styles.banner, styles.bannerGood]}>
             <Text style={styles.bannerText}>
-              {vLevel >= MAX_LEVEL
+              {vLevel >= ceiling
                 ? "You've finished every level here. Amazing work. 🎉"
                 : `Nice — all checked off! Tap Unlock below — or tap a ✓ to undo.`}
             </Text>
@@ -138,7 +139,7 @@ export default function CategoryScreen() {
           })}
         </View>
 
-        {reason === 'none' && vLevel < MAX_LEVEL ? (
+        {reason === 'none' && vLevel < ceiling ? (
           nextLevelUnlocked ? (
             <Pressable
               onPress={() => setCelebrateLevel(vLevel)}

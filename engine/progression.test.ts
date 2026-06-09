@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { BENCHMARKS, CATEGORY_IDS, CategoryId, MAX_LEVEL, benchmarksFor } from '@/data/benchmarks';
+import { BENCHMARKS, CATEGORY_IDS, CategoryId, MAX_LEVEL, benchmarksFor, categoryCeiling } from '@/data/benchmarks';
 import {
   ProgressState,
   RUNWAY,
@@ -40,13 +40,19 @@ function firstBenchmark(c: CategoryId, level: number) {
 describe('program data', () => {
   it('defines L1..L5 for all categories', () => {
     for (const c of CATEGORY_IDS) {
-      for (let l = 1; l <= MAX_LEVEL; l++) expect(benchmarksFor(c, l).length).toBeGreaterThan(0);
+      for (let l = 1; l <= 5; l++) expect(benchmarksFor(c, l).length).toBeGreaterThan(0);
     }
   });
 
-  it('has five levels and five categories', () => {
-    expect(MAX_LEVEL).toBe(5);
+  it('has ten levels and five categories', () => {
+    expect(MAX_LEVEL).toBe(10);
     expect(CATEGORY_IDS.length).toBe(5);
+  });
+
+  it('categories cap at their own ceilings (Mobility at 5, the rest at 10)', () => {
+    expect(categoryCeiling('mobility')).toBe(5);
+    expect(benchmarksFor('mobility', 6).length).toBe(0);
+    for (const c of ['move', 'push', 'pull', 'cardio'] as const) expect(categoryCeiling(c)).toBe(10);
   });
 
   it('has globally unique benchmark ids', () => {
@@ -104,11 +110,23 @@ describe('runway-of-one', () => {
     expect(isClaimable(s, true, firstBenchmark('move', 3))).toBe(true);
   });
 
-  it('reports maxed once all five levels are complete', () => {
+  it('a category maxes at its own ceiling and stops gating the overall', () => {
+    let s = emptyProgress();
+    for (let l = 1; l <= 5; l++) s = completeEverywhere(s, l);
+    expect(completedLevel(s, 'mobility')).toBe(5); // Mobility tops out at L5
+    expect(lockReason(s, true, 'mobility')).toBe('maxed');
+    expect(lockReason(s, true, 'push')).toBe('none'); // Push still has room (ceiling 10)
+    // Maxed Mobility no longer drags the overall down — push the rest to L6
+    for (const c of ['move', 'push', 'pull', 'cardio'] as const) s = claimLevel(s, c, 6);
+    expect(baselineLevel(s, true)).toBe(6);
+  });
+
+  it('overall reaches MAX_LEVEL when every category hits its ceiling', () => {
     let s = emptyProgress();
     for (let l = 1; l <= MAX_LEVEL; l++) s = completeEverywhere(s, l);
     expect(completedLevel(s, 'move')).toBe(MAX_LEVEL);
-    expect(lockReason(s, true, 'move')).toBe('maxed');
+    expect(completedLevel(s, 'mobility')).toBe(5);
+    expect(baselineLevel(s, true)).toBe(MAX_LEVEL);
   });
 });
 

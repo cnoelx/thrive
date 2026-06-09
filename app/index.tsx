@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Celebration } from '@/components/Celebration';
 import { colors, font, radius, spacing } from '@/constants/theme';
-import { CATEGORIES, MAX_LEVEL, benchmarksFor } from '@/data/benchmarks';
+import { CATEGORIES, MAX_LEVEL, benchmarksFor, categoryCeiling } from '@/data/benchmarks';
 import { todaysWorkout } from '@/engine/dailyCard';
 import { baselineLevel, completedLevel, effectiveCategoryIds, nextLevel } from '@/engine/progression';
 import { currentStreak, pendingStreakMilestone } from '@/engine/streak';
@@ -80,7 +80,7 @@ export default function Home() {
   const showCelebration = overall > overallLevelSeen;
   const celebrateBody =
     overall >= MAX_LEVEL
-      ? `Every area at Level ${MAX_LEVEL} — you've maxed the whole program. Outstanding work. 👏`
+      ? `You've maxed out every area — the whole program's done. Outstanding work. 👏`
       : overall === 1
         ? `Every area's at Level 1 — your foundation's set. The next tier's within reach everywhere now.`
         : `Every area's at Level ${overall} — the next tier's within reach everywhere. Keep going!`;
@@ -201,9 +201,10 @@ export default function Home() {
             {orderedCats.map((cat, i) => {
               const locked = cat.id === 'pull' && !pullUnlocked;
               const lvl = completedLevel(progress, cat.id);
-              const nextBenches = locked || lvl >= MAX_LEVEL ? [] : benchmarksFor(cat.id, nextLevel(progress, cat.id));
+              const maxed = !locked && lvl >= categoryCeiling(cat.id);
+              const nextBenches = locked || maxed ? [] : benchmarksFor(cat.id, nextLevel(progress, cat.id));
               const claimedNext = nextBenches.filter((b) => progress.claimed[b.id]).length;
-              const fillPct = locked ? 0 : lvl >= MAX_LEVEL ? 100 : nextBenches.length ? (claimedNext / nextBenches.length) * 100 : 0;
+              const fillPct = nextBenches.length ? (claimedNext / nextBenches.length) * 100 : 0;
               return (
                 <Pressable
                   key={cat.id}
@@ -217,6 +218,8 @@ export default function Home() {
                     <Text style={styles.areaName}>{cat.short}</Text>
                     {locked ? (
                       <Text style={styles.areaLockHint}>Tap to unlock</Text>
+                    ) : maxed ? (
+                      <Text style={styles.areaMaxedHint}>Maxed out ✓</Text>
                     ) : (
                       <View style={styles.rowBarTrack}>
                         <View style={[styles.rowBarFill, { width: `${fillPct}%` }]} />
@@ -329,7 +332,7 @@ export default function Home() {
             <Text style={styles.overallLevel}>Overall · Level {overall}</Text>
             <Text style={styles.overallSub}>
               {atMax
-                ? `Every area at Level ${MAX_LEVEL} — you've maxed the whole program. 🎉`
+                ? `Every area maxed out — you've finished the whole program. 🎉`
                 : `The level you've hit across the board. ${atNextCount} of ${activeCats.length} areas are at Level ${nextOverall} now — your overall goes up once the rest catch up.`}
             </Text>
             {!atMax ? (
@@ -344,7 +347,11 @@ export default function Home() {
                   <View key={cat.id} style={styles.levelsRow}>
                     <Text style={styles.levelsCat}>{cat.short}</Text>
                     <Text style={[styles.levelsVal, locked && styles.levelsValLocked]}>
-                      {locked ? '🔒 Locked' : `Level ${completedLevel(progress, cat.id)}`}
+                      {locked
+                        ? '🔒 Locked'
+                        : completedLevel(progress, cat.id) >= categoryCeiling(cat.id)
+                          ? `Level ${completedLevel(progress, cat.id)} · Maxed`
+                          : `Level ${completedLevel(progress, cat.id)}`}
                     </Text>
                   </View>
                 );
@@ -404,6 +411,7 @@ const styles = StyleSheet.create({
   levelTextOn: { color: colors.primaryText },
   areaName: { color: colors.text, fontSize: font.body, fontWeight: '700' },
   areaLockHint: { color: colors.muted, fontSize: font.small },
+  areaMaxedHint: { color: colors.primary, fontSize: font.small, fontWeight: '700' },
   rowBarTrack: { height: 6, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden' },
   rowBarFill: { height: 6, backgroundColor: colors.primary, borderRadius: radius.pill },
   chevron: { color: colors.muted, fontSize: 22 },

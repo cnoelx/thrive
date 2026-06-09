@@ -17,6 +17,13 @@ function dateForDay(dow: number): Date {
   return d;
 }
 
+// Claim every benchmark everywhere: Move/Push/Pull/Cardio reach L10, Mobility maxes at L5.
+function maxedState(): ProgressState {
+  let s = emptyProgress();
+  for (let l = 1; l <= 10; l++) for (const c of CATEGORY_IDS) s = claimLevel(s, c, l);
+  return s;
+}
+
 describe('weekly schedule', () => {
   it('Sunday is a rest day with no items', () => {
     const w = todaysWorkout(emptyProgress(), true, dateForDay(0));
@@ -43,9 +50,26 @@ describe('weekly schedule', () => {
   });
 });
 
+// Capped / maxed exercises must NOT drop out of the schedule — they stay in and run at their top
+// (maintenance) target.
+describe('capped & maxed exercises stay in the workout (maintenance)', () => {
+  it('maxed Mobility still appears on its day at the L5 target', () => {
+    const tue = todaysWorkout(maxedState(), true, dateForDay(2));
+    expect(tue.items.length).toBe(4); // nothing dropped
+    const dsq = tue.items.find((i) => i.exKey === 'deepsquat')!;
+    expect(dsq.target).toBe('free 120s'); // L5 top, held as maintenance
+  });
+
+  it('an exercise that caps below its category (Balance, L8) maintains at its top target', () => {
+    const thu = todaysWorkout(maxedState(), true, dateForDay(4));
+    const bal = thu.items.find((i) => i.exKey === 'balance')!;
+    expect(bal.target).toBe('unstable surface 30s'); // L8 top even though Move reaches L10
+  });
+});
+
 // When Pull is locked, every pull-category item is dropped and one Superman is appended (per day
 // that had any pull items). The Superman target steps up with overall level (baseline of the
-// unlocked categories) and caps at the L3 target.
+// unlocked categories) across the 10 levels.
 describe('Superman fallback (no equipment)', () => {
   it('Monday drops Inverted Row and adds one Superman', () => {
     const w = todaysWorkout(emptyProgress(), false, dateForDay(1));
@@ -70,31 +94,23 @@ describe('Superman fallback (no equipment)', () => {
     expect(sm.categoryId).toBeUndefined();
   });
 
-  it("Superman's target reads from overall level and caps at L3", () => {
-    // At baseline 0: shows L1 target
-    let w = todaysWorkout(emptyProgress(), false, dateForDay(1));
-    expect(w.items.find((i) => i.exKey === SUPERMAN_KEY)!.target).toBe('8 reps, 1s hold');
+  it("Superman's target reads from overall level and scales across levels", () => {
+    const sm = (s: ProgressState) => todaysWorkout(s, false, dateForDay(1)).items.find((i) => i.exKey === SUPERMAN_KEY)!.target;
 
-    // Complete L1 across the 4 unlocked categories → baseline 1 → still L1 target
+    expect(sm(emptyProgress())).toBe('8 reps'); // baseline 0 → L1
+
     let s = emptyProgress();
     for (const c of effectiveCategoryIds(false)) s = claimLevel(s, c, 1);
-    w = todaysWorkout(s, false, dateForDay(1));
-    expect(w.items.find((i) => i.exKey === SUPERMAN_KEY)!.target).toBe('8 reps, 1s hold');
+    expect(sm(s)).toBe('8 reps'); // baseline 1 → L1
 
-    // Complete L2 across the 4 → baseline 2 → L2 target
     for (const c of effectiveCategoryIds(false)) s = claimLevel(s, c, 2);
-    w = todaysWorkout(s, false, dateForDay(1));
-    expect(w.items.find((i) => i.exKey === SUPERMAN_KEY)!.target).toBe('12 reps, 2s hold');
+    expect(sm(s)).toBe('10 reps'); // baseline 2
 
-    // Complete L3 → L3 target (capped)
     for (const c of effectiveCategoryIds(false)) s = claimLevel(s, c, 3);
-    w = todaysWorkout(s, false, dateForDay(1));
-    expect(w.items.find((i) => i.exKey === SUPERMAN_KEY)!.target).toBe('15 reps, 3s hold');
+    expect(sm(s)).toBe('12 reps'); // baseline 3
 
-    // L4 — still L3 (cap)
     for (const c of effectiveCategoryIds(false)) s = claimLevel(s, c, 4);
-    w = todaysWorkout(s, false, dateForDay(1));
-    expect(w.items.find((i) => i.exKey === SUPERMAN_KEY)!.target).toBe('15 reps, 3s hold');
+    expect(sm(s)).toBe('15 reps'); // baseline 4 — past the old L3 cap
   });
 
   it('with Pull unlocked, the schedule is untouched (no Superman, pull moves stay)', () => {

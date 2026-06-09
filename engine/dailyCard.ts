@@ -1,15 +1,15 @@
 // Today's workout = the fixed weekly schedule for the current day. Sets are fixed; reps/time come
 // from the user's current level for each exercise, so the card "auto-evolves" as they level up.
 
-import { CategoryId, EXERCISE_BY_KEY, MAX_LEVEL, exerciseTarget } from '@/data/benchmarks';
+import { CategoryId, EXERCISE_BY_KEY, categoryCeiling, exerciseTarget } from '@/data/benchmarks';
 import { DAY_KEYS, WEEKLY_SCHEDULE } from '@/data/schedule';
 import { ProgressState, baselineLevel, completedLevel, levelCap, nextLevel } from '@/engine/progression';
 
 // Superman — back/posture fallback for users with no bar/rings. NOT a category exercise: it never
-// shows a category chip, never contributes to levels, and never completes Pull. Reps derive from
-// the user's overall level (baselineLevel with Pull excluded) and cap at the L3 target.
+// shows a category chip, never contributes to levels, and never completes Pull. Its target derives
+// from the user's overall level (baselineLevel with Pull excluded) across the 10 levels below.
 export const SUPERMAN_KEY = 'superman';
-const SUPERMAN_TARGETS = ['8 reps, 1s hold', '12 reps, 2s hold', '15 reps, 3s hold'] as const;
+const SUPERMAN_TARGETS = ['8 reps', '10 reps', '12 reps', '15 reps', '15 + 2s hold', 'hold 20s', 'swimmer 30s', 'W-raise ×15', 'superman rock ×15', 'hold 40s'] as const;
 function supermanTarget(overall: number): string {
   const idx = Math.min(Math.max(overall, 1), SUPERMAN_TARGETS.length) - 1;
   return SUPERMAN_TARGETS[idx]!;
@@ -19,7 +19,8 @@ function supermanTarget(overall: number): string {
  *  highest completed level (maintenance), clamped to available content. */
 export function trainingLevel(state: ProgressState, pullUnlocked: boolean, c: CategoryId): number {
   const next = nextLevel(state, c);
-  if (next > MAX_LEVEL) return MAX_LEVEL;
+  const ceiling = categoryCeiling(c);
+  if (next > ceiling) return ceiling; // capped → maintenance at the top target
   if (next > levelCap(state, pullUnlocked)) return Math.max(completedLevel(state, c), 1);
   return next;
 }

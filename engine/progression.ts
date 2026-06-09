@@ -2,7 +2,7 @@
 // self-reported at any time (no training-gate) but bounded by the runway-of-one cap. Kept free of
 // React/Expo so it can be unit-tested in isolation.
 
-import { Benchmark, CATEGORY_IDS, CategoryId, MAX_LEVEL, benchmarksFor } from '@/data/benchmarks';
+import { Benchmark, CATEGORY_IDS, CategoryId, MAX_LEVEL, benchmarksFor, categoryCeiling } from '@/data/benchmarks';
 
 // A category may progress to (baseline + RUNWAY). With baseline L0 that means L1 and L2 are open
 // while L3 is locked — the spec's "runway of one".
@@ -46,6 +46,12 @@ export function completedLevel(state: ProgressState, c: CategoryId): number {
   return lvl;
 }
 
+/** A category is maxed once it has completed its deepest level (its ceiling, e.g. Mobility at L5).
+ *  Maxed categories stop gating the overall level and the runway. */
+export function isCategoryMaxed(state: ProgressState, c: CategoryId): boolean {
+  return completedLevel(state, c) >= categoryCeiling(c);
+}
+
 /** Categories currently 'in play' for the multi-category math (baseline, overall level, lagging, the
  *  runway cap). Pull is excluded until the user confirms they have a bar/rings — otherwise it would
  *  sit at L0 forever and cap every other category at L2. */
@@ -53,9 +59,13 @@ export function effectiveCategoryIds(pullUnlocked: boolean): CategoryId[] {
   return pullUnlocked ? CATEGORY_IDS : CATEGORY_IDS.filter((c) => c !== 'pull');
 }
 
-/** Baseline = the level completed across all UNLOCKED categories (the min). */
+/** Baseline = the level completed across all UNLOCKED, NOT-yet-maxed categories (the min). Maxed
+ *  categories drop out so a low ceiling (Mobility at L5) can't freeze the overall forever; when every
+ *  active category is maxed the program is complete (MAX_LEVEL). */
 export function baselineLevel(state: ProgressState, pullUnlocked: boolean): number {
-  return Math.min(...effectiveCategoryIds(pullUnlocked).map((c) => completedLevel(state, c)));
+  const cats = effectiveCategoryIds(pullUnlocked).filter((c) => !isCategoryMaxed(state, c));
+  if (cats.length === 0) return MAX_LEVEL;
+  return Math.min(...cats.map((c) => completedLevel(state, c)));
 }
 
 /** The highest level any category is currently allowed to work toward (runway-of-one). */
@@ -73,7 +83,7 @@ export type LockReason = 'none' | 'runway' | 'maxed' | 'noEquipment';
 export function lockReason(state: ProgressState, pullUnlocked: boolean, c: CategoryId): LockReason {
   if (c === 'pull' && !pullUnlocked) return 'noEquipment';
   const next = nextLevel(state, c);
-  if (next > MAX_LEVEL) return 'maxed';
+  if (next > categoryCeiling(c)) return 'maxed';
   if (next > levelCap(state, pullUnlocked)) return 'runway';
   return 'none';
 }
@@ -112,7 +122,8 @@ export function applyClaim(state: ProgressState, pullUnlocked: boolean, b: Bench
 
 /** Categories lagging behind the others (only among unlocked ones). Returns [] when level. */
 export function laggingCategories(state: ProgressState, pullUnlocked: boolean): CategoryId[] {
-  const cats = effectiveCategoryIds(pullUnlocked);
+  const cats = effectiveCategoryIds(pullUnlocked).filter((c) => !isCategoryMaxed(state, c));
+  if (cats.length === 0) return [];
   const levels = cats.map((c) => completedLevel(state, c));
   const min = Math.min(...levels);
   const max = Math.max(...levels);
