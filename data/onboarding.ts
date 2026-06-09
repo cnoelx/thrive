@@ -35,9 +35,9 @@ export const GOAL_OPTIONS: Option<GoalId>[] = [
   { id: 'health', label: 'General health and longevity' },
 ];
 
-// Placement uses one signature exercise per category. The user picks the best they can do;
-// the thresholds map to the same L1/L2/L3 numbers as the full benchmark set. It's an estimate —
-// the rest of each level fills in (and can be refined) through normal training + claims.
+// Placement uses one signature exercise per category, and each option IS that level's goal — so "the
+// most you can do" maps directly to the level you've earned. It's still an estimate: the rest of the
+// category's moves fill in (and can be refined) through normal training + claims.
 export interface PlacementAnchor {
   categoryId: CategoryId;
   exercise: string;
@@ -46,9 +46,9 @@ export interface PlacementAnchor {
 }
 
 export const PLACEMENT_ANCHORS: PlacementAnchor[] = [
-  { categoryId: 'move', exercise: 'Bodyweight squats', unit: 'in a row', thresholds: [{ level: 1, label: '8' }, { level: 2, label: '12' }, { level: 3, label: '18' }, { level: 4, label: '25' }, { level: 5, label: '35' }] },
-  { categoryId: 'push', exercise: 'Push-ups', unit: 'hands-raised is fine', thresholds: [{ level: 1, label: '3' }, { level: 2, label: '5' }, { level: 3, label: '8' }, { level: 4, label: '12' }, { level: 5, label: '20' }] },
-  { categoryId: 'pull', exercise: 'Pulling', unit: 'most you can do', thresholds: [{ level: 1, label: 'Hang ~15s' }, { level: 2, label: '2 slow lowers' }, { level: 4, label: '1 pull-up (band OK)' }, { level: 5, label: '3+ pull-ups' }] },
-  { categoryId: 'cardio', exercise: 'Walk / run nonstop', thresholds: [{ level: 1, label: '1 km' }, { level: 2, label: '1.5 km' }, { level: 3, label: '2.5 km' }, { level: 4, label: '4 km' }, { level: 5, label: '5 km' }] },
-  { categoryId: 'mobility', exercise: 'Deep squat hold', thresholds: [{ level: 1, label: '15s' }, { level: 2, label: '30s' }, { level: 3, label: '60s' }, { level: 4, label: '90s' }, { level: 5, label: '120s' }] },
+  { categoryId: 'move', exercise: 'Bodyweight squats', unit: 'in a row', thresholds: [{ level: 1, label: '15' }, { level: 2, label: '22' }, { level: 3, label: '30' }, { level: 4, label: '40' }, { level: 5, label: '50' }] },
+  { categoryId: 'push', exercise: 'Push-ups', unit: 'hardest you can do', thresholds: [{ level: 1, label: 'Wall ×8' }, { level: 2, label: 'Counter ×8' }, { level: 3, label: 'Low step ×8' }, { level: 4, label: 'Lower slowly ×5' }, { level: 5, label: '8 full' }] },
+  { categoryId: 'pull', exercise: 'Pulling', unit: 'most you can do', thresholds: [{ level: 1, label: 'Active hang 15s' }, { level: 2, label: 'Lower slowly 5s ×3' }, { level: 3, label: 'Lower slowly 10s ×3' }, { level: 4, label: '5 with a band' }, { level: 5, label: '3+ pull-ups' }] },
+  { categoryId: 'cardio', exercise: 'Walk / run nonstop', thresholds: [{ level: 1, label: 'Brisk walk 10min' }, { level: 2, label: 'Brisk walk 20min' }, { level: 3, label: 'Brisk walk 30min' }, { level: 4, label: 'Walk-jog 20min' }, { level: 5, label: 'Easy jog 20min+' }] },
+  { categoryId: 'mobility', exercise: 'Deep squat hold', thresholds: [{ level: 1, label: 'Support 15s' }, { level: 2, label: 'Support 30s' }, { level: 3, label: 'Free 60s' }, { level: 4, label: 'Free 90s' }, { level: 5, label: 'Free 120s' }] },
 ];
