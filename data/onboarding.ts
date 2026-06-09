@@ -47,8 +47,8 @@ export interface PlacementAnchor {
 
 export const PLACEMENT_ANCHORS: PlacementAnchor[] = [
   { categoryId: 'move', exercise: 'Bodyweight squats', unit: 'in a row', thresholds: [{ level: 1, label: '8' }, { level: 2, label: '12' }, { level: 3, label: '18' }, { level: 4, label: '25' }, { level: 5, label: '35' }] },
-  { categoryId: 'push', exercise: 'Push-ups', unit: 'incline OK at L1', thresholds: [{ level: 1, label: '3' }, { level: 2, label: '5' }, { level: 3, label: '8' }, { level: 4, label: '12' }, { level: 5, label: '20' }] },
-  { categoryId: 'pull', exercise: 'Pulling', unit: 'best you can do', thresholds: [{ level: 1, label: 'Hang + scap pulls' }, { level: 2, label: 'Slow negatives' }, { level: 3, label: 'Long negatives' }, { level: 4, label: 'Band-assisted' }, { level: 5, label: '3+ pull-ups' }] },
+  { categoryId: 'push', exercise: 'Push-ups', unit: 'hands-raised is fine', thresholds: [{ level: 1, label: '3' }, { level: 2, label: '5' }, { level: 3, label: '8' }, { level: 4, label: '12' }, { level: 5, label: '20' }] },
+  { categoryId: 'pull', exercise: 'Pulling', unit: 'best you can do', thresholds: [{ level: 1, label: 'Just hang on' }, { level: 2, label: 'Lower down slowly' }, { level: 4, label: '1 with help' }, { level: 5, label: '3+ on my own' }] },
   { categoryId: 'cardio', exercise: 'Walk / run nonstop', thresholds: [{ level: 1, label: '1 km' }, { level: 2, label: '1.5 km' }, { level: 3, label: '2.5 km' }, { level: 4, label: '4 km' }, { level: 5, label: '5 km' }] },
   { categoryId: 'mobility', exercise: 'Deep squat hold', thresholds: [{ level: 1, label: '15s' }, { level: 2, label: '30s' }, { level: 3, label: '60s' }, { level: 4, label: '90s' }, { level: 5, label: '120s' }] },
 ];
