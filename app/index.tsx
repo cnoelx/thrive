@@ -261,11 +261,13 @@ export default function Home() {
             ) : null}
           </View>
 
-          <View style={styles.devRow}>
-            <Pressable onPress={resetAll} style={styles.reset}>
-              <Text style={styles.resetText}>Reset (dev)</Text>
-            </Pressable>
-          </View>
+          {__DEV__ ? (
+            <View style={styles.devRow}>
+              <Pressable onPress={resetAll} style={styles.reset}>
+                <Text style={styles.resetText}>Reset (dev)</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
       </ScrollView>
 
