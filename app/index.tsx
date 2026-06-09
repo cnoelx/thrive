@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Celebration } from '@/components/Celebration';
 import { colors, font, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, MAX_LEVEL, benchmarksFor, categoryCeiling } from '@/data/benchmarks';
+import { WHATS_NEW } from '@/data/whatsNew';
 import { todaysWorkout } from '@/engine/dailyCard';
 import { baselineLevel, completedLevel, effectiveCategoryIds, nextLevel } from '@/engine/progression';
 import { currentStreak, pendingStreakMilestone } from '@/engine/streak';
@@ -48,6 +49,8 @@ export default function Home() {
   const streak = useAppStore((s) => s.streak);
   const streakMilestoneSeen = useAppStore((s) => s.streakMilestoneSeen);
   const markStreakMilestoneSeen = useAppStore((s) => s.markStreakMilestoneSeen);
+  const whatsNewSeen = useAppStore((s) => s.whatsNewSeen);
+  const markWhatsNewSeen = useAppStore((s) => s.markWhatsNewSeen);
   const overallLevelSeen = useAppStore((s) => s.overallLevelSeen);
   const markOverallLevelSeen = useAppStore((s) => s.markOverallLevelSeen);
   const reminderEnabled = useAppStore((s) => s.reminderEnabled);
@@ -78,6 +81,7 @@ export default function Home() {
   const atMax = overall >= MAX_LEVEL;
   const overallPct = atMax ? 100 : (atNextCount / activeCats.length) * 100;
   const showCelebration = overall > overallLevelSeen;
+  const showWhatsNew = WHATS_NEW.version > whatsNewSeen;
   const celebrateBody =
     overall >= MAX_LEVEL
       ? `You've maxed out every area — the whole program's done. Outstanding work. 👏`
@@ -365,6 +369,31 @@ export default function Home() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <Modal
+        visible={showWhatsNew && !showCelebration && !streakMilestone}
+        transparent
+        animationType="fade"
+        onRequestClose={() => markWhatsNewSeen(WHATS_NEW.version)}
+      >
+        <Pressable style={styles.overlay} onPress={() => markWhatsNewSeen(WHATS_NEW.version)}>
+          <Pressable style={styles.levelsSheet} onPress={() => {}}>
+            <Text style={styles.overallEyebrow}>WHAT&apos;S NEW ✨</Text>
+            <Text style={styles.overallLevel}>Fresh in this update</Text>
+            <View style={styles.whatsNewList}>
+              {WHATS_NEW.items.map((it, i) => (
+                <View key={i} style={styles.whatsNewRow}>
+                  <Text style={styles.whatsNewDot}>•</Text>
+                  <Text style={styles.whatsNewText}>{it}</Text>
+                </View>
+              ))}
+            </View>
+            <Pressable onPress={() => markWhatsNewSeen(WHATS_NEW.version)} style={styles.pullPrimary}>
+              <Text style={styles.pullPrimaryText}>Got it</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -452,6 +481,11 @@ const styles = StyleSheet.create({
 
   levelsSheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm, width: '100%', maxWidth: 420 },
   levelsList: { marginTop: spacing.sm },
+
+  whatsNewList: { marginTop: spacing.sm, gap: spacing.sm },
+  whatsNewRow: { flexDirection: 'row', gap: spacing.sm },
+  whatsNewDot: { color: colors.primary, fontSize: font.body, fontWeight: '900', lineHeight: 22 },
+  whatsNewText: { flex: 1, color: colors.text, fontSize: font.body, lineHeight: 22 },
   levelsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
   levelsCat: { color: colors.text, fontSize: font.body, fontWeight: '700' },
   levelsVal: { color: colors.primary, fontSize: font.body, fontWeight: '800' },

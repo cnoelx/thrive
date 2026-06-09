@@ -9,6 +9,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { BENCHMARK_BY_ID } from '@/data/benchmarks';
 import { Equipment, GoalId } from '@/data/onboarding';
+import { WHATS_NEW } from '@/data/whatsNew';
 import { ProgressState, applyClaim, emptyProgress, unclaim } from '@/engine/progression';
 import { nextStreak } from '@/engine/streak';
 
@@ -34,6 +35,8 @@ interface AppState {
   /** Highest overall level the user has acknowledged (dismissed the celebration for). The next
    *  level-up celebration fires when their current overall exceeds this. */
   overallLevelSeen: number;
+  /** Highest "What's new" changelog version the user has dismissed. */
+  whatsNewSeen: number;
   nudgeDismissedDay: number | null;
   reminderEnabled: boolean;
   reminderHour: number;
@@ -51,6 +54,7 @@ interface AppState {
   unclaimBenchmark: (benchmarkId: string) => void;
   markOverallLevelSeen: (level: number) => void;
   markStreakMilestoneSeen: (milestone: number) => void;
+  markWhatsNewSeen: (version: number) => void;
   dismissNudge: (dayNumber: number) => void;
   setReminder: (enabled: boolean, hour: number, minute: number) => void;
   setName: (name: string) => void;
@@ -70,6 +74,7 @@ export const useAppStore = create<AppState>()(
       streak: 0,
       streakMilestoneSeen: 0,
       overallLevelSeen: 0,
+      whatsNewSeen: 0,
       nudgeDismissedDay: null,
       reminderEnabled: false,
       reminderHour: 8,
@@ -85,6 +90,7 @@ export const useAppStore = create<AppState>()(
           streak: 0,
           streakMilestoneSeen: 0,
           overallLevelSeen: 0,
+          whatsNewSeen: WHATS_NEW.version,
           nudgeDismissedDay: null,
         }),
 
@@ -109,6 +115,8 @@ export const useAppStore = create<AppState>()(
 
       markStreakMilestoneSeen: (milestone) => set({ streakMilestoneSeen: milestone }),
 
+      markWhatsNewSeen: (version) => set({ whatsNewSeen: version }),
+
       dismissNudge: (dayNumber) => set({ nudgeDismissedDay: dayNumber }),
 
       setReminder: (enabled, hour, minute) => set({ reminderEnabled: enabled, reminderHour: hour, reminderMinute: minute }),
@@ -127,6 +135,7 @@ export const useAppStore = create<AppState>()(
           streak: 0,
           streakMilestoneSeen: 0,
           overallLevelSeen: 0,
+          whatsNewSeen: 0,
           nudgeDismissedDay: null,
           reminderEnabled: false,
           reminderHour: 8,
@@ -147,6 +156,7 @@ export const useAppStore = create<AppState>()(
         streak: s.streak,
         streakMilestoneSeen: s.streakMilestoneSeen,
         overallLevelSeen: s.overallLevelSeen,
+        whatsNewSeen: s.whatsNewSeen,
         nudgeDismissedDay: s.nudgeDismissedDay,
         reminderEnabled: s.reminderEnabled,
         reminderHour: s.reminderHour,
