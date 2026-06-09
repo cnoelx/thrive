@@ -82,7 +82,7 @@ export default function Onboarding() {
           <Text style={styles.body}>Tap the most you can do — skip anything you can&apos;t yet.</Text>
 
           <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
-            {PLACEMENT_ANCHORS.map((a) => {
+            {PLACEMENT_ANCHORS.filter((a) => a.categoryId !== 'pull' || pullEquip === 'bar' || pullEquip === 'rings').map((a) => {
               const cur = placed[a.categoryId] ?? 0;
               return (
                 <View key={a.categoryId} style={styles.placeCard}>

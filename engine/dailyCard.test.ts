@@ -77,9 +77,9 @@ describe('Superman fallback (no equipment)', () => {
     expect(w.items.filter((i) => i.exKey === SUPERMAN_KEY).length).toBe(1);
   });
 
-  it('Thursday drops both pull moves and adds just ONE Superman', () => {
+  it('Thursday drops the Pulling move and adds one Superman', () => {
     const w = todaysWorkout(emptyProgress(), false, dateForDay(4));
-    expect(w.items.some((i) => i.exKey === 'deadhang' || i.exKey === 'pullup')).toBe(false);
+    expect(w.items.some((i) => i.exKey === 'pullup')).toBe(false);
     expect(w.items.filter((i) => i.exKey === SUPERMAN_KEY).length).toBe(1);
   });
 

@@ -51,7 +51,6 @@ export const WEEKLY_SCHEDULE: Record<DayKey, DaySchedule> = {
   thu: {
     focus: 'Upper Body',
     items: [
-      { exKey: 'deadhang', sets: 3, restSec: 60 },
       { exKey: 'pullup', sets: 3, restSec: 90 },
       { exKey: 'pushups', sets: 2, restSec: 60, note: 'lighter' },
       { exKey: 'balance', sets: 2, restSec: 30 },
