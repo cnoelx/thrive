@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Redirect, useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -57,7 +58,6 @@ export default function Home() {
   const reminderHour = useAppStore((s) => s.reminderHour);
   const reminderMinute = useAppStore((s) => s.reminderMinute);
   const setReminder = useAppStore((s) => s.setReminder);
-  const resetAll = useAppStore((s) => s.resetAll);
   const name = useAppStore((s) => s.name);
   const pullUnlocked = useAppStore((s) => s.pullUnlocked);
   const unlockPull = useAppStore((s) => s.unlockPull);
@@ -130,7 +130,12 @@ export default function Home() {
       <ScrollView contentContainerStyle={{ paddingTop: insets.top, paddingBottom: insets.bottom + spacing.xl }}>
         {/* Dark hero — greeting, streak, overall level */}
         <View style={styles.hero}>
-          <Text style={styles.heroGreeting}>{name ? `Hi, ${name} 👋` : 'Hi there 👋'}</Text>
+          <View style={styles.heroTop}>
+            <Text style={[styles.heroGreeting, { flex: 1 }]}>{name ? `Hi, ${name} 👋` : 'Hi there 👋'}</Text>
+            <Pressable onPress={() => router.push('/settings')} hitSlop={10}>
+              <Ionicons name="settings-outline" size={24} color={colors.onInkMuted} />
+            </Pressable>
+          </View>
 
           {streakNow >= 2 ? (
             <Text style={styles.heroStreak}>{STREAK_MESSAGES[streakNow % STREAK_MESSAGES.length](streakNow)}</Text>
@@ -234,14 +239,6 @@ export default function Home() {
               )
             ) : null}
           </View>
-
-          {__DEV__ ? (
-            <View style={styles.devRow}>
-              <Pressable onPress={resetAll} style={styles.reset}>
-                <Text style={styles.resetText}>Reset (dev)</Text>
-              </Pressable>
-            </View>
-          ) : null}
         </View>
       </ScrollView>
 
@@ -373,6 +370,7 @@ const SECTION_GAP = spacing.xl + spacing.xs; // ~28: breathe between sections
 const styles = StyleSheet.create({
   // Dark hero
   hero: { backgroundColor: colors.inkCard, paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xxl },
+  heroTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   heroGreeting: { color: colors.primaryText, fontSize: 24, fontWeight: '900' },
   heroStreak: { color: colors.streakInk, fontSize: font.body, fontWeight: '800', marginTop: spacing.md },
   heroOverall: { marginTop: spacing.xl + spacing.xs },
@@ -433,10 +431,6 @@ const styles = StyleSheet.create({
   },
   timeButtonText: { color: colors.text, fontSize: font.body, fontWeight: '800' },
   timeButtonHint: { color: colors.primary, fontSize: font.small, fontWeight: '700' },
-
-  devRow: { flexDirection: 'row', justifyContent: 'center', paddingTop: spacing.lg },
-  reset: { alignItems: 'center', paddingVertical: spacing.sm },
-  resetText: { color: colors.muted, fontSize: font.small, textDecorationLine: 'underline' },
 
   // Modals / sheets
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
