@@ -18,6 +18,13 @@ export function previousWorkoutDay(dayNumber: number): number {
   return d;
 }
 
+/** The scheduled workout day immediately after `dayNumber` (skips rest days). */
+export function nextWorkoutDay(dayNumber: number): number {
+  let d = dayNumber + 1;
+  while (isRestDay(d)) d++;
+  return d;
+}
+
 /** New streak count after completing `day`'s workout. Continues (+1) if the last completed day was the
  *  immediately-preceding workout day; otherwise restarts at 1. A repeat log of the same day is a no-op. */
 export function nextStreak(prevStreak: number, lastLoggedDay: number | null, day: number): number {

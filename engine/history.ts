@@ -2,7 +2,7 @@
 // Day numbers are local days since epoch (see todayNumber in the screens); weekday = (d + 4) % 7
 // matching JS Date.getDay(), same convention as engine/streak.
 
-import { previousWorkoutDay } from '@/engine/streak';
+import { nextWorkoutDay, previousWorkoutDay } from '@/engine/streak';
 
 /** The day number of a local Date (days since epoch in the device's timezone). */
 export function dayNumberFromDate(d: Date): number {
@@ -28,6 +28,24 @@ export function backfillStreakDays(streak: number, lastLoggedDay: number): numbe
     days.unshift(d);
   }
   return days;
+}
+
+/** The longest run of consecutive scheduled workout days in `loggedDays` — the all-time best
+ *  streak, by the same rule as the live one (rest days skipped, a missed workout day breaks it). */
+export function longestStreak(loggedDays: number[]): number {
+  const set = new Set(loggedDays);
+  let best = 0;
+  for (const d of set) {
+    if (set.has(previousWorkoutDay(d))) continue; // only count from the start of a run
+    let len = 1;
+    let next = nextWorkoutDay(d);
+    while (set.has(next)) {
+      len++;
+      next = nextWorkoutDay(next);
+    }
+    if (len > best) best = len;
+  }
+  return best;
 }
 
 export interface MonthCell {

@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
-import { dayNumberFromDate, monthGrid } from '@/engine/history';
+import { dayNumberFromDate, longestStreak, monthGrid } from '@/engine/history';
 import { isRestDay } from '@/engine/streak';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -26,6 +26,7 @@ export default function History() {
     setShown((s) => (s.month === 11 ? { year: s.year + 1, month: 0 } : { year: s.year, month: s.month + 1 }));
 
   const weeks = monthGrid(shown.year, shown.month);
+  const monthCount = weeks.flat().filter((c) => c !== null && loggedDays.includes(c.dayNumber)).length;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -37,6 +38,22 @@ export default function History() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}>
+        {/* Stats */}
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNum}>{loggedDays.length}</Text>
+            <Text style={styles.statLabel}>Workouts</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNum}>🔥 {longestStreak(loggedDays)}</Text>
+            <Text style={styles.statLabel}>Best streak</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNum}>{monthCount}</Text>
+            <Text style={styles.statLabel}>In {MONTHS[shown.month].slice(0, 3)}</Text>
+          </View>
+        </View>
+
         <View style={styles.card}>
           {/* Month switcher */}
           <View style={styles.monthRow}>
@@ -108,6 +125,11 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
   back: { color: colors.primary, fontSize: font.body, fontWeight: '700' },
   title: { color: colors.ink, fontSize: font.h2, fontWeight: '800' },
+
+  statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+  statCard: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.md, alignItems: 'center', gap: 2 },
+  statNum: { color: colors.ink, fontSize: font.h2, fontWeight: '900' },
+  statLabel: { color: colors.muted, fontSize: font.small },
 
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border },
 
