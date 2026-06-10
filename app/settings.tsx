@@ -63,9 +63,7 @@ export default function Settings() {
 
         {/* About */}
         <View style={styles.card}>
-          <Text style={styles.label}>ABOUT</Text>
-          <Text style={styles.aboutText}>Thrive · Version {Constants.expoConfig?.version ?? '1.0.0'}</Text>
-          <Text style={styles.disclaimer}>General fitness guidance — not a substitute for a coach or physio. Stop if anything hurts.</Text>
+          <Text style={styles.aboutText}>Version {Constants.expoConfig?.version ?? '1.0.0'}</Text>
         </View>
 
         {/* Reset */}
@@ -88,7 +86,6 @@ const styles = StyleSheet.create({
   nameInput: { color: colors.ink, fontSize: font.h2, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs },
 
   aboutText: { color: colors.text, fontSize: font.body, fontWeight: '700' },
-  disclaimer: { color: colors.muted, fontSize: font.small, fontStyle: 'italic', lineHeight: 19 },
 
   resetBtn: { borderWidth: 1, borderColor: '#F0C2C2', backgroundColor: '#FCEFEF', borderRadius: radius.pill, paddingVertical: spacing.md + 2, alignItems: 'center', marginTop: spacing.sm },
   resetText: { color: '#B91C1C', fontSize: font.body, fontWeight: '800' },
