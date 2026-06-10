@@ -11,5 +11,6 @@ export const WHATS_NEW: { version: number; items: string[] } = {
   items: [
     'See your week at a glance — your last 7 days now show right on the home screen.',
     'Tap your week to open a month-by-month calendar of every workout you’ve done.',
+    'Every training area now has its own colour — spot your strongest at a glance.',
   ],
 };

@@ -19,6 +19,8 @@ export const colors = {
   onInkMuted: '#9FB3A8', // muted text on the dark hero
   accent: '#22C55E', // vivid green highlight on dark
   streakInk: '#FBBF24', // amber streak text on dark
+  streakBg: '#FFFBEB', // warm cream — THIS WEEK card background
+  streakBorder: '#FDE68A', // soft amber border around the streak card
 } as const;
 
 // Per-area identity colours — used for level badges and progress bars so the five training areas
