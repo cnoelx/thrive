@@ -5,7 +5,6 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
-import { WHATS_NEW } from '@/data/whatsNew';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function Settings() {
@@ -62,17 +61,6 @@ export default function Settings() {
           />
         </View>
 
-        {/* What's new */}
-        <View style={styles.card}>
-          <Text style={styles.label}>WHAT&apos;S NEW</Text>
-          {WHATS_NEW.items.map((it, i) => (
-            <View key={i} style={styles.bulletRow}>
-              <Text style={styles.bulletDot}>•</Text>
-              <Text style={styles.bulletText}>{it}</Text>
-            </View>
-          ))}
-        </View>
-
         {/* About */}
         <View style={styles.card}>
           <Text style={styles.label}>ABOUT</Text>
@@ -98,10 +86,6 @@ const styles = StyleSheet.create({
   label: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
 
   nameInput: { color: colors.ink, fontSize: font.h2, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs },
-
-  bulletRow: { flexDirection: 'row', gap: spacing.sm },
-  bulletDot: { color: colors.primary, fontSize: font.body, fontWeight: '900', lineHeight: 22 },
-  bulletText: { flex: 1, color: colors.text, fontSize: font.body, lineHeight: 22 },
 
   aboutText: { color: colors.text, fontSize: font.body, fontWeight: '700' },
   disclaimer: { color: colors.muted, fontSize: font.small, fontStyle: 'italic', lineHeight: 19 },
