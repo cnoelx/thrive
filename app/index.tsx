@@ -6,12 +6,13 @@ import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Celebration } from '@/components/Celebration';
-import { colors, font, radius, spacing } from '@/constants/theme';
+import { categoryColors, colors, font, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, MAX_LEVEL, benchmarksFor, categoryCeiling } from '@/data/benchmarks';
 import { WHATS_NEW } from '@/data/whatsNew';
 import { todaysWorkout } from '@/engine/dailyCard';
+import { weekDays } from '@/engine/history';
 import { baselineLevel, completedLevel, effectiveCategoryIds, nextLevel } from '@/engine/progression';
-import { currentStreak, pendingStreakMilestone } from '@/engine/streak';
+import { currentStreak, isRestDay, pendingStreakMilestone } from '@/engine/streak';
 import { cancelReminders, requestNotificationPermission, scheduleDailyReminder } from '@/lib/notifications';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -48,6 +49,7 @@ export default function Home() {
   const progress = useAppStore((s) => s.progress);
   const lastLoggedDay = useAppStore((s) => s.lastLoggedDay);
   const streak = useAppStore((s) => s.streak);
+  const loggedDays = useAppStore((s) => s.loggedDays);
   const streakMilestoneSeen = useAppStore((s) => s.streakMilestoneSeen);
   const markStreakMilestoneSeen = useAppStore((s) => s.markStreakMilestoneSeen);
   const whatsNewSeen = useAppStore((s) => s.whatsNewSeen);
@@ -137,10 +139,6 @@ export default function Home() {
             </Pressable>
           </View>
 
-          {streakNow >= 2 ? (
-            <Text style={styles.heroStreak}>{STREAK_MESSAGES[streakNow % STREAK_MESSAGES.length](streakNow)}</Text>
-          ) : null}
-
           <Pressable onPress={() => setLevelsOpen(true)} style={styles.heroOverall}>
             <Text style={styles.heroOverallEyebrow}>OVERALL</Text>
             <Text style={styles.heroLevel}>Level {overall}</Text>
@@ -151,15 +149,41 @@ export default function Home() {
         </View>
 
         <View style={styles.content}>
+          {/* Streak + week strip — tap for the full calendar */}
+          <Pressable onPress={() => router.push('/history')} style={styles.streakCard}>
+            <View style={styles.weekHeader}>
+              <Text style={styles.weekEyebrow}>THIS WEEK</Text>
+              <Text style={styles.weekChevron}>›</Text>
+            </View>
+            {streakNow >= 2 ? (
+              <Text style={styles.streakSentence}>{STREAK_MESSAGES[streakNow % STREAK_MESSAGES.length](streakNow)}</Text>
+            ) : null}
+            <View style={styles.weekStrip}>
+              {weekDays(day).map((d, i) => {
+                const done = loggedDays.includes(d);
+                return (
+                  <View key={d} style={styles.weekDay}>
+                    <View style={[styles.weekDot, done && styles.weekDotDone, !done && d === day && styles.weekDotToday]}>
+                      <Text style={[styles.weekDotMark, done && styles.weekDotMarkDone]}>
+                        {done ? '🔥' : isRestDay(d) ? '–' : ''}
+                      </Text>
+                    </View>
+                    <Text style={styles.weekDayLabel}>{'MTWTFSS'[i]}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </Pressable>
+
           {/* Today */}
           {todayWk.rest ? (
-            <View style={styles.restCard}>
+            <View style={[styles.restCard, styles.sectionGap]}>
               <Text style={styles.restEyebrow}>TODAY</Text>
               <Text style={styles.restTitle}>Rest day</Text>
               <Text style={styles.restSub}>Take it easy today — you&apos;ve earned it.</Text>
             </View>
           ) : (
-            <View style={styles.todayHero}>
+            <View style={[styles.todayHero, styles.sectionGap]}>
               <Text style={styles.todayHeroEyebrow}>TODAY&apos;S WORKOUT</Text>
               <Text style={styles.todayHeroTitle}>{todayWk.focus}</Text>
               <Text style={styles.todayHeroSub}>{movePreview}</Text>
@@ -190,18 +214,20 @@ export default function Home() {
                   onPress={() => (locked ? setPullStep('explain') : router.push(`/category/${cat.id}`))}
                   style={[styles.areaRow, i > 0 && styles.areaRowDivider]}
                 >
-                  <View style={[styles.levelBox, !locked && lvl > 0 && styles.levelBoxOn]}>
-                    <Text style={[styles.levelText, !locked && lvl > 0 && styles.levelTextOn]}>{locked ? '🔒' : `L${lvl}`}</Text>
+                  <View style={[styles.levelBox, !locked && { backgroundColor: lvl > 0 ? categoryColors[cat.id].main : categoryColors[cat.id].soft }]}>
+                    <Text style={[styles.levelText, !locked && (lvl > 0 ? styles.levelTextOn : { color: categoryColors[cat.id].main })]}>
+                      {locked ? '🔒' : `L${lvl}`}
+                    </Text>
                   </View>
                   <View style={{ flex: 1, gap: 7 }}>
                     <Text style={styles.areaName}>{cat.short}</Text>
                     {locked ? (
                       <Text style={styles.areaLockHint}>Tap to unlock</Text>
                     ) : maxed ? (
-                      <Text style={styles.areaMaxedHint}>Maxed out ✓</Text>
+                      <Text style={[styles.areaMaxedHint, { color: categoryColors[cat.id].main }]}>Maxed out ✓</Text>
                     ) : (
                       <View style={styles.rowBarTrack}>
-                        <View style={[styles.rowBarFill, { width: `${fillPct}%` }]} />
+                        <View style={[styles.rowBarFill, { width: `${fillPct}%`, backgroundColor: categoryColors[cat.id].main }]} />
                       </View>
                     )}
                   </View>
@@ -319,7 +345,7 @@ export default function Home() {
                 return (
                   <View key={cat.id} style={styles.levelsRow}>
                     <Text style={styles.levelsCat}>{cat.short}</Text>
-                    <Text style={[styles.levelsVal, locked && styles.levelsValLocked]}>
+                    <Text style={[styles.levelsVal, { color: categoryColors[cat.id].main }, locked && styles.levelsValLocked]}>
                       {locked
                         ? '🔒 Locked'
                         : completedLevel(progress, cat.id) >= categoryCeiling(cat.id)
@@ -372,7 +398,19 @@ const styles = StyleSheet.create({
   hero: { backgroundColor: colors.inkCard, paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xxl },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   heroGreeting: { color: colors.primaryText, fontSize: 24, fontWeight: '900' },
-  heroStreak: { color: colors.streakInk, fontSize: font.body, fontWeight: '800', marginTop: spacing.md },
+  streakCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border },
+  weekHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
+  weekEyebrow: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1 },
+  streakSentence: { color: colors.ink, fontSize: font.body, fontWeight: '800', marginBottom: spacing.md },
+  weekStrip: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  weekDay: { flex: 1, alignItems: 'center', gap: 4 },
+  weekDot: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  weekDotDone: { backgroundColor: colors.warnBg, borderColor: colors.streakInk },
+  weekDotToday: { borderColor: colors.primary, borderWidth: 2 },
+  weekDotMark: { color: colors.muted, fontSize: 14, fontWeight: '900' },
+  weekDotMarkDone: { color: colors.primaryText },
+  weekDayLabel: { color: colors.muted, fontSize: 10, fontWeight: '700' },
+  weekChevron: { color: colors.primary, fontSize: 18, fontWeight: '700' },
   heroOverall: { marginTop: spacing.xl + spacing.xs },
   heroOverallEyebrow: { color: colors.onInkMuted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
   heroLevel: { color: colors.primaryText, fontSize: font.h2, fontWeight: '900', marginTop: spacing.xs },
@@ -403,7 +441,6 @@ const styles = StyleSheet.create({
   areaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
   areaRowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
   levelBox: { width: 38, height: 38, borderRadius: 10, backgroundColor: colors.track, alignItems: 'center', justifyContent: 'center' },
-  levelBoxOn: { backgroundColor: colors.primary },
   levelText: { color: colors.muted, fontSize: font.small, fontWeight: '900' },
   levelTextOn: { color: colors.primaryText },
   areaName: { color: colors.text, fontSize: font.body, fontWeight: '700' },

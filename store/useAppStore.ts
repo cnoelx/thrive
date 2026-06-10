@@ -10,6 +10,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { BENCHMARK_BY_ID } from '@/data/benchmarks';
 import { Equipment, GoalId } from '@/data/onboarding';
 import { WHATS_NEW } from '@/data/whatsNew';
+import { backfillStreakDays } from '@/engine/history';
 import { ProgressState, applyClaim, emptyProgress, unclaim } from '@/engine/progression';
 import { nextStreak } from '@/engine/streak';
 
@@ -30,6 +31,9 @@ interface AppState {
   lastLoggedDay: number | null;
   /** Consecutive-completed-workout streak as of lastLoggedDay (rest days don't break it). */
   streak: number;
+  /** Day-numbers of every completed workout, ascending — drives the week strip and the calendar.
+   *  Recording started with the history feature; older history is backfilled from the streak. */
+  loggedDays: number[];
   /** Highest streak milestone the user has seen the celebration for; cleared when the streak resets. */
   streakMilestoneSeen: number;
   /** Highest overall level the user has acknowledged (dismissed the celebration for). The next
@@ -72,6 +76,7 @@ export const useAppStore = create<AppState>()(
       progress: emptyProgress(),
       lastLoggedDay: null,
       streak: 0,
+      loggedDays: [],
       streakMilestoneSeen: 0,
       overallLevelSeen: 0,
       whatsNewSeen: 0,
@@ -88,6 +93,7 @@ export const useAppStore = create<AppState>()(
           progress: initialProgress ?? emptyProgress(),
           lastLoggedDay: null,
           streak: 0,
+          loggedDays: [],
           streakMilestoneSeen: 0,
           overallLevelSeen: 0,
           whatsNewSeen: WHATS_NEW.version,
@@ -99,7 +105,12 @@ export const useAppStore = create<AppState>()(
           if (s.lastLoggedDay === dayNumber) return s;
           const streak = nextStreak(s.streak, s.lastLoggedDay, dayNumber);
           // A fresh run (streak back to 1) re-arms all milestone celebrations.
-          return { lastLoggedDay: dayNumber, streak, streakMilestoneSeen: streak === 1 ? 0 : s.streakMilestoneSeen };
+          return {
+            lastLoggedDay: dayNumber,
+            streak,
+            loggedDays: s.loggedDays.includes(dayNumber) ? s.loggedDays : [...s.loggedDays, dayNumber],
+            streakMilestoneSeen: streak === 1 ? 0 : s.streakMilestoneSeen,
+          };
         }),
 
       claimBenchmark: (benchmarkId) =>
@@ -133,6 +144,7 @@ export const useAppStore = create<AppState>()(
           progress: emptyProgress(),
           lastLoggedDay: null,
           streak: 0,
+          loggedDays: [],
           streakMilestoneSeen: 0,
           overallLevelSeen: 0,
           whatsNewSeen: 0,
@@ -154,6 +166,7 @@ export const useAppStore = create<AppState>()(
         progress: s.progress,
         lastLoggedDay: s.lastLoggedDay,
         streak: s.streak,
+        loggedDays: s.loggedDays,
         streakMilestoneSeen: s.streakMilestoneSeen,
         overallLevelSeen: s.overallLevelSeen,
         whatsNewSeen: s.whatsNewSeen,
@@ -167,5 +180,20 @@ export const useAppStore = create<AppState>()(
   ),
 );
 
-useAppStore.persist.onFinishHydration(() => useAppStore.setState({ hydrated: true }));
-if (useAppStore.persist.hasHydrated()) useAppStore.setState({ hydrated: true });
+// One-time backfill for users from before workout days were recorded: a streak of N means exactly
+// the last N scheduled workout days were completed, so reconstruct them. No-op once loggedDays has data.
+function backfillLoggedDays() {
+  const s = useAppStore.getState();
+  if (s.loggedDays.length === 0 && s.streak > 0 && s.lastLoggedDay !== null) {
+    useAppStore.setState({ loggedDays: backfillStreakDays(s.streak, s.lastLoggedDay) });
+  }
+}
+
+useAppStore.persist.onFinishHydration(() => {
+  backfillLoggedDays();
+  useAppStore.setState({ hydrated: true });
+});
+if (useAppStore.persist.hasHydrated()) {
+  backfillLoggedDays();
+  useAppStore.setState({ hydrated: true });
+}

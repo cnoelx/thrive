@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Celebration } from '@/components/Celebration';
-import { colors, font, radius, spacing } from '@/constants/theme';
+import { categoryColors, colors, font, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, EXERCISE_BY_KEY, benchmarksFor, categoryCeiling, formatTarget, isCheckpoint } from '@/data/benchmarks';
 import { RUNWAY, completedLevel, isClaimable, levelCap, lockReason } from '@/engine/progression';
 import { useAppStore } from '@/store/useAppStore';
@@ -46,6 +46,7 @@ export default function CategoryScreen() {
   const reason = lockReason(progress, pullUnlocked, c);
   const checkpoint = isCheckpoint(c);
 
+  const catColor = categoryColors[c];
   const vLevel = reason === 'noEquipment' ? 1 : Math.min(Math.max(viewLevel, 1), workingLevel);
   const benches = reason === 'noEquipment' ? [] : benchmarksFor(c, vLevel);
   const claimedCount = benches.filter((b) => progress.claimed[b.id]).length;
@@ -63,8 +64,8 @@ export default function CategoryScreen() {
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl, gap: spacing.lg }}>
         <View style={styles.titleRow}>
-          <View style={[styles.levelBox, levelDone && styles.levelBoxOn]}>
-            <Text style={[styles.levelBoxText, levelDone && styles.levelBoxTextOn]}>L{vLevel}</Text>
+          <View style={[styles.levelBox, { backgroundColor: levelDone ? catColor.main : catColor.soft }]}>
+            <Text style={[styles.levelBoxText, { color: levelDone ? colors.primaryText : catColor.main }]}>L{vLevel}</Text>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>{category.short}</Text>
@@ -82,7 +83,7 @@ export default function CategoryScreen() {
 
         {reason !== 'noEquipment' && benches.length > 0 ? (
           <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${(claimedCount / benches.length) * 100}%` }]} />
+            <View style={[styles.progressFill, { width: `${(claimedCount / benches.length) * 100}%`, backgroundColor: catColor.main }]} />
           </View>
         ) : null}
 
@@ -95,7 +96,7 @@ export default function CategoryScreen() {
             <Text style={styles.bannerText}>🔒 Get every area to Level {vLevel - RUNWAY} to unlock Level {vLevel} here.</Text>
           </View>
         ) : levelDone ? (
-          <View style={[styles.banner, styles.bannerGood]}>
+          <View style={[styles.banner, { backgroundColor: catColor.soft }]}>
             <Text style={styles.bannerText}>
               {vLevel >= ceiling
                 ? "You've finished every level here. Amazing work. 🎉"
@@ -103,7 +104,7 @@ export default function CategoryScreen() {
             </Text>
           </View>
         ) : (
-          <View style={[styles.banner, styles.bannerGood]}>
+          <View style={[styles.banner, { backgroundColor: catColor.soft }]}>
             <Text style={styles.bannerText}>
               {checkpoint ? "Hold each one with good form and you'll level up." : "Do each one with good form — that's your level up."}
             </Text>
@@ -176,10 +177,8 @@ const styles = StyleSheet.create({
   back: { color: colors.primary, fontSize: font.body, fontWeight: '700' },
 
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  levelBox: { width: 48, height: 48, borderRadius: 12, backgroundColor: colors.track, alignItems: 'center', justifyContent: 'center' },
-  levelBoxOn: { backgroundColor: colors.primary },
-  levelBoxText: { color: colors.muted, fontSize: font.body, fontWeight: '900' },
-  levelBoxTextOn: { color: colors.primaryText },
+  levelBox: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  levelBoxText: { fontSize: font.body, fontWeight: '900' },
   title: { color: colors.ink, fontSize: font.title, fontWeight: '800' },
   sub: { color: colors.muted, fontSize: font.small, marginTop: 2 },
   progressTrack: { height: 8, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden' },
@@ -192,7 +191,6 @@ const styles = StyleSheet.create({
 
   banner: { borderRadius: radius.md, padding: spacing.md },
   bannerLock: { backgroundColor: colors.warnBg },
-  bannerGood: { backgroundColor: '#EAF7F0' },
   bannerText: { color: colors.text, fontSize: font.small, lineHeight: 19 },
 
   benchRow: {
