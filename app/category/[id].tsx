@@ -1,9 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Celebration } from '@/components/Celebration';
+import { HowToSheet } from '@/components/HowToSheet';
 import { categoryColors, colors, font, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, EXERCISE_BY_KEY, benchmarksFor, categoryCeiling, formatTarget, isCheckpoint } from '@/data/benchmarks';
 import { RUNWAY, completedLevel, isClaimable, levelCap, lockReason } from '@/engine/progression';
@@ -27,6 +29,7 @@ export default function CategoryScreen() {
   const initialWorking = category ? Math.min(completedLevel(progress, category.id) + 1, categoryCeiling(category.id)) : 1;
   const [viewLevel, setViewLevel] = useState(initialWorking);
   const [celebrateLevel, setCelebrateLevel] = useState<number | null>(null);
+  const [howTo, setHowTo] = useState<{ exKey: string; name: string } | null>(null);
 
   if (!category || !profile) {
     return (
@@ -118,7 +121,12 @@ export default function CategoryScreen() {
             return (
               <View key={b.id} style={[styles.benchRow, done && styles.benchRowDone]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.benchTitle}>{b.exercise}</Text>
+                  <View style={styles.benchTitleRow}>
+                    <Text style={styles.benchTitle}>{b.exercise}</Text>
+                    <Pressable onPress={() => setHowTo({ exKey: b.exKey, name: b.exercise })} hitSlop={10}>
+                      <Ionicons name="information-circle-outline" size={19} color={colors.muted} />
+                    </Pressable>
+                  </View>
                   <Text style={styles.benchTarget}>{EXERCISE_BY_KEY[b.exKey]?.check ? 'Check:' : 'Target:'} {formatTarget(b.target)}</Text>
                   <Text style={styles.benchWhy}>{b.why}</Text>
                 </View>
@@ -156,6 +164,8 @@ export default function CategoryScreen() {
           )
         ) : null}
       </ScrollView>
+
+      {howTo ? <HowToSheet exKey={howTo.exKey} name={howTo.name} onClose={() => setHowTo(null)} /> : null}
 
       {celebrateLevel !== null ? (
         <Celebration
@@ -204,6 +214,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   benchRowDone: { backgroundColor: '#F3FAF6', borderColor: colors.primary },
+  benchTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   benchTitle: { color: colors.text, fontSize: font.body, fontWeight: '700' },
   benchTarget: { color: colors.text, fontSize: font.small, marginTop: 1 },
   benchWhy: { color: colors.muted, fontSize: font.small, marginTop: 2, fontStyle: 'italic' },

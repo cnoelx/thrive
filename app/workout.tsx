@@ -2,13 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { HowToSheet } from '@/components/HowToSheet';
 import { colors, font, radius, spacing } from '@/constants/theme';
 import { EXERCISE_BY_KEY, formatTarget } from '@/data/benchmarks';
-import { EXERCISE_IMAGES } from '@/data/exerciseImages';
-import { FORM_CUES } from '@/data/formCues';
 import { todaysWorkout, type WorkoutItem } from '@/engine/dailyCard';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -56,7 +55,6 @@ export default function Workout() {
   const [restLeft, setRestLeft] = useState(0);
   const [finished, setFinished] = useState(false);
   const [showHowTo, setShowHowTo] = useState(false);
-  const [frame, setFrame] = useState(0);
 
   const goNext = () => {
     setResting(false);
@@ -83,16 +81,6 @@ export default function Workout() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resting, restLeft]);
-
-  const currentExKey = steps[stepIndex]?.item.exKey ?? '';
-
-  // Flip the start/finish demo frames while the how-to sheet is open (reads like an animation).
-  useEffect(() => {
-    if (!showHowTo || !EXERCISE_IMAGES[currentExKey]) return;
-    setFrame(0);
-    const id = setInterval(() => setFrame((f) => (f === 0 ? 1 : 0)), 700);
-    return () => clearInterval(id);
-  }, [showHowTo, currentExKey]);
 
   if (steps.length === 0) {
     return (
@@ -180,27 +168,7 @@ export default function Workout() {
         )}
       </View>
 
-      <Modal visible={showHowTo} transparent animationType="fade" onRequestClose={() => setShowHowTo(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setShowHowTo(false)}>
-          <Pressable style={styles.sheet} onPress={() => {}}>
-            <Text style={styles.sheetSub}>HOW TO DO IT</Text>
-            <Text style={styles.sheetTitle}>{step.item.name}</Text>
-            {EXERCISE_IMAGES[step.item.exKey] ? (
-              <Image source={EXERCISE_IMAGES[step.item.exKey][frame]} style={styles.howImg} resizeMode="contain" />
-            ) : null}
-            {(FORM_CUES[step.item.exKey] ?? []).map((cue, i) => (
-              <View key={i} style={styles.cueRow}>
-                <Text style={styles.cueDot}>•</Text>
-                <Text style={styles.cueText}>{cue}</Text>
-              </View>
-            ))}
-            <Text style={styles.disclaimer}>General guidance — not a substitute for a coach. Stop if anything hurts.</Text>
-            <Pressable onPress={() => setShowHowTo(false)} style={styles.sheetClose}>
-              <Text style={styles.sheetCloseText}>Got it</Text>
-            </Pressable>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      {showHowTo ? <HowToSheet exKey={step.item.exKey} name={step.item.name} onClose={() => setShowHowTo(false)} /> : null}
     </View>
   );
 }
@@ -233,15 +201,4 @@ const styles = StyleSheet.create({
   secondaryText: { color: colors.text, fontSize: font.body, fontWeight: '700' },
 
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
-  sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm, width: '100%', maxWidth: 420 },
-  sheetSub: { color: colors.primary, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1, marginBottom: spacing.xs },
-  sheetTitle: { color: colors.ink, fontSize: font.h2, fontWeight: '800' },
-  howImg: { width: '100%', height: 200, borderRadius: radius.md, backgroundColor: colors.track, marginTop: spacing.sm },
-  cueRow: { flexDirection: 'row', gap: spacing.sm },
-  cueDot: { color: colors.primary, fontSize: font.body, fontWeight: '900', lineHeight: 22 },
-  cueText: { flex: 1, color: colors.text, fontSize: font.body, lineHeight: 22 },
-  disclaimer: { color: colors.muted, fontSize: font.small, fontStyle: 'italic', marginTop: spacing.sm },
-  sheetClose: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
-  sheetCloseText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
 });
