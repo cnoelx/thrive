@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { BENCHMARKS, CATEGORY_IDS, CategoryId, MAX_LEVEL, benchmarksFor, categoryCeiling } from '@/data/benchmarks';
+import { BENCHMARKS, CATEGORY_IDS, CategoryId, MAX_LEVEL, benchmarksFor, categoryCeiling, exerciseTarget } from '@/data/benchmarks';
 import {
   ProgressState,
   RUNWAY,
@@ -10,6 +10,7 @@ import {
   completedLevel,
   effectiveCategoryIds,
   emptyProgress,
+  isCategoryMaxed,
   isClaimable,
   laggingCategories,
   levelCap,
@@ -59,6 +60,28 @@ describe('program data', () => {
     const ids = BENCHMARKS.map((b) => b.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
+
+  it('exerciseTarget falls back to the TOP target past an exercise ceiling (maintenance)', () => {
+    expect(exerciseTarget('sittostand', 6)).toBe('No hands'); // ceiling 5
+    expect(exerciseTarget('balance', 10)).toBe('unstable surface 30s'); // ceiling 8
+  });
+});
+
+// An exercise that caps below its category's ceiling (Sit-to-Stand L5, Balance L8 inside Move L10)
+// drops out of the level requirement past its cap — higher levels complete without it.
+describe('per-exercise caps', () => {
+  it('benchmarks stop existing past an exercise ceiling', () => {
+    expect(benchmarksFor('move', 6).some((b) => b.exKey === 'sittostand')).toBe(false);
+    expect(benchmarksFor('move', 9).some((b) => b.exKey === 'balance')).toBe(false);
+    expect(benchmarksFor('move', 8).some((b) => b.exKey === 'balance')).toBe(true); // still in at its cap
+  });
+
+  it('a level completes without the exercises that capped below it', () => {
+    let s = emptyProgress();
+    for (let l = 1; l <= 5; l++) s = completeEverywhere(s, l);
+    s = claimLevel(s, 'move', 6); // the L6 set no longer includes Sit-to-Stand
+    expect(completedLevel(s, 'move')).toBe(6);
+  });
 });
 
 describe('starting state (baseline L0)', () => {
@@ -79,6 +102,17 @@ describe('claiming (anytime within the runway)', () => {
   });
   it('L3 is not claimable at the start (beyond the runway)', () => {
     expect(isClaimable(emptyProgress(), true, firstBenchmark('move', 3))).toBe(false);
+  });
+  it('one exercise cannot run ahead of its category level', () => {
+    // Squat L1 claimed, but Move L1 isn't complete (siblings pending) — so squat L2 stays locked.
+    const squatL1 = BENCHMARKS.find((b) => b.exKey === 'squat' && b.level === 1)!;
+    const squatL2 = BENCHMARKS.find((b) => b.exKey === 'squat' && b.level === 2)!;
+    const s = claim(emptyProgress(), squatL1.id);
+    expect(isClaimable(s, true, squatL2)).toBe(false);
+  });
+  it('an already-claimed benchmark is not claimable again', () => {
+    const b = firstBenchmark('move', 1);
+    expect(isClaimable(claim(emptyProgress(), b.id), true, b)).toBe(false);
   });
 });
 
@@ -127,6 +161,35 @@ describe('runway-of-one', () => {
     expect(completedLevel(s, 'move')).toBe(MAX_LEVEL);
     expect(completedLevel(s, 'mobility')).toBe(5);
     expect(baselineLevel(s, true)).toBe(MAX_LEVEL);
+  });
+});
+
+describe('maxed categories', () => {
+  it('a maxed category reports "maxed" even when the runway would also lock it', () => {
+    // Mobility maxed while everything else sits at L0: next (6) is past the cap (2) AND the
+    // ceiling (5) — 'maxed' must win so the UI says "done", not "catch the others up".
+    const s = progressFromPlacement({ mobility: 5 });
+    expect(isCategoryMaxed(s, 'mobility')).toBe(true);
+    expect(lockReason(s, true, 'mobility')).toBe('maxed');
+    expect(baselineLevel(s, true)).toBe(0); // the others still gate the overall
+    expect(laggingCategories(s, true)).not.toContain('mobility');
+  });
+
+  it('with Pull locked, the program completes when the four unlocked categories max out', () => {
+    let s = emptyProgress();
+    for (let l = 1; l <= MAX_LEVEL; l++) for (const c of effectiveCategoryIds(false)) s = claimLevel(s, c, l);
+    expect(baselineLevel(s, false)).toBe(MAX_LEVEL);
+    expect(completedLevel(s, 'pull')).toBe(0); // Pull untouched, and not blocking
+  });
+
+  it('unclaiming a ceiling benchmark un-maxes the category and re-gates the overall', () => {
+    let s = emptyProgress();
+    for (let l = 1; l <= 5; l++) s = completeEverywhere(s, l);
+    for (const c of ['move', 'push', 'pull', 'cardio'] as const) s = claimLevel(s, c, 6);
+    expect(baselineLevel(s, true)).toBe(6); // Mobility maxed, ignored
+    s = unclaim(s, firstBenchmark('mobility', 5).id);
+    expect(isCategoryMaxed(s, 'mobility')).toBe(false);
+    expect(baselineLevel(s, true)).toBe(4); // Mobility back in play at L4
   });
 });
 

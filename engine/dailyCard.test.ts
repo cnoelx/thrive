@@ -65,6 +65,16 @@ describe('capped & maxed exercises stay in the workout (maintenance)', () => {
     const bal = thu.items.find((i) => i.exKey === 'balance')!;
     expect(bal.target).toBe('unstable surface 30s'); // L8 top even though Move reaches L10
   });
+
+  it('a runway-locked category trains at its completed level, not the locked next one', () => {
+    // Move pushed to L2 while the baseline is still 0: L3 is runway-locked, so the card holds
+    // the L2 targets until the other categories catch up.
+    let s = claimLevel(emptyProgress(), 'move', 1);
+    s = claimLevel(s, 'move', 2);
+    const squat = todaysWorkout(s, true, dateForDay(1)).items.find((i) => i.exKey === 'squat')!;
+    expect(squat.level).toBe(2);
+    expect(squat.target).toBe('22');
+  });
 });
 
 // When Pull is locked, every pull-category item is dropped and one Superman is appended (per day
@@ -111,6 +121,14 @@ describe('Superman fallback (no equipment)', () => {
 
     for (const c of effectiveCategoryIds(false)) s = claimLevel(s, c, 4);
     expect(sm(s)).toBe('15 reps'); // baseline 4 — past the old L3 cap
+  });
+
+  it('Superman tops out at the L10 target when the four unlocked categories are maxed', () => {
+    let s = emptyProgress();
+    for (let l = 1; l <= 10; l++) for (const c of effectiveCategoryIds(false)) s = claimLevel(s, c, l);
+    const sm = todaysWorkout(s, false, dateForDay(1)).items.find((i) => i.exKey === SUPERMAN_KEY)!;
+    expect(sm.target).toBe('hold 40s');
+    expect(sm.level).toBe(10);
   });
 
   it('with Pull unlocked, the schedule is untouched (no Superman, pull moves stay)', () => {
