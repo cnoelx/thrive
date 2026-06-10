@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -14,8 +15,12 @@ export default function Settings() {
   const setName = useAppStore((s) => s.setName);
   const resetAll = useAppStore((s) => s.resetAll);
   const [draft, setDraft] = useState(name);
+  const [editing, setEditing] = useState(false);
 
-  const saveName = () => setName(draft.trim());
+  const saveName = () => {
+    setName(draft.trim());
+    setEditing(false);
+  };
 
   const confirmReset = () => {
     Alert.alert(
@@ -48,17 +53,33 @@ export default function Settings() {
         {/* Name */}
         <View style={styles.card}>
           <Text style={styles.label}>YOUR NAME</Text>
-          <TextInput
-            value={draft}
-            onChangeText={setDraft}
-            onBlur={saveName}
-            onSubmitEditing={saveName}
-            placeholder="Your name"
-            placeholderTextColor={colors.muted}
-            maxLength={30}
-            returnKeyType="done"
-            style={styles.nameInput}
-          />
+          {editing ? (
+            <TextInput
+              value={draft}
+              onChangeText={setDraft}
+              onBlur={saveName}
+              onSubmitEditing={saveName}
+              placeholder="Your name"
+              placeholderTextColor={colors.muted}
+              maxLength={30}
+              returnKeyType="done"
+              autoFocus
+              style={styles.nameInput}
+            />
+          ) : (
+            <View style={styles.nameRow}>
+              <Text style={[styles.nameText, !name && { color: colors.muted }]}>{name || 'Your name'}</Text>
+              <Pressable
+                onPress={() => {
+                  setDraft(name);
+                  setEditing(true);
+                }}
+                hitSlop={10}
+              >
+                <Ionicons name="create-outline" size={22} color={colors.primary} />
+              </Pressable>
+            </View>
+          )}
         </View>
 
         {/* About */}
@@ -84,6 +105,8 @@ const styles = StyleSheet.create({
   label: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
 
   nameInput: { color: colors.ink, fontSize: font.h2, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs },
+  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
+  nameText: { flex: 1, color: colors.ink, fontSize: font.h2, fontWeight: '800', paddingVertical: spacing.xs },
 
   aboutText: { color: colors.text, fontSize: font.body, fontWeight: '700' },
 
