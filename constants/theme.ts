@@ -15,12 +15,13 @@ export const colors = {
   ink: '#0C1410', // near-black for bold headings
 
   // Dark hero block on the home screen
-  inkCard: '#14532D', // deep-green hero background
-  onInkMuted: '#9FB3A8', // muted text on the dark hero
+  inkCard: '#0C1410', // ink-black hero background (green-tinted near-black)
+  onInkMuted: '#8A9590', // muted text on the dark hero
   accent: '#22C55E', // vivid green highlight on dark
   streakInk: '#FBBF24', // amber streak text on dark
-  streakBg: '#FFFBEB', // warm cream — THIS WEEK card background
-  streakBorder: '#FDE68A', // soft amber border around the streak card
+  streakBg: '#FEF3C7', // warm amber — THIS WEEK card background
+  streakBorder: '#FCD34D', // amber border around the streak card
+  session: '#EA580C', // hot orange — a pending or live workout session (cools to green when done)
 } as const;
 
 // Per-area identity colours — used for level badges and progress bars so the five training areas

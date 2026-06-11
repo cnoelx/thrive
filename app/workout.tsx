@@ -52,6 +52,17 @@ function clock(sec: number): string {
 // How old (in days) the stored weight may get before the finish screen asks about it.
 const WEIGHT_NUDGE_DAYS = 30;
 
+// Sunrise — the live session's own bright, warm room (heat = effort; the home card glows the same
+// orange until done). Rest day and the finish screen stay on the app's cool light theme.
+const sunrise = {
+  bg: '#FFF7ED', // warm cream canvas
+  ink: '#431407', // warm near-black headings
+  hot: colors.session, // #EA580C — big effort numbers, actions, progress
+  soft: '#D97706', // gentler heat for the rest countdown
+  muted: '#B45309', // secondary text
+  track: '#FED7AA', // progress track / light borders
+};
+
 const FEELS: { id: WorkoutFeel; emoji: string; label: string }[] = [
   { id: 'hard', emoji: '🥵', label: 'Too hard' },
   { id: 'right', emoji: '🙂', label: 'Just right' },
@@ -219,7 +230,7 @@ export default function Workout() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: sunrise.bg }}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <Text style={styles.close}>✕</Text>
@@ -249,7 +260,7 @@ export default function Workout() {
             <View style={styles.nameRow}>
               <Text style={styles.exerciseName}>{step.item.name}</Text>
               <Pressable onPress={() => setShowHowTo(true)} hitSlop={10}>
-                <Ionicons name="information-circle-outline" size={22} color={colors.muted} />
+                <Ionicons name="information-circle-outline" size={22} color={sunrise.muted} />
               </Pressable>
             </View>
             {EXERCISE_BY_KEY[step.item.exKey]?.check ? <Text style={styles.checkEyebrow}>ONE-TIME CHECK</Text> : null}
@@ -262,8 +273,8 @@ export default function Workout() {
               <Text style={styles.chasingHint}>Level {step.item.level} goal — get as close as you can</Text>
             ) : null}
             {step.item.note ? <Text style={styles.note}>{step.item.note}</Text> : null}
-            <Pressable onPress={onDoneSet} style={styles.primaryBtn}>
-              <Text style={styles.primaryText}>{isLast ? 'Finish workout' : 'Done'}</Text>
+            <Pressable onPress={onDoneSet} style={styles.sunBtn}>
+              <Text style={styles.sunBtnText}>{isLast ? 'Finish workout' : 'Done'}</Text>
             </Pressable>
           </>
         )}
@@ -305,26 +316,28 @@ const styles = StyleSheet.create({
   feelLabelOn: { color: colors.primary, fontWeight: '800' },
 
   header: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  close: { color: colors.muted, fontSize: 22, fontWeight: '700' },
-  progressTrack: { flex: 1, height: 8, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden' },
-  progressFill: { height: 8, backgroundColor: colors.primary, borderRadius: radius.pill },
+  close: { color: sunrise.muted, fontSize: 22, fontWeight: '700' },
+  progressTrack: { flex: 1, height: 8, backgroundColor: sunrise.track, borderRadius: radius.pill, overflow: 'hidden' },
+  progressFill: { height: 8, backgroundColor: sunrise.hot, borderRadius: radius.pill },
 
   body: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.xs },
 
-  exerciseName: { color: colors.ink, fontSize: 30, fontWeight: '900', textAlign: 'center', marginTop: 2, flexShrink: 1 },
-  checkEyebrow: { color: colors.muted, fontSize: font.small, fontWeight: '800', letterSpacing: 1.5, marginTop: spacing.sm },
-  targetBig: { color: colors.primary, fontSize: 40, fontWeight: '900', marginTop: spacing.xs },
-  chasingHint: { color: colors.muted, fontSize: font.small, textAlign: 'center' },
-  note: { color: colors.muted, fontSize: font.small, textAlign: 'center', fontStyle: 'italic' },
+  exerciseName: { color: sunrise.ink, fontSize: 30, fontWeight: '900', textAlign: 'center', marginTop: 2, flexShrink: 1 },
+  checkEyebrow: { color: sunrise.muted, fontSize: font.small, fontWeight: '800', letterSpacing: 1.5, marginTop: spacing.sm },
+  targetBig: { color: sunrise.hot, fontSize: 40, fontWeight: '900', marginTop: spacing.xs },
+  chasingHint: { color: sunrise.muted, fontSize: font.small, textAlign: 'center' },
+  note: { color: sunrise.muted, fontSize: font.small, textAlign: 'center', fontStyle: 'italic' },
+  sunBtn: { backgroundColor: sunrise.hot, borderRadius: radius.pill, paddingVertical: spacing.md + 2, paddingHorizontal: spacing.xl, alignItems: 'center', marginTop: spacing.xxl, minWidth: 200 },
+  sunBtnText: { color: '#FFFFFF', fontSize: font.body, fontWeight: '800' },
   primaryBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md + 2, paddingHorizontal: spacing.xl, alignItems: 'center', marginTop: spacing.xxl, minWidth: 200 },
   primaryText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
 
-  restLabel: { color: colors.muted, fontSize: font.small, fontWeight: '800', letterSpacing: 2 },
-  countdown: { color: colors.text, fontSize: 64, fontWeight: '900', marginTop: spacing.xs },
-  upNext: { color: colors.muted, fontSize: font.body, textAlign: 'center', marginTop: spacing.sm },
+  restLabel: { color: sunrise.muted, fontSize: font.small, fontWeight: '800', letterSpacing: 2 },
+  countdown: { color: sunrise.soft, fontSize: 64, fontWeight: '900', marginTop: spacing.xs },
+  upNext: { color: sunrise.muted, fontSize: font.body, textAlign: 'center', marginTop: spacing.sm },
   btnRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
-  secondaryBtn: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingVertical: spacing.sm + 2, paddingHorizontal: spacing.lg, backgroundColor: colors.surface },
-  secondaryText: { color: colors.text, fontSize: font.body, fontWeight: '700' },
+  secondaryBtn: { borderWidth: 1, borderColor: sunrise.track, borderRadius: radius.pill, paddingVertical: spacing.sm + 2, paddingHorizontal: spacing.lg, backgroundColor: '#FFFFFF' },
+  secondaryText: { color: sunrise.ink, fontSize: font.body, fontWeight: '700' },
 
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
 });

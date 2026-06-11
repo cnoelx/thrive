@@ -10,7 +10,7 @@ import { categoryColors, colors, font, radius, spacing } from '@/constants/theme
 import { CATEGORIES, MAX_LEVEL, benchmarksFor, categoryCeiling } from '@/data/benchmarks';
 import { WHATS_NEW } from '@/data/whatsNew';
 import { todaysWorkout } from '@/engine/dailyCard';
-import { weekDays } from '@/engine/history';
+import { dateOfDayNumber, weekDays } from '@/engine/history';
 import { baselineLevel, completedLevel, effectiveCategoryIds, nextLevel } from '@/engine/progression';
 import { currentStreak, isRestDay, pendingStreakMilestone } from '@/engine/streak';
 import { cancelReminders, requestNotificationPermission, scheduleDailyReminder } from '@/lib/notifications';
@@ -89,6 +89,15 @@ export default function Home() {
         : `Every area's at Level ${overall} — the next tier's within reach everywhere. Keep going!`;
   const todayWk = todaysWorkout(progress, pullUnlocked, new Date());
   const movePreview = todayWk.rest ? '' : `${todayWk.items.length} moves`;
+  // The week card always says something: streak first, then today's state.
+  const weekLine =
+    streakNow >= 2
+      ? STREAK_MESSAGES[streakNow % STREAK_MESSAGES.length](streakNow)
+      : doneToday
+        ? 'Workout done — rest easy, see you tomorrow. 🔥'
+        : todayWk.rest
+          ? 'Rest day — recovery is training too. 🌿'
+          : 'Today’s session is waiting for you.';
   // A locked Pull sinks to the bottom of the areas list (stable sort keeps the rest in order).
   const orderedCats = [...CATEGORIES].sort(
     (a, b) => Number(a.id === 'pull' && !pullUnlocked) - Number(b.id === 'pull' && !pullUnlocked),
@@ -155,20 +164,23 @@ export default function Home() {
               <Text style={styles.weekEyebrow}>THIS WEEK</Text>
               <Text style={styles.weekChevron}>›</Text>
             </View>
-            {streakNow >= 2 ? (
-              <Text style={styles.streakSentence}>{STREAK_MESSAGES[streakNow % STREAK_MESSAGES.length](streakNow)}</Text>
-            ) : null}
+            <Text style={styles.streakSentence}>{weekLine}</Text>
             <View style={styles.weekStrip}>
-              {weekDays(day).map((d, i) => {
+              {weekDays(day).map((d) => {
                 const done = loggedDays.includes(d);
+                const isToday = d === day;
                 return (
                   <View key={d} style={styles.weekDay}>
-                    <View style={[styles.weekDot, done && styles.weekDotDone, !done && d === day && styles.weekDotToday]}>
-                      <Text style={[styles.weekDotMark, done && styles.weekDotMarkDone]}>
-                        {done ? '🔥' : isRestDay(d) ? '–' : ''}
-                      </Text>
+                    <View style={styles.weekDotSlot}>
+                      {done ? (
+                        <Ionicons name="flame" size={isToday ? 30 : 22} color={colors.session} />
+                      ) : isRestDay(d) ? (
+                        <Ionicons name="bed-outline" size={isToday ? 24 : 18} color={colors.muted} />
+                      ) : (
+                        <Ionicons name="flame-outline" size={isToday ? 30 : 22} color={isToday ? colors.session : colors.muted} />
+                      )}
                     </View>
-                    <Text style={styles.weekDayLabel}>{'MTWTFSS'[i]}</Text>
+                    <Text style={[styles.weekDayLabel, isToday && styles.weekDayLabelToday]}>{dateOfDayNumber(d)}</Text>
                   </View>
                 );
               })}
@@ -183,7 +195,7 @@ export default function Home() {
               <Text style={styles.restSub}>Take it easy today — you&apos;ve earned it.</Text>
             </View>
           ) : (
-            <View style={[styles.todayHero, styles.sectionGap]}>
+            <View style={[styles.todayHero, !doneToday && styles.todayHeroHot, styles.sectionGap]}>
               <Text style={styles.todayHeroEyebrow}>TODAY&apos;S WORKOUT</Text>
               <Text style={styles.todayHeroTitle}>{todayWk.focus}</Text>
               <Text style={styles.todayHeroSub}>{movePreview}</Text>
@@ -400,16 +412,13 @@ const styles = StyleSheet.create({
   heroGreeting: { color: colors.primaryText, fontSize: 24, fontWeight: '900' },
   streakCard: { backgroundColor: colors.streakBg, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.streakBorder },
   weekHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
-  weekEyebrow: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1 },
+  weekEyebrow: { color: colors.warnText, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1 },
   streakSentence: { color: colors.ink, fontSize: font.body, fontWeight: '800', marginBottom: spacing.md },
   weekStrip: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   weekDay: { flex: 1, alignItems: 'center', gap: 4 },
-  weekDot: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  weekDotDone: { backgroundColor: colors.warnBg, borderColor: colors.streakInk },
-  weekDotToday: { borderColor: colors.primary, borderWidth: 2 },
-  weekDotMark: { color: colors.muted, fontSize: 14, fontWeight: '900' },
-  weekDotMarkDone: { color: colors.primaryText },
+  weekDotSlot: { height: 34, justifyContent: 'center' }, // keeps date labels aligned despite today's bigger flame
   weekDayLabel: { color: colors.muted, fontSize: 10, fontWeight: '700' },
+  weekDayLabelToday: { color: colors.ink, fontWeight: '900' },
   weekChevron: { color: colors.primary, fontSize: 18, fontWeight: '700' },
   heroOverall: { marginTop: spacing.xl + spacing.xs },
   heroOverallEyebrow: { color: colors.onInkMuted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
@@ -420,13 +429,14 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg },
   sectionGap: { marginTop: SECTION_GAP },
 
-  // Today — green action hero
+  // Today — burns session-orange until done, then cools to brand green
   todayHero: { backgroundColor: colors.primary, borderRadius: radius.lg, padding: spacing.xl },
+  todayHeroHot: { backgroundColor: colors.session },
   todayHeroEyebrow: { color: 'rgba(255,255,255,0.85)', fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1 },
   todayHeroTitle: { color: colors.primaryText, fontSize: font.title, fontWeight: '900', marginTop: spacing.xs },
   todayHeroSub: { color: 'rgba(255,255,255,0.85)', fontSize: font.small, marginTop: spacing.xs },
   todayHeroBtn: { backgroundColor: colors.surface, borderRadius: radius.pill, paddingVertical: spacing.md + 2, alignItems: 'center', marginTop: spacing.lg },
-  todayHeroBtnText: { color: colors.primary, fontSize: font.body, fontWeight: '800' },
+  todayHeroBtnText: { color: colors.session, fontSize: font.body, fontWeight: '800' }, // only shown on the hot card
   todayDonePill: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: radius.pill, paddingVertical: spacing.md + 2, alignItems: 'center', marginTop: spacing.lg },
   todayDoneText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
 

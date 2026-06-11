@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { backfillStreakDays, dayNumberFromDate, longestStreak, monthGrid, weekDays } from '@/engine/history';
+import { backfillStreakDays, dateOfDayNumber, dayNumberFromDate, longestStreak, monthGrid, weekDays } from '@/engine/history';
 import { isRestDay } from '@/engine/streak';
 
 // Same reference week as streak.test.ts: 4 Mon · 5 Tue · 6 Wed · 7 Thu · 8 Fri · 9 Sat · 10 Sun · 11 Mon
@@ -26,6 +26,14 @@ describe('backfillStreakDays', () => {
   });
   it('never includes a rest day', () => {
     for (const d of backfillStreakDays(12, 25)) expect(isRestDay(d)).toBe(false);
+  });
+});
+
+describe('dateOfDayNumber', () => {
+  it('maps a day number back to its day of the month', () => {
+    expect(dateOfDayNumber(4)).toBe(5); // Jan 5, 1970 — the reference Monday
+    expect(dateOfDayNumber(dayNumberFromDate(new Date(2026, 5, 10)))).toBe(10);
+    expect(dateOfDayNumber(dayNumberFromDate(new Date(2026, 0, 31)))).toBe(31);
   });
 });
 

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -94,17 +95,14 @@ export default function History() {
                 const rest = isRestDay(cell.dayNumber);
                 return (
                   <Pressable key={cell.dayNumber} style={styles.dayCell} disabled={!done} onPress={() => setOpenCell(cell)}>
-                    <View
-                      style={[
-                        styles.dayDot,
-                        done && styles.dayDotDone,
-                        !done && rest && !future && styles.dayDotRest,
-                        !done && isToday && styles.dayDotToday,
-                      ]}
-                    >
-                      <Text style={[styles.dayText, done && styles.dayTextDone, future && styles.dayTextFuture, !done && isToday && styles.dayTextToday]}>
-                        {cell.date}
-                      </Text>
+                    <View style={[styles.dayDot, !done && isToday && styles.dayDotToday]}>
+                      {done ? (
+                        <Ionicons name="flame" size={18} color={colors.session} />
+                      ) : rest && !future ? (
+                        <Ionicons name="bed-outline" size={16} color={colors.muted} />
+                      ) : (
+                        <Text style={[styles.dayText, future && styles.dayTextFuture, !done && isToday && styles.dayTextToday]}>{cell.date}</Text>
+                      )}
                     </View>
                   </Pressable>
                 );
@@ -114,9 +112,9 @@ export default function History() {
 
           {/* Legend */}
           <View style={styles.legendRow}>
-            <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
+            <Ionicons name="flame" size={14} color={colors.session} />
             <Text style={styles.legendText}>Workout done</Text>
-            <View style={[styles.legendDot, { backgroundColor: colors.track, marginLeft: spacing.md }]} />
+            <Ionicons name="bed-outline" size={14} color={colors.muted} style={{ marginLeft: spacing.md }} />
             <Text style={styles.legendText}>Rest day</Text>
           </View>
         </View>
@@ -186,16 +184,12 @@ const styles = StyleSheet.create({
 
   dayCell: { flex: 1, alignItems: 'center', paddingVertical: 3 },
   dayDot: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  dayDotDone: { backgroundColor: colors.primary },
-  dayDotRest: { backgroundColor: colors.track },
-  dayDotToday: { borderWidth: 2, borderColor: colors.primary },
+  dayDotToday: { borderWidth: 2, borderColor: colors.session },
   dayText: { color: colors.text, fontSize: font.small, fontWeight: '600' },
-  dayTextDone: { color: colors.primaryText, fontWeight: '800' },
   dayTextFuture: { color: colors.track },
-  dayTextToday: { color: colors.primary, fontWeight: '800' },
+  dayTextToday: { color: colors.session, fontWeight: '800' },
 
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.lg },
-  legendDot: { width: 12, height: 12, borderRadius: 6 },
   legendText: { color: colors.muted, fontSize: font.small },
 
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },

@@ -9,6 +9,12 @@ export function dayNumberFromDate(d: Date): number {
   return Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 86400000);
 }
 
+/** Day of the month (1–31) for a day number. Noon-UTC of the day index lands on the same local
+ *  calendar day for any UTC±12 offset, so this stays pure (no "now" needed). */
+export function dateOfDayNumber(d: number): number {
+  return new Date(d * 86400000 + 43200000).getDate();
+}
+
 /** The current week as day numbers, Monday → Sunday, containing `today`. */
 export function weekDays(today: number): number[] {
   const weekday = (((today + 4) % 7) + 7) % 7; // 0 = Sunday
