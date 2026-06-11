@@ -8,6 +8,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, font, radius, spacing } from '@/constants/theme';
 import { useAppStore } from '@/store/useAppStore';
 
+function todayNumber(): number {
+  const now = new Date();
+  return Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
+}
+
 export default function Settings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -27,7 +32,7 @@ export default function Settings() {
 
   const saveWeight = () => {
     const n = Math.round(parseFloat(weightDraft.replace(',', '.')));
-    setWeight(Number.isFinite(n) && n > 0 ? n : null);
+    setWeight(Number.isFinite(n) && n > 0 ? n : null, todayNumber());
   };
 
   const confirmReset = () => {

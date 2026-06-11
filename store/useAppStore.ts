@@ -59,6 +59,8 @@ interface AppState {
   workoutLog: Record<number, WorkoutSummary>;
   /** Body weight in kg — optional, used only for the calorie estimate. */
   weightKg: number | null;
+  /** Day-number the weight was last set/confirmed — drives the monthly "still right?" nudge. */
+  weightSetDay: number | null;
   /** Highest streak milestone the user has seen the celebration for; cleared when the streak resets. */
   streakMilestoneSeen: number;
   /** Highest overall level the user has acknowledged (dismissed the celebration for). The next
@@ -80,7 +82,7 @@ interface AppState {
   logToday: (dayNumber: number, summary: WorkoutSummary) => void;
   /** Attach a feel rating to an already-logged day (tapped on the finish screen). */
   rateWorkout: (dayNumber: number, feel: WorkoutFeel) => void;
-  setWeight: (kg: number | null) => void;
+  setWeight: (kg: number | null, dayNumber: number) => void;
   /** Claim a benchmark (validated by the engine). */
   claimBenchmark: (benchmarkId: string) => void;
   unclaimBenchmark: (benchmarkId: string) => void;
@@ -107,6 +109,7 @@ export const useAppStore = create<AppState>()(
       loggedDays: [],
       workoutLog: {},
       weightKg: null,
+      weightSetDay: null,
       streakMilestoneSeen: 0,
       overallLevelSeen: 0,
       whatsNewSeen: 0,
@@ -152,7 +155,7 @@ export const useAppStore = create<AppState>()(
           return { workoutLog: { ...s.workoutLog, [dayNumber]: { ...cur, feel } } };
         }),
 
-      setWeight: (kg) => set({ weightKg: kg }),
+      setWeight: (kg, dayNumber) => set({ weightKg: kg, weightSetDay: kg ? dayNumber : null }),
 
       claimBenchmark: (benchmarkId) =>
         set((s) => {
@@ -188,6 +191,7 @@ export const useAppStore = create<AppState>()(
           loggedDays: [],
           workoutLog: {},
           weightKg: null,
+          weightSetDay: null,
           streakMilestoneSeen: 0,
           overallLevelSeen: 0,
           whatsNewSeen: 0,
@@ -212,6 +216,7 @@ export const useAppStore = create<AppState>()(
         loggedDays: s.loggedDays,
         workoutLog: s.workoutLog,
         weightKg: s.weightKg,
+        weightSetDay: s.weightSetDay,
         streakMilestoneSeen: s.streakMilestoneSeen,
         overallLevelSeen: s.overallLevelSeen,
         whatsNewSeen: s.whatsNewSeen,

@@ -60,7 +60,8 @@ export default function Onboarding() {
     if (equipment && goal) {
       setName(nameDraft.trim());
       const kg = Math.round(parseFloat(weightDraft.replace(',', '.')));
-      setWeight(Number.isFinite(kg) && kg > 0 ? kg : null);
+      const today = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
+      setWeight(Number.isFinite(kg) && kg > 0 ? kg : null, today);
       if (pullEquip === 'bar' || pullEquip === 'rings') unlockPull();
       completeOnboarding({ equipment, goal, healthFlag: parqYes }, initialProgress);
       router.replace('/');

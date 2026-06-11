@@ -49,6 +49,9 @@ function clock(sec: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
+// How old (in days) the stored weight may get before the finish screen asks about it.
+const WEIGHT_NUDGE_DAYS = 30;
+
 const FEELS: { id: WorkoutFeel; emoji: string; label: string }[] = [
   { id: 'hard', emoji: '🥵', label: 'Too hard' },
   { id: 'right', emoji: '🙂', label: 'Just right' },
@@ -65,6 +68,8 @@ export default function Workout() {
   const rateWorkout = useAppStore((s) => s.rateWorkout);
   const lastLoggedDay = useAppStore((s) => s.lastLoggedDay);
   const weightKg = useAppStore((s) => s.weightKg);
+  const weightSetDay = useAppStore((s) => s.weightSetDay);
+  const setWeight = useAppStore((s) => s.setWeight);
 
   const day = todayNumber();
   const workout = useMemo(() => todaysWorkout(progress, pullUnlocked, new Date()), [progress, pullUnlocked]);
@@ -156,6 +161,20 @@ export default function Workout() {
             </View>
           ) : null}
         </View>
+
+        {weightKg && weightSetDay !== null && day - weightSetDay >= WEIGHT_NUDGE_DAYS ? (
+          <View style={styles.weightCard}>
+            <Text style={styles.weightCardText}>Quick check — still about {weightKg} kg?</Text>
+            <View style={styles.weightCardRow}>
+              <Pressable onPress={() => setWeight(weightKg, day)} style={styles.weightYes}>
+                <Text style={styles.weightYesText}>Yes, same</Text>
+              </Pressable>
+              <Pressable onPress={() => router.push('/settings')} style={styles.weightUpdate}>
+                <Text style={styles.weightUpdateText}>Update</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
 
         <View style={styles.feelCard}>
           <Text style={styles.feelTitle}>How did it feel?</Text>
@@ -267,6 +286,14 @@ const styles = StyleSheet.create({
   statBox: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingVertical: spacing.md, alignItems: 'center', gap: 2 },
   statVal: { color: colors.ink, fontSize: font.h2, fontWeight: '900' },
   statLabel: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '700' },
+
+  weightCard: { alignSelf: 'stretch', backgroundColor: colors.warnBg, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.md },
+  weightCardText: { color: colors.warnText, fontSize: font.body, fontWeight: '800', textAlign: 'center' },
+  weightCardRow: { flexDirection: 'row', gap: spacing.sm },
+  weightYes: { flex: 1, backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center' },
+  weightYesText: { color: colors.primaryText, fontSize: font.small, fontWeight: '800' },
+  weightUpdate: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center' },
+  weightUpdateText: { color: colors.warnText, fontSize: font.small, fontWeight: '800' },
 
   feelCard: { alignSelf: 'stretch', backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: spacing.md },
   feelTitle: { color: colors.ink, fontSize: font.body, fontWeight: '800' },
