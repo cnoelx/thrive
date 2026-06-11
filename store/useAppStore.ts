@@ -20,6 +20,12 @@ export interface Profile {
   healthFlag: boolean; // true if any PAR-Q question was answered "yes"
 }
 
+/** What a completed workout looked like — shown on the finish screen and from the calendar. */
+export interface WorkoutSummary {
+  focus: string;
+  items: { name: string; sets: number | null; target: string }[];
+}
+
 interface AppState {
   /** false until persisted state has loaded — screens wait on this before routing. */
   hydrated: boolean;
@@ -34,6 +40,9 @@ interface AppState {
   /** Day-numbers of every completed workout, ascending — drives the week strip and the calendar.
    *  Recording started with the history feature; older history is backfilled from the streak. */
   loggedDays: number[];
+  /** Per-day summaries of completed workouts, keyed by day-number. Days logged before this was
+   *  recorded (incl. backfilled streak days) simply have no entry. */
+  workoutLog: Record<number, WorkoutSummary>;
   /** Highest streak milestone the user has seen the celebration for; cleared when the streak resets. */
   streakMilestoneSeen: number;
   /** Highest overall level the user has acknowledged (dismissed the celebration for). The next
@@ -51,8 +60,8 @@ interface AppState {
 
   completeOnboarding: (profile: Profile, initialProgress?: ProgressState) => void;
   unlockPull: () => void;
-  /** Mark today's workout complete. */
-  logToday: (dayNumber: number) => void;
+  /** Mark today's workout complete, recording what it contained. */
+  logToday: (dayNumber: number, summary: WorkoutSummary) => void;
   /** Claim a benchmark (validated by the engine). */
   claimBenchmark: (benchmarkId: string) => void;
   unclaimBenchmark: (benchmarkId: string) => void;
@@ -77,6 +86,7 @@ export const useAppStore = create<AppState>()(
       lastLoggedDay: null,
       streak: 0,
       loggedDays: [],
+      workoutLog: {},
       streakMilestoneSeen: 0,
       overallLevelSeen: 0,
       whatsNewSeen: 0,
@@ -94,13 +104,14 @@ export const useAppStore = create<AppState>()(
           lastLoggedDay: null,
           streak: 0,
           loggedDays: [],
+          workoutLog: {},
           streakMilestoneSeen: 0,
           overallLevelSeen: 0,
           whatsNewSeen: WHATS_NEW.version,
           nudgeDismissedDay: null,
         }),
 
-      logToday: (dayNumber) =>
+      logToday: (dayNumber, summary) =>
         set((s) => {
           if (s.lastLoggedDay === dayNumber) return s;
           const streak = nextStreak(s.streak, s.lastLoggedDay, dayNumber);
@@ -109,6 +120,7 @@ export const useAppStore = create<AppState>()(
             lastLoggedDay: dayNumber,
             streak,
             loggedDays: s.loggedDays.includes(dayNumber) ? s.loggedDays : [...s.loggedDays, dayNumber],
+            workoutLog: { ...s.workoutLog, [dayNumber]: summary },
             streakMilestoneSeen: streak === 1 ? 0 : s.streakMilestoneSeen,
           };
         }),
@@ -145,6 +157,7 @@ export const useAppStore = create<AppState>()(
           lastLoggedDay: null,
           streak: 0,
           loggedDays: [],
+          workoutLog: {},
           streakMilestoneSeen: 0,
           overallLevelSeen: 0,
           whatsNewSeen: 0,
@@ -167,6 +180,7 @@ export const useAppStore = create<AppState>()(
         lastLoggedDay: s.lastLoggedDay,
         streak: s.streak,
         loggedDays: s.loggedDays,
+        workoutLog: s.workoutLog,
         streakMilestoneSeen: s.streakMilestoneSeen,
         overallLevelSeen: s.overallLevelSeen,
         whatsNewSeen: s.whatsNewSeen,

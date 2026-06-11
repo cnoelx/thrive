@@ -16,17 +16,27 @@ function todayNumber(): number {
   return Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
 }
 
-type CircuitStep = { item: WorkoutItem; restSec: number | null };
+type SetKind = 'goal' | 'work' | 'plain';
+type CircuitStep = { item: WorkoutItem; restSec: number | null; target: string; kind: SetKind };
 
 // Circuit: one set of each exercise per round, repeated for as many rounds as the highest set
 // count that day. Exercises with fewer sets drop out of the later rounds. No rest after the last set.
+// A chasing exercise with distinct work volume splits: round 1 = fresh goal attempt, later rounds =
+// the completed level's target (the volume that builds toward the goal).
 function buildCircuit(items: WorkoutItem[]): CircuitStep[] {
   const setsOf = (it: WorkoutItem) => it.sets ?? 1;
   const totalRounds = items.length ? Math.max(...items.map(setsOf)) : 0;
   const steps: CircuitStep[] = [];
   for (let r = 1; r <= totalRounds; r++) {
     for (const it of items) {
-      if (setsOf(it) >= r) steps.push({ item: it, restSec: it.restSec ?? null });
+      if (setsOf(it) < r) continue;
+      const mixed = it.chasing && it.workTarget !== it.target && setsOf(it) > 1;
+      steps.push({
+        item: it,
+        restSec: it.restSec ?? null,
+        target: mixed && r > 1 ? it.workTarget : it.target,
+        kind: mixed ? (r === 1 ? 'goal' : 'work') : 'plain',
+      });
     }
   }
   if (steps.length > 0) steps[steps.length - 1].restSec = null;
@@ -36,6 +46,16 @@ function buildCircuit(items: WorkoutItem[]): CircuitStep[] {
 function clock(sec: number): string {
   const s = Math.max(0, sec);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+// Summary rows for the finish card and the saved day log. Mixed (goal + work) exercises get a
+// precomposed line; plain items keep sets × target.
+function summarize(items: WorkoutItem[]): { name: string; sets: number | null; target: string }[] {
+  return items.map((it) => {
+    const mixed = it.chasing && it.workTarget !== it.target && (it.sets ?? 1) > 1;
+    if (!mixed) return { name: it.name, sets: it.sets, target: it.target };
+    return { name: it.name, sets: null, target: `goal try ${formatTarget(it.target)} · ${(it.sets ?? 1) - 1} × ${formatTarget(it.workTarget)}` };
+  });
 }
 
 export default function Workout() {
@@ -59,7 +79,9 @@ export default function Workout() {
   const goNext = () => {
     setResting(false);
     if (stepIndex + 1 >= steps.length) {
-      if (lastLoggedDay !== day) logToday(day);
+      if (lastLoggedDay !== day) {
+        logToday(day, { focus: workout.focus, items: summarize(workout.items) });
+      }
       setFinished(true);
     } else {
       setStepIndex(stepIndex + 1);
@@ -101,6 +123,18 @@ export default function Workout() {
         <Text style={styles.bigEmoji}>🎉</Text>
         <Text style={styles.completeTitle}>Nice work! 👏</Text>
         <Text style={styles.completeBody}>That&apos;s today done. See you tomorrow.</Text>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryFocus}>{workout.focus}</Text>
+          {summarize(workout.items).map((it, i) => (
+            <View key={i} style={styles.summaryRow}>
+              <Text style={styles.summaryName}>{it.name}</Text>
+              <Text style={styles.summaryTarget}>
+                {it.sets ? `${it.sets} × ` : ''}
+                {formatTarget(it.target)}
+              </Text>
+            </View>
+          ))}
+        </View>
         <Pressable onPress={() => router.back()} style={styles.primaryBtn}>
           <Text style={styles.primaryText}>Done</Text>
         </Pressable>
@@ -159,7 +193,14 @@ export default function Workout() {
               </Pressable>
             </View>
             {EXERCISE_BY_KEY[step.item.exKey]?.check ? <Text style={styles.checkEyebrow}>ONE-TIME CHECK</Text> : null}
-            <Text style={styles.targetBig}>{formatTarget(step.item.target)}</Text>
+            <Text style={styles.targetBig}>{formatTarget(step.target)}</Text>
+            {step.kind === 'goal' ? (
+              <Text style={styles.chasingHint}>Goal set — Level {step.item.level}: as close as you can</Text>
+            ) : step.kind === 'work' ? (
+              <Text style={styles.chasingHint}>Work set — solid reps at your level</Text>
+            ) : step.item.chasing ? (
+              <Text style={styles.chasingHint}>Level {step.item.level} goal — get as close as you can</Text>
+            ) : null}
             {step.item.note ? <Text style={styles.note}>{step.item.note}</Text> : null}
             <Pressable onPress={onDoneSet} style={styles.primaryBtn}>
               <Text style={styles.primaryText}>{isLast ? 'Finish workout' : 'Done'}</Text>
@@ -179,6 +220,12 @@ const styles = StyleSheet.create({
   completeTitle: { color: colors.ink, fontSize: font.title, fontWeight: '800', textAlign: 'center' },
   completeBody: { color: colors.muted, fontSize: font.body, textAlign: 'center', lineHeight: 22 },
 
+  summaryCard: { alignSelf: 'stretch', backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, marginTop: spacing.sm, gap: spacing.sm },
+  summaryFocus: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1 },
+  summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
+  summaryName: { color: colors.text, fontSize: font.small, fontWeight: '700', flexShrink: 1 },
+  summaryTarget: { color: colors.muted, fontSize: font.small, textAlign: 'right', flexShrink: 1 },
+
   header: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   close: { color: colors.muted, fontSize: 22, fontWeight: '700' },
   progressTrack: { flex: 1, height: 8, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden' },
@@ -189,6 +236,7 @@ const styles = StyleSheet.create({
   exerciseName: { color: colors.ink, fontSize: 30, fontWeight: '900', textAlign: 'center', marginTop: 2, flexShrink: 1 },
   checkEyebrow: { color: colors.muted, fontSize: font.small, fontWeight: '800', letterSpacing: 1.5, marginTop: spacing.sm },
   targetBig: { color: colors.primary, fontSize: 40, fontWeight: '900', marginTop: spacing.xs },
+  chasingHint: { color: colors.muted, fontSize: font.small, textAlign: 'center' },
   note: { color: colors.muted, fontSize: font.small, textAlign: 'center', fontStyle: 'italic' },
   primaryBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md + 2, paddingHorizontal: spacing.xl, alignItems: 'center', marginTop: spacing.xxl, minWidth: 200 },
   primaryText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },

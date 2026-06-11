@@ -41,14 +41,13 @@ export const GOAL_OPTIONS: Option<GoalId>[] = [
 export interface PlacementAnchor {
   categoryId: CategoryId;
   exercise: string;
-  unit?: string;
-  thresholds: { level: number; label: string }[]; // L1..L3, ascending
+  thresholds: { level: number; label: string }[]; // L1.., ascending; labels match the program's targets
 }
 
 export const PLACEMENT_ANCHORS: PlacementAnchor[] = [
-  { categoryId: 'move', exercise: 'Bodyweight squats', unit: 'in a row', thresholds: [{ level: 1, label: '15' }, { level: 2, label: '22' }, { level: 3, label: '30' }, { level: 4, label: '40' }, { level: 5, label: '50' }] },
-  { categoryId: 'push', exercise: 'Push-ups', unit: 'hardest you can do', thresholds: [{ level: 1, label: 'Wall ×8' }, { level: 2, label: 'Counter ×8' }, { level: 3, label: 'Low step ×8' }, { level: 4, label: 'Lower slowly ×5' }, { level: 5, label: '8 full' }] },
-  { categoryId: 'pull', exercise: 'Pulling', unit: 'most you can do', thresholds: [{ level: 1, label: 'Active hang 15s' }, { level: 2, label: 'Lower slowly 5s ×3' }, { level: 3, label: 'Lower slowly 10s ×3' }, { level: 4, label: '5 with a band' }, { level: 5, label: '3+ pull-ups' }] },
-  { categoryId: 'cardio', exercise: 'Walk / run nonstop', thresholds: [{ level: 1, label: 'Brisk walk 10min' }, { level: 2, label: 'Brisk walk 20min' }, { level: 3, label: 'Brisk walk 30min' }, { level: 4, label: 'Walk-jog 20min' }, { level: 5, label: 'Easy jog 20min+' }] },
-  { categoryId: 'mobility', exercise: 'Deep squat hold', thresholds: [{ level: 1, label: 'Support 15s' }, { level: 2, label: 'Support 30s' }, { level: 3, label: 'Free 60s' }, { level: 4, label: 'Free 90s' }, { level: 5, label: 'Free 120s' }] },
+  { categoryId: 'move', exercise: 'Bodyweight squats', thresholds: [{ level: 1, label: '15 in a row' }, { level: 2, label: '22 in a row' }, { level: 3, label: '30 in a row' }, { level: 4, label: '40 in a row' }, { level: 5, label: '50 in a row' }] },
+  { categoryId: 'push', exercise: 'Push-ups', thresholds: [{ level: 1, label: 'Wall ×8' }, { level: 2, label: 'Incline ×8 (hands on a counter)' }, { level: 3, label: 'Incline ×8 (hands on a low step)' }, { level: 4, label: 'Negatives ×5 (lower down slowly)' }, { level: 5, label: '5 full push-ups' }] },
+  { categoryId: 'pull', exercise: 'Pulling', thresholds: [{ level: 1, label: 'Active hang 15s' }, { level: 2, label: 'Negatives ×3 (jump to top, lower 5s)' }, { level: 3, label: 'Negatives ×3 (lower for 10s)' }, { level: 4, label: '5 with a band' }, { level: 5, label: '3 pull-ups' }] },
+  { categoryId: 'cardio', exercise: 'Walk / run nonstop', thresholds: [{ level: 1, label: 'Brisk walk 10min' }, { level: 2, label: 'Brisk walk 20min' }, { level: 3, label: 'Brisk walk 30min' }, { level: 4, label: 'Walk-jog 20min' }, { level: 5, label: 'Easy jog 20min' }] },
+  { categoryId: 'mobility', exercise: 'Deep squat hold', thresholds: [{ level: 1, label: 'With support 15s' }, { level: 2, label: 'With support 30s' }, { level: 3, label: 'No support 60s' }, { level: 4, label: 'No support 90s' }, { level: 5, label: 'No support 120s' }] },
 ];

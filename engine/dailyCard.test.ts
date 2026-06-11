@@ -75,6 +75,30 @@ describe('capped & maxed exercises stay in the workout (maintenance)', () => {
     expect(squat.level).toBe(2);
     expect(squat.target).toBe('22');
   });
+
+  it('chasing marks unearned goals; maintenance and maxed items are not chasing', () => {
+    // Fresh user: every target is the next (L1) goal — something to grow into.
+    expect(todaysWorkout(emptyProgress(), true, dateForDay(1)).items.every((i) => i.chasing)).toBe(true);
+    // Runway-locked Move trains its completed L2 → not chasing.
+    const s = claimLevel(claimLevel(emptyProgress(), 'move', 1), 'move', 2);
+    expect(todaysWorkout(s, true, dateForDay(1)).items.find((i) => i.exKey === 'squat')!.chasing).toBe(false);
+    // Maxed Mobility holds its top target → not chasing.
+    expect(todaysWorkout(maxedState(), true, dateForDay(2)).items.find((i) => i.exKey === 'deepsquat')!.chasing).toBe(false);
+  });
+
+  it('chasing past L0 splits goal and work targets; L0 and maintenance do not', () => {
+    // Move at L1, chasing L2: goal = the L2 target, work sets = the earned L1 target.
+    const s = claimLevel(emptyProgress(), 'move', 1);
+    const squat = todaysWorkout(s, true, dateForDay(1)).items.find((i) => i.exKey === 'squat')!;
+    expect(squat.target).toBe('22');
+    expect(squat.workTarget).toBe('15');
+    // Fresh L0 user: the L1 goal IS the workout — no split.
+    const fresh = todaysWorkout(emptyProgress(), true, dateForDay(1)).items.find((i) => i.exKey === 'squat')!;
+    expect(fresh.workTarget).toBe(fresh.target);
+    // Maintenance (runway-locked at L2) trains one target only.
+    const locked = todaysWorkout(claimLevel(s, 'move', 2), true, dateForDay(1)).items.find((i) => i.exKey === 'squat')!;
+    expect(locked.workTarget).toBe(locked.target);
+  });
 });
 
 // When Pull is locked, every pull-category item is dropped and one Superman is appended (per day

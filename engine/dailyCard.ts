@@ -33,8 +33,16 @@ export interface WorkoutItem {
   why: string;
   sets: number | null;
   restSec?: number; // rest between sets, in seconds
-  target: string; // reps/time at the current level
+  /** The level target being trained — the next level's goal when chasing. */
+  target: string;
+  /** What sets after the first use when chasing: the COMPLETED level's target (volume the user can
+   *  actually do). Equals `target` when not chasing, at L0 (the L1 goal is the entry workout), or
+   *  for single-effort items. Set 1 stays the fresh goal attempt. */
+  workTarget: string;
   level: number;
+  /** True when the target is the NEXT level's goal (not yet earned) — something to grow into over
+   *  sessions, not nail on day one. Maintenance/capped items are false. */
+  chasing: boolean;
   note?: string;
 }
 
@@ -59,6 +67,9 @@ export function todaysWorkout(state: ProgressState, pullUnlocked: boolean, date:
       continue;
     }
     const level = trainingLevel(state, pullUnlocked, ex.categoryId);
+    const completed = completedLevel(state, ex.categoryId);
+    const chasing = level > completed;
+    const target = exerciseTarget(it.exKey, level);
     items.push({
       exKey: it.exKey,
       categoryId: ex.categoryId,
@@ -66,22 +77,27 @@ export function todaysWorkout(state: ProgressState, pullUnlocked: boolean, date:
       why: ex.why,
       sets: it.sets,
       restSec: it.restSec,
-      target: exerciseTarget(it.exKey, level),
+      target,
+      workTarget: chasing && completed >= 1 ? exerciseTarget(it.exKey, completed) : target,
       level,
+      chasing,
       note: it.note,
     });
   }
   if (droppedPull) {
     const overall = baselineLevel(state, pullUnlocked);
     const level = Math.min(Math.max(overall, 1), SUPERMAN_TARGETS.length);
+    const target = supermanTarget(overall);
     items.push({
       exKey: SUPERMAN_KEY,
       name: 'Superman',
       why: 'Back / posture work (no-equipment back substitute)',
       sets: 2,
       restSec: 45,
-      target: supermanTarget(overall),
+      target,
+      workTarget: target,
       level,
+      chasing: false, // tracks the overall level, not a goal being earned
     });
   }
 

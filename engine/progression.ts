@@ -30,6 +30,17 @@ export function progressFromPlacement(placed: Partial<Record<CategoryId, number>
   return { claimed };
 }
 
+/** The placement quiz asks for a SINGLE max, but workouts repeat a level's target across sets — so
+ *  start each category one level below the tapped max (a max at L1 still starts at L0). */
+export function startLevelsFromMax(tapped: Partial<Record<CategoryId, number>>): Partial<Record<CategoryId, number>> {
+  const out: Partial<Record<CategoryId, number>> = {};
+  for (const c of CATEGORY_IDS) {
+    const max = tapped[c] ?? 0;
+    if (max > 1) out[c] = max - 1;
+  }
+  return out;
+}
+
 function levelComplete(state: ProgressState, c: CategoryId, level: number): boolean {
   const set = benchmarksFor(c, level);
   if (set.length === 0) return false;

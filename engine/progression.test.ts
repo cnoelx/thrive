@@ -17,6 +17,7 @@ import {
   lockReason,
   nextLevel,
   progressFromPlacement,
+  startLevelsFromMax,
   unclaim,
 } from '@/engine/progression';
 
@@ -221,6 +222,13 @@ describe('placement', () => {
     const placed: Partial<Record<CategoryId, number>> = {};
     for (const c of CATEGORY_IDS) placed[c] = 1;
     expect(baselineLevel(progressFromPlacement(placed), true)).toBe(1);
+  });
+  it('starts one level below the tapped max — sets add up', () => {
+    expect(startLevelsFromMax({ move: 3, push: 1, cardio: 2 })).toEqual({ move: 2, cardio: 1 });
+  });
+  it('a max at L1 or nothing tapped starts at L0', () => {
+    expect(startLevelsFromMax({ move: 1 })).toEqual({});
+    expect(startLevelsFromMax({})).toEqual({});
   });
 });
 

@@ -109,7 +109,9 @@ export default function CategoryScreen() {
         ) : (
           <View style={[styles.banner, { backgroundColor: catColor.soft }]}>
             <Text style={styles.bannerText}>
-              {checkpoint ? "Hold each one with good form and you'll level up." : "Do each one with good form — that's your level up."}
+              {checkpoint
+                ? "Hold each one with good form and you'll level up."
+                : 'Workouts start with one fresh try at each goal — nail it with good form, then tick it off here.'}
             </Text>
           </View>
         )}

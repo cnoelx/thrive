@@ -7,7 +7,7 @@ import { colors, font, radius, spacing } from '@/constants/theme';
 import type { CategoryId } from '@/data/benchmarks';
 import { GOAL_OPTIONS, PARQ_QUESTIONS, PLACEMENT_ANCHORS } from '@/data/onboarding';
 import type { Equipment, GoalId, Option } from '@/data/onboarding';
-import { progressFromPlacement } from '@/engine/progression';
+import { progressFromPlacement, startLevelsFromMax } from '@/engine/progression';
 import type { ProgressState } from '@/engine/progression';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -79,33 +79,28 @@ export default function Onboarding() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <Text style={styles.kicker}>FIND YOUR LEVEL</Text>
           <Text style={styles.h1}>What can you do today?</Text>
-          <Text style={styles.body}>Tap the most you can do — skip anything you can&apos;t yet.</Text>
+          <Text style={styles.body}>
+            For each exercise, pick the most you can do in one go. We&apos;ll start you one notch below your max —
+            workouts repeat it over a few sets.
+          </Text>
 
-          <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
+          <View style={{ gap: spacing.lg, marginTop: spacing.sm }}>
             {PLACEMENT_ANCHORS.filter((a) => a.categoryId !== 'pull' || pullEquip === 'bar' || pullEquip === 'rings').map((a) => {
               const cur = placed[a.categoryId] ?? 0;
               return (
                 <View key={a.categoryId} style={styles.placeCard}>
                   <View style={styles.placeHead}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.placeExercise}>{a.exercise}</Text>
-                      {a.unit ? <Text style={styles.placeUnit}>{a.unit}</Text> : null}
-                    </View>
+                    <Text style={styles.placeExercise}>{a.exercise}</Text>
                     {cur > 0 ? (
                       <View style={styles.levelTag}>
-                        <Text style={styles.levelTagText}>Level {cur}</Text>
+                        <Text style={styles.levelTagText}>Start: Level {cur - 1}</Text>
                       </View>
                     ) : null}
                   </View>
-                  <View style={styles.chipRow}>
-                    <Chip label="Not yet" selected={cur === 0} onPress={() => setLevel(a.categoryId, 0)} />
+                  <View style={styles.levelList}>
+                    <LevelRow label="Not yet" selected={cur === 0} onPress={() => setLevel(a.categoryId, 0)} />
                     {a.thresholds.map((t) => (
-                      <Chip
-                        key={t.level}
-                        label={t.label}
-                        selected={cur === t.level}
-                        onPress={() => setLevel(a.categoryId, t.level)}
-                      />
+                      <LevelRow key={t.level} label={t.label} selected={cur === t.level} onPress={() => setLevel(a.categoryId, t.level)} />
                     ))}
                   </View>
                 </View>
@@ -118,8 +113,8 @@ export default function Onboarding() {
           <Pressable onPress={() => setPlacing(false)} hitSlop={8} style={styles.backBtn}>
             <Text style={styles.backText}>Back</Text>
           </Pressable>
-          <Pressable onPress={() => finish(progressFromPlacement(placed))} style={styles.nextBtn}>
-            <Text style={styles.nextText}>Place me</Text>
+          <Pressable onPress={() => finish(progressFromPlacement(startLevelsFromMax(placed)))} style={styles.nextBtn}>
+            <Text style={styles.nextText}>Set my levels</Text>
           </Pressable>
         </View>
       </View>
@@ -317,10 +312,11 @@ function ChoiceStep<T extends string>(props: {
   );
 }
 
-function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+function LevelRow({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={[styles.chip, selected && styles.chipOn]}>
-      <Text style={[styles.chipText, selected && styles.chipTextOn]}>{label}</Text>
+    <Pressable onPress={onPress} style={[styles.levelRow, selected && styles.levelRowOn]}>
+      <View style={[styles.radio, selected && styles.radioOn]}>{selected ? <View style={styles.radioDot} /> : null}</View>
+      <Text style={[styles.levelRowText, selected && styles.levelRowTextOn]}>{label}</Text>
     </Pressable>
   );
 }
@@ -418,16 +414,27 @@ const styles = StyleSheet.create({
 
   // placement
   placeCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.lg },
-  placeExercise: { color: colors.text, fontSize: font.body, fontWeight: '800' },
-  placeUnit: { color: colors.muted, fontSize: font.small, marginTop: 1 },
+  placeExercise: { flex: 1, color: colors.ink, fontSize: font.h2, fontWeight: '800' },
   placeHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   levelTag: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 3 },
   levelTagText: { color: colors.primaryText, fontSize: font.small, fontWeight: '800' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
-  chip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
-  chipOn: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { color: colors.text, fontSize: font.small, fontWeight: '700' },
-  chipTextOn: { color: colors.primaryText },
+  levelList: { marginTop: spacing.md, gap: 6 },
+  levelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  levelRowOn: { borderColor: colors.primary, backgroundColor: '#F0FAF4' },
+  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  radioOn: { borderColor: colors.primary },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
+  levelRowText: { flex: 1, color: colors.text, fontSize: font.small, fontWeight: '600', lineHeight: 19 },
+  levelRowTextOn: { color: colors.ink, fontWeight: '700' },
 
   footer: {
     flexDirection: 'row',

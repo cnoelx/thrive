@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
-import { dayNumberFromDate, longestStreak, monthGrid } from '@/engine/history';
+import { formatTarget } from '@/data/benchmarks';
+import { dayNumberFromDate, longestStreak, monthGrid, type MonthCell } from '@/engine/history';
 import { isRestDay } from '@/engine/streak';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -14,10 +15,13 @@ export default function History() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const loggedDays = useAppStore((s) => s.loggedDays);
+  const workoutLog = useAppStore((s) => s.workoutLog);
 
   const now = new Date();
   const today = dayNumberFromDate(now);
   const [shown, setShown] = useState({ year: now.getFullYear(), month: now.getMonth() });
+  const [openCell, setOpenCell] = useState<MonthCell | null>(null);
+  const openLog = openCell ? workoutLog[openCell.dayNumber] : undefined;
   const atCurrentMonth = shown.year === now.getFullYear() && shown.month === now.getMonth();
 
   const prevMonth = () =>
@@ -89,7 +93,7 @@ export default function History() {
                 const future = cell.dayNumber > today;
                 const rest = isRestDay(cell.dayNumber);
                 return (
-                  <View key={cell.dayNumber} style={styles.dayCell}>
+                  <Pressable key={cell.dayNumber} style={styles.dayCell} disabled={!done} onPress={() => setOpenCell(cell)}>
                     <View
                       style={[
                         styles.dayDot,
@@ -102,7 +106,7 @@ export default function History() {
                         {cell.date}
                       </Text>
                     </View>
-                  </View>
+                  </Pressable>
                 );
               })}
             </View>
@@ -117,6 +121,41 @@ export default function History() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Day summary — what that workout contained (older days may predate recording) */}
+      <Modal visible={openCell !== null} transparent animationType="fade" onRequestClose={() => setOpenCell(null)}>
+        <Pressable style={styles.overlay} onPress={() => setOpenCell(null)}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            <Text style={styles.sheetSub}>
+              {MONTHS[shown.month].toUpperCase()} {openCell?.date}, {shown.year}
+            </Text>
+            {openLog ? (
+              <>
+                <Text style={styles.sheetTitle}>{openLog.focus}</Text>
+                <View style={{ gap: spacing.sm, marginTop: spacing.xs }}>
+                  {openLog.items.map((it, i) => (
+                    <View key={i} style={styles.sheetRow}>
+                      <Text style={styles.sheetName}>{it.name}</Text>
+                      <Text style={styles.sheetTarget}>
+                        {it.sets ? `${it.sets} × ` : ''}
+                        {formatTarget(it.target)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.sheetTitle}>Workout done ✓</Text>
+                <Text style={styles.sheetMuted}>No details for this day — summaries started being saved with a later update.</Text>
+              </>
+            )}
+            <Pressable onPress={() => setOpenCell(null)} style={styles.sheetClose}>
+              <Text style={styles.sheetCloseText}>Got it</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -155,4 +194,15 @@ const styles = StyleSheet.create({
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.lg },
   legendDot: { width: 12, height: 12, borderRadius: 6 },
   legendText: { color: colors.muted, fontSize: font.small },
+
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
+  sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.xs, width: '100%', maxWidth: 420 },
+  sheetSub: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
+  sheetTitle: { color: colors.ink, fontSize: font.h2, fontWeight: '800' },
+  sheetMuted: { color: colors.muted, fontSize: font.small, lineHeight: 19 },
+  sheetRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
+  sheetName: { color: colors.text, fontSize: font.small, fontWeight: '700', flexShrink: 1 },
+  sheetTarget: { color: colors.muted, fontSize: font.small, textAlign: 'right', flexShrink: 1 },
+  sheetClose: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
+  sheetCloseText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
 });
