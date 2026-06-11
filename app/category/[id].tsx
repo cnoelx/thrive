@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Celebration } from '@/components/Celebration';
 import { HowToSheet } from '@/components/HowToSheet';
-import { categoryColors, colors, font, radius, spacing } from '@/constants/theme';
+import { categoryColors, colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, EXERCISE_BY_KEY, benchmarksFor, categoryCeiling, formatTarget, isCheckpoint } from '@/data/benchmarks';
 import { RUNWAY, completedLevel, isClaimable, levelCap, lockReason } from '@/engine/progression';
 import { useAppStore } from '@/store/useAppStore';
@@ -186,24 +186,24 @@ export default function CategoryScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, backgroundColor: colors.bg },
   header: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
-  back: { color: colors.primary, fontSize: font.body, fontWeight: '700' },
+  back: { color: colors.primary, fontSize: font.body, fontFamily: fonts.bold },
 
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   levelBox: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  levelBoxText: { fontSize: font.body, fontWeight: '900' },
-  title: { color: colors.ink, fontSize: font.title, fontWeight: '800' },
-  sub: { color: colors.muted, fontSize: font.small, marginTop: 2 },
+  levelBoxText: { fontSize: font.body, fontFamily: fonts.display },
+  title: { color: colors.ink, fontSize: font.title, fontFamily: fonts.heavy },
+  sub: { color: colors.muted, fontSize: font.small, marginTop: 2, fontFamily: fonts.regular },
   progressTrack: { height: 8, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden' },
   progressFill: { height: 8, backgroundColor: colors.primary, borderRadius: radius.pill },
 
   advanceBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md + 2, alignItems: 'center' },
   advanceBtnOff: { backgroundColor: colors.track },
-  advanceText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
+  advanceText: { color: colors.primaryText, fontSize: font.body, fontFamily: fonts.heavy },
   advanceTextOff: { color: colors.muted },
 
   banner: { borderRadius: radius.md, padding: spacing.md },
   bannerLock: { backgroundColor: colors.warnBg },
-  bannerText: { color: colors.text, fontSize: font.small, lineHeight: 19 },
+  bannerText: { color: colors.text, fontSize: font.small, lineHeight: 19, fontFamily: fonts.regular },
 
   benchRow: {
     flexDirection: 'row',
@@ -217,15 +217,15 @@ const styles = StyleSheet.create({
   },
   benchRowDone: { backgroundColor: '#F3FAF6', borderColor: colors.primary },
   benchTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  benchTitle: { color: colors.text, fontSize: font.body, fontWeight: '700' },
-  benchTarget: { color: colors.text, fontSize: font.small, marginTop: 1 },
-  benchWhy: { color: colors.muted, fontSize: font.small, marginTop: 2, fontStyle: 'italic' },
+  benchTitle: { color: colors.text, fontSize: font.body, fontFamily: fonts.bold },
+  benchTarget: { color: colors.text, fontSize: font.small, marginTop: 1, fontFamily: fonts.regular },
+  benchWhy: { color: colors.muted, fontSize: font.small, marginTop: 2, fontFamily: fonts.regular },
   claimBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   claimBtnOff: { backgroundColor: colors.track },
-  claimText: { color: colors.primaryText, fontSize: font.small, fontWeight: '800' },
+  claimText: { color: colors.primaryText, fontSize: font.small, fontFamily: fonts.heavy },
   claimTextOff: { color: colors.muted },
   doneCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  doneTick: { color: colors.primaryText, fontSize: 15, fontWeight: '900' },
+  doneTick: { color: colors.primaryText, fontSize: 15, fontFamily: fonts.display },
 
-  body: { color: colors.text, fontSize: font.body },
+  body: { color: colors.text, fontSize: font.body, fontFamily: fonts.regular },
 });

@@ -35,6 +35,16 @@ export const categoryColors: Record<string, { main: string; soft: string }> = {
   mobility: { main: '#0D9488', soft: '#CCFBF1' },
 };
 
+// Outfit (Google Fonts), loaded in app/_layout. Custom fonts don't respond to fontWeight — always
+// set one of these families instead. Hierarchy: display (hero numbers/titles) > heavy (headings,
+// buttons) > bold (emphasis) > regular (body).
+export const fonts = {
+  regular: 'Outfit_500Medium',
+  bold: 'Outfit_700Bold',
+  heavy: 'Outfit_800ExtraBold',
+  display: 'Outfit_900Black',
+} as const;
+
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
 export const radius = { sm: 8, md: 12, lg: 16, pill: 999 } as const;
 export const font = { display: 34, title: 28, h2: 20, body: 16, small: 13, eyebrow: 12 } as const;

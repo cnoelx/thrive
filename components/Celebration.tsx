@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, Text } from 'react-native';
 
-import { colors, font, radius, spacing } from '@/constants/theme';
+import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 
 // Auto-dismissing celebration popup: a real Modal (Back dismisses, never under system UI) that fades
 // + pops in, then auto-closes after a beat. Tap anywhere or Back also closes it early. Mount it
@@ -52,6 +52,6 @@ const styles = StyleSheet.create({
   },
   celebrate: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, alignItems: 'center', gap: spacing.md },
   celebrateEmoji: { fontSize: 56 },
-  celebrateTitle: { color: colors.ink, fontSize: font.title, fontWeight: '800', textAlign: 'center' },
-  celebrateBody: { color: colors.muted, fontSize: font.body, lineHeight: 22, textAlign: 'center' },
+  celebrateTitle: { color: colors.ink, fontSize: font.title, fontFamily: fonts.heavy, textAlign: 'center' },
+  celebrateBody: { color: colors.muted, fontSize: font.body, lineHeight: 22, textAlign: 'center', fontFamily: fonts.regular },
 });

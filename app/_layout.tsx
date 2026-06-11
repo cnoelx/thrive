@@ -1,10 +1,11 @@
+import { Outfit_500Medium, Outfit_700Bold, Outfit_800ExtraBold, Outfit_900Black, useFonts } from '@expo-google-fonts/outfit';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Updates from 'expo-updates';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, LogBox, Text, View } from 'react-native';
 
-import { colors, font, spacing } from '@/constants/theme';
+import { colors, font, fonts, spacing } from '@/constants/theme';
 import { useAppStore } from '@/store/useAppStore';
 
 // expo-notifications warns that *push* (remote) notifications don't work in Expo Go (removed in
@@ -18,6 +19,7 @@ const UPDATE_TIMEOUT_MS = 10000;
 
 export default function RootLayout() {
   const hydrated = useAppStore((s) => s.hydrated);
+  const [fontsLoaded] = useFonts({ Outfit_500Medium, Outfit_700Bold, Outfit_800ExtraBold, Outfit_900Black });
   // Updates.isEnabled is false in Expo Go and dev builds, so this gate only runs in production.
   const [updating, setUpdating] = useState(Updates.isEnabled && !__DEV__);
 
@@ -50,14 +52,14 @@ export default function RootLayout() {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.inkCard, gap: spacing.md }}>
         <ActivityIndicator color={colors.primaryText} />
-        <Text style={{ color: colors.primaryText, fontSize: font.body, fontWeight: '800' }}>Updating…</Text>
-        <Text style={{ color: colors.onInkMuted, fontSize: font.small }}>Getting the latest version</Text>
+        <Text style={{ color: colors.primaryText, fontSize: font.body, fontFamily: fontsLoaded ? fonts.heavy : undefined }}>Updating…</Text>
+        <Text style={{ color: colors.onInkMuted, fontSize: font.small, fontFamily: fontsLoaded ? fonts.regular : undefined }}>Getting the latest version</Text>
       </View>
     );
   }
 
-  // Wait for AsyncStorage to load so we don't flash the wrong screen on cold start.
-  if (!hydrated) {
+  // Wait for AsyncStorage to load (and fonts, which are local and instant) so screens render right.
+  if (!hydrated || !fontsLoaded) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg }}>
         <ActivityIndicator color={colors.primary} />

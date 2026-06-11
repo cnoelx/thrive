@@ -6,7 +6,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HowToSheet } from '@/components/HowToSheet';
-import { colors, font, radius, spacing } from '@/constants/theme';
+import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { EXERCISE_BY_KEY, formatTarget } from '@/data/benchmarks';
 import { estimateCalories } from '@/engine/calories';
 import { todaysWorkout, type WorkoutItem } from '@/engine/dailyCard';
@@ -288,56 +288,56 @@ export default function Workout() {
 const styles = StyleSheet.create({
   screenCenter: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.md },
   bigEmoji: { fontSize: 56 },
-  completeTitle: { color: colors.ink, fontSize: font.title, fontWeight: '800', textAlign: 'center' },
-  completeBody: { color: colors.muted, fontSize: font.body, textAlign: 'center', lineHeight: 22 },
+  completeTitle: { color: colors.ink, fontSize: font.title, fontFamily: fonts.heavy, textAlign: 'center' },
+  completeBody: { color: colors.muted, fontSize: font.body, textAlign: 'center', lineHeight: 22, fontFamily: fonts.regular },
 
   finishScroll: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, gap: spacing.md },
 
   statRow: { flexDirection: 'row', alignSelf: 'stretch', gap: spacing.sm, marginTop: spacing.sm },
   statBox: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingVertical: spacing.md, alignItems: 'center', gap: 2 },
-  statVal: { color: colors.ink, fontSize: font.h2, fontWeight: '900' },
-  statLabel: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '700' },
+  statVal: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.display },
+  statLabel: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.bold },
 
   weightCard: { alignSelf: 'stretch', backgroundColor: colors.warnBg, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.md },
-  weightCardText: { color: colors.warnText, fontSize: font.body, fontWeight: '800', textAlign: 'center' },
+  weightCardText: { color: colors.warnText, fontSize: font.body, fontFamily: fonts.heavy, textAlign: 'center' },
   weightCardRow: { flexDirection: 'row', gap: spacing.sm },
   weightYes: { flex: 1, backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center' },
-  weightYesText: { color: colors.primaryText, fontSize: font.small, fontWeight: '800' },
+  weightYesText: { color: colors.primaryText, fontSize: font.small, fontFamily: fonts.heavy },
   weightUpdate: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center' },
-  weightUpdateText: { color: colors.warnText, fontSize: font.small, fontWeight: '800' },
+  weightUpdateText: { color: colors.warnText, fontSize: font.small, fontFamily: fonts.heavy },
 
   feelCard: { alignSelf: 'stretch', backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: spacing.md },
-  feelTitle: { color: colors.ink, fontSize: font.body, fontWeight: '800' },
+  feelTitle: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy },
   feelRow: { flexDirection: 'row', gap: spacing.sm },
   feelBtn: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
   feelBtnOn: { borderColor: colors.primary, backgroundColor: '#F0FAF4' },
   feelEmoji: { fontSize: 26 },
-  feelLabel: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '700' },
-  feelLabelOn: { color: colors.primary, fontWeight: '800' },
+  feelLabel: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.bold },
+  feelLabelOn: { color: colors.primary, fontFamily: fonts.heavy },
 
   header: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  close: { color: sunrise.muted, fontSize: 22, fontWeight: '700' },
+  close: { color: sunrise.muted, fontSize: 22, fontFamily: fonts.bold },
   progressTrack: { flex: 1, height: 8, backgroundColor: sunrise.track, borderRadius: radius.pill, overflow: 'hidden' },
   progressFill: { height: 8, backgroundColor: sunrise.hot, borderRadius: radius.pill },
 
   body: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.xs },
 
-  exerciseName: { color: sunrise.ink, fontSize: 30, fontWeight: '900', textAlign: 'center', marginTop: 2, flexShrink: 1 },
-  checkEyebrow: { color: sunrise.muted, fontSize: font.small, fontWeight: '800', letterSpacing: 1.5, marginTop: spacing.sm },
-  targetBig: { color: sunrise.hot, fontSize: 40, fontWeight: '900', marginTop: spacing.xs },
-  chasingHint: { color: sunrise.muted, fontSize: font.small, textAlign: 'center' },
-  note: { color: sunrise.muted, fontSize: font.small, textAlign: 'center', fontStyle: 'italic' },
+  exerciseName: { color: sunrise.ink, fontSize: 30, fontFamily: fonts.display, textAlign: 'center', marginTop: 2, flexShrink: 1 },
+  checkEyebrow: { color: sunrise.muted, fontSize: font.small, fontFamily: fonts.heavy, letterSpacing: 1.5, marginTop: spacing.sm },
+  targetBig: { color: sunrise.hot, fontSize: 40, fontFamily: fonts.display, marginTop: spacing.xs },
+  chasingHint: { color: sunrise.muted, fontSize: font.small, textAlign: 'center', fontFamily: fonts.regular },
+  note: { color: sunrise.muted, fontSize: font.small, textAlign: 'center', fontFamily: fonts.regular },
   sunBtn: { backgroundColor: sunrise.hot, borderRadius: radius.pill, paddingVertical: spacing.md + 2, paddingHorizontal: spacing.xl, alignItems: 'center', marginTop: spacing.xxl, minWidth: 200 },
-  sunBtnText: { color: '#FFFFFF', fontSize: font.body, fontWeight: '800' },
+  sunBtnText: { color: '#FFFFFF', fontSize: font.body, fontFamily: fonts.heavy },
   primaryBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md + 2, paddingHorizontal: spacing.xl, alignItems: 'center', marginTop: spacing.xxl, minWidth: 200 },
-  primaryText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
+  primaryText: { color: colors.primaryText, fontSize: font.body, fontFamily: fonts.heavy },
 
-  restLabel: { color: sunrise.muted, fontSize: font.small, fontWeight: '800', letterSpacing: 2 },
-  countdown: { color: sunrise.soft, fontSize: 64, fontWeight: '900', marginTop: spacing.xs },
-  upNext: { color: sunrise.muted, fontSize: font.body, textAlign: 'center', marginTop: spacing.sm },
+  restLabel: { color: sunrise.muted, fontSize: font.small, fontFamily: fonts.heavy, letterSpacing: 2 },
+  countdown: { color: sunrise.soft, fontSize: 64, fontFamily: fonts.display, marginTop: spacing.xs },
+  upNext: { color: sunrise.muted, fontSize: font.body, textAlign: 'center', marginTop: spacing.sm, fontFamily: fonts.regular },
   btnRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
   secondaryBtn: { borderWidth: 1, borderColor: sunrise.track, borderRadius: radius.pill, paddingVertical: spacing.sm + 2, paddingHorizontal: spacing.lg, backgroundColor: '#FFFFFF' },
-  secondaryText: { color: sunrise.ink, fontSize: font.body, fontWeight: '700' },
+  secondaryText: { color: sunrise.ink, fontSize: font.body, fontFamily: fonts.bold },
 
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
 });

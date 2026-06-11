@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, font, radius, spacing } from '@/constants/theme';
+import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import type { CategoryId } from '@/data/benchmarks';
 import { GOAL_OPTIONS, PARQ_QUESTIONS, PLACEMENT_ANCHORS } from '@/data/onboarding';
 import type { Equipment, GoalId, Option } from '@/data/onboarding';
@@ -352,9 +352,9 @@ function LevelRow({ label, selected, onPress }: { label: string; selected: boole
 
 const styles = StyleSheet.create({
   scroll: { padding: spacing.lg, paddingBottom: spacing.xl, gap: spacing.md, flexGrow: 1 },
-  kicker: { color: colors.primary, fontSize: font.small, fontWeight: '700', letterSpacing: 1 },
-  h1: { color: colors.ink, fontSize: font.title, fontWeight: '800' },
-  body: { color: colors.muted, fontSize: font.body, lineHeight: 22 },
+  kicker: { color: colors.primary, fontSize: font.small, fontFamily: fonts.bold, letterSpacing: 1 },
+  h1: { color: colors.ink, fontSize: font.title, fontFamily: fonts.heavy },
+  body: { color: colors.muted, fontSize: font.body, lineHeight: 22, fontFamily: fonts.regular },
   equipCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -367,12 +367,12 @@ const styles = StyleSheet.create({
   },
   equipCardSelected: { borderColor: colors.primary, backgroundColor: '#F0FAF4' },
   equipEmoji: { fontSize: 48, width: 64, textAlign: 'center' },
-  equipLabel: { color: colors.ink, fontSize: font.body, fontWeight: '800' },
-  equipHint: { color: colors.muted, fontSize: font.small, marginTop: 2 },
+  equipLabel: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy },
+  equipHint: { color: colors.muted, fontSize: font.small, marginTop: 2, fontFamily: fonts.regular },
   nameInput: {
     color: colors.ink,
     fontSize: font.title,
-    fontWeight: '800',
+    fontFamily: fonts.heavy,
     borderBottomWidth: 2,
     borderBottomColor: colors.primary,
     paddingVertical: spacing.sm,
@@ -382,14 +382,14 @@ const styles = StyleSheet.create({
   weightInput: {
     color: colors.ink,
     fontSize: font.title,
-    fontWeight: '800',
+    fontFamily: fonts.heavy,
     borderBottomWidth: 2,
     borderBottomColor: colors.primary,
     paddingVertical: spacing.sm,
     minWidth: 88,
     textAlign: 'center',
   },
-  weightUnit: { color: colors.muted, fontSize: font.h2, fontWeight: '700' },
+  weightUnit: { color: colors.muted, fontSize: font.h2, fontFamily: fonts.bold },
 
   // Welcome (page 1, minimal: logo + text)
   welcomeWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
@@ -403,13 +403,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 4,
   },
-  wordmark: { color: colors.ink, fontSize: 44, fontWeight: '900', letterSpacing: -1, marginTop: spacing.sm },
-  tagline: { color: colors.muted, fontSize: font.body },
+  wordmark: { color: colors.ink, fontSize: 44, fontFamily: fonts.display, letterSpacing: -1, marginTop: spacing.sm },
+  tagline: { color: colors.muted, fontSize: font.body, fontFamily: fonts.regular },
   parqCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.lg },
   parqRow: { flexDirection: 'row', gap: spacing.sm, paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: colors.border },
   parqRowFirst: { borderTopWidth: 0 },
-  parqDot: { color: colors.primary, fontSize: font.body, lineHeight: 20, fontWeight: '900' },
-  parqQ: { flex: 1, color: colors.text, fontSize: font.small, lineHeight: 20 },
+  parqDot: { color: colors.primary, fontSize: font.body, lineHeight: 20, fontFamily: fonts.display },
+  parqQ: { flex: 1, color: colors.text, fontSize: font.small, lineHeight: 20, fontFamily: fonts.regular },
   toggle: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -432,10 +432,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
-  checkmark: { color: colors.primaryText, fontSize: 14, fontWeight: '900' },
-  toggleText: { color: colors.text, fontSize: font.body, flex: 1 },
+  checkmark: { color: colors.primaryText, fontSize: 14, fontFamily: fonts.display },
+  toggleText: { color: colors.text, fontSize: font.body, flex: 1, fontFamily: fonts.regular },
   warn: { backgroundColor: colors.warnBg, borderRadius: radius.md, padding: spacing.md },
-  warnText: { color: colors.warnText, fontSize: font.small, lineHeight: 19 },
+  warnText: { color: colors.warnText, fontSize: font.small, lineHeight: 19, fontFamily: fonts.regular },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -447,18 +447,18 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   optionSelected: { borderColor: colors.primary, backgroundColor: '#F0FAF4' },
-  optionLabel: { color: colors.ink, fontSize: font.body, fontWeight: '800' },
-  optionHint: { color: colors.muted, fontSize: font.small, marginTop: 2 },
+  optionLabel: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy },
+  optionHint: { color: colors.muted, fontSize: font.small, marginTop: 2, fontFamily: fonts.regular },
   check: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   checkOn: { backgroundColor: colors.primary, borderColor: colors.primary },
-  checkTick: { color: colors.primaryText, fontSize: 14, fontWeight: '900' },
+  checkTick: { color: colors.primaryText, fontSize: 14, fontFamily: fonts.display },
 
   // placement
   placeCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.lg },
-  placeExercise: { flex: 1, color: colors.ink, fontSize: font.h2, fontWeight: '800' },
+  placeExercise: { flex: 1, color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy },
   placeHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   levelTag: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 3 },
-  levelTagText: { color: colors.primaryText, fontSize: font.small, fontWeight: '800' },
+  levelTagText: { color: colors.primaryText, fontSize: font.small, fontFamily: fonts.heavy },
   levelList: { marginTop: spacing.md, gap: 6 },
   levelRow: {
     flexDirection: 'row',
@@ -474,8 +474,8 @@ const styles = StyleSheet.create({
   radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   radioOn: { borderColor: colors.primary },
   radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
-  levelRowText: { flex: 1, color: colors.text, fontSize: font.small, fontWeight: '600', lineHeight: 19 },
-  levelRowTextOn: { color: colors.ink, fontWeight: '700' },
+  levelRowText: { flex: 1, color: colors.text, fontSize: font.small, fontFamily: fonts.bold, lineHeight: 19 },
+  levelRowTextOn: { color: colors.ink, fontFamily: fonts.bold },
 
   footer: {
     flexDirection: 'row',
@@ -488,9 +488,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   backBtn: { paddingVertical: spacing.sm, width: 56 },
-  backText: { color: colors.muted, fontSize: font.body },
-  progress: { color: colors.muted, fontSize: font.small },
+  backText: { color: colors.muted, fontSize: font.body, fontFamily: fonts.regular },
+  progress: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
   nextBtn: { backgroundColor: colors.primary, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: radius.pill, minWidth: 110, alignItems: 'center' },
   nextBtnDisabled: { backgroundColor: '#A7E3C2' },
-  nextText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
+  nextText: { color: colors.primaryText, fontSize: font.body, fontFamily: fonts.heavy },
 });

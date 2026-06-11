@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, font, radius, spacing } from '@/constants/theme';
+import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { dayNumberFromDate, longestStreak, monthGrid, type MonthCell } from '@/engine/history';
 import { isRestDay } from '@/engine/streak';
 import { useAppStore } from '@/store/useAppStore';
@@ -163,41 +163,41 @@ export default function History() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
-  back: { color: colors.primary, fontSize: font.body, fontWeight: '700' },
-  title: { color: colors.ink, fontSize: font.h2, fontWeight: '800' },
+  back: { color: colors.primary, fontSize: font.body, fontFamily: fonts.bold },
+  title: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy },
 
   statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   statCard: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.md, alignItems: 'center', gap: 2 },
-  statNum: { color: colors.ink, fontSize: font.h2, fontWeight: '900' },
-  statLabel: { color: colors.muted, fontSize: font.small },
+  statNum: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.display },
+  statLabel: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
 
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border },
 
   monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   monthBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  monthBtnText: { color: colors.primary, fontSize: 24, fontWeight: '800' },
+  monthBtnText: { color: colors.primary, fontSize: 24, fontFamily: fonts.heavy },
   monthBtnOff: { color: colors.track },
-  monthTitle: { color: colors.ink, fontSize: font.body, fontWeight: '800' },
+  monthTitle: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy },
 
   weekRow: { flexDirection: 'row', marginTop: 4 },
-  weekHead: { flex: 1, textAlign: 'center', color: colors.muted, fontSize: font.eyebrow, fontWeight: '800' },
+  weekHead: { flex: 1, textAlign: 'center', color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy },
 
   dayCell: { flex: 1, alignItems: 'center', paddingVertical: 3 },
   dayDot: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   dayDotToday: { borderWidth: 2, borderColor: colors.session },
-  dayText: { color: colors.text, fontSize: font.small, fontWeight: '600' },
+  dayText: { color: colors.text, fontSize: font.small, fontFamily: fonts.bold },
   dayTextFuture: { color: colors.track },
-  dayTextToday: { color: colors.session, fontWeight: '800' },
+  dayTextToday: { color: colors.session, fontFamily: fonts.heavy },
 
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.lg },
-  legendText: { color: colors.muted, fontSize: font.small },
+  legendText: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
 
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.xs, width: '100%', maxWidth: 420 },
-  sheetSub: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
-  sheetTitle: { color: colors.ink, fontSize: font.h2, fontWeight: '800' },
-  sheetMeta: { color: colors.muted, fontSize: font.small, fontWeight: '700' },
-  sheetMuted: { color: colors.muted, fontSize: font.small, lineHeight: 19 },
+  sheetSub: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.5 },
+  sheetTitle: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy },
+  sheetMeta: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold },
+  sheetMuted: { color: colors.muted, fontSize: font.small, lineHeight: 19, fontFamily: fonts.regular },
   sheetClose: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
-  sheetCloseText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
+  sheetCloseText: { color: colors.primaryText, fontSize: font.body, fontFamily: fonts.heavy },
 });

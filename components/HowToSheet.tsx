@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, font, radius, spacing } from '@/constants/theme';
+import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { EXERCISE_IMAGES } from '@/data/exerciseImages';
 import { FORM_CUES } from '@/data/formCues';
 
@@ -53,13 +53,13 @@ export function HowToSheet({ exKey, name, onClose }: Props) {
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm, width: '100%', maxWidth: 420 },
-  sub: { color: colors.primary, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1, marginBottom: spacing.xs },
-  title: { color: colors.ink, fontSize: font.h2, fontWeight: '800' },
+  sub: { color: colors.primary, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1, marginBottom: spacing.xs },
+  title: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy },
   img: { width: '100%', height: 200, borderRadius: radius.md, backgroundColor: colors.track, marginTop: spacing.sm },
   cueRow: { flexDirection: 'row', gap: spacing.sm },
-  cueDot: { color: colors.primary, fontSize: font.body, fontWeight: '900', lineHeight: 22 },
-  cueText: { flex: 1, color: colors.text, fontSize: font.body, lineHeight: 22 },
-  disclaimer: { color: colors.muted, fontSize: font.small, fontStyle: 'italic', marginTop: spacing.sm },
+  cueDot: { color: colors.primary, fontSize: font.body, fontFamily: fonts.display, lineHeight: 22 },
+  cueText: { flex: 1, color: colors.text, fontSize: font.body, lineHeight: 22, fontFamily: fonts.regular },
+  disclaimer: { color: colors.muted, fontSize: font.small, marginTop: spacing.sm, fontFamily: fonts.regular },
   close: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
-  closeText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
+  closeText: { color: colors.primaryText, fontSize: font.body, fontFamily: fonts.heavy },
 });

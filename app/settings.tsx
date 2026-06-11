@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, font, radius, spacing } from '@/constants/theme';
+import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { useAppStore } from '@/store/useAppStore';
 
 function todayNumber(): number {
@@ -132,23 +132,23 @@ export default function Settings() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
-  back: { color: colors.primary, fontSize: font.body, fontWeight: '700' },
-  title: { color: colors.ink, fontSize: font.h2, fontWeight: '800' },
+  back: { color: colors.primary, fontSize: font.body, fontFamily: fonts.bold },
+  title: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy },
 
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.sm },
-  label: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
+  label: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.5 },
 
-  nameInput: { color: colors.ink, fontSize: font.h2, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs },
+  nameInput: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy, borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs },
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
-  nameText: { flex: 1, color: colors.ink, fontSize: font.h2, fontWeight: '800', paddingVertical: spacing.xs },
+  nameText: { flex: 1, color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy, paddingVertical: spacing.xs },
 
   weightRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
-  weightInput: { color: colors.ink, fontSize: font.h2, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs, minWidth: 64, textAlign: 'center' },
-  weightUnit: { color: colors.muted, fontSize: font.body, fontWeight: '700' },
-  weightHint: { color: colors.muted, fontSize: font.small },
+  weightInput: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy, borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs, minWidth: 64, textAlign: 'center' },
+  weightUnit: { color: colors.muted, fontSize: font.body, fontFamily: fonts.bold },
+  weightHint: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
 
-  aboutText: { color: colors.text, fontSize: font.body, fontWeight: '700' },
+  aboutText: { color: colors.text, fontSize: font.body, fontFamily: fonts.bold },
 
   resetBtn: { borderWidth: 1, borderColor: '#F0C2C2', backgroundColor: '#FCEFEF', borderRadius: radius.pill, paddingVertical: spacing.md + 2, alignItems: 'center', marginTop: spacing.sm },
-  resetText: { color: '#B91C1C', fontSize: font.body, fontWeight: '800' },
+  resetText: { color: '#B91C1C', fontSize: font.body, fontFamily: fonts.heavy },
 });

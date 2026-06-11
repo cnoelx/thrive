@@ -6,7 +6,7 @@ import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Celebration } from '@/components/Celebration';
-import { categoryColors, colors, font, radius, spacing } from '@/constants/theme';
+import { categoryColors, colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, MAX_LEVEL, benchmarksFor, categoryCeiling } from '@/data/benchmarks';
 import { WHATS_NEW } from '@/data/whatsNew';
 import { todaysWorkout } from '@/engine/dailyCard';
@@ -409,20 +409,20 @@ const styles = StyleSheet.create({
   // Dark hero
   hero: { backgroundColor: colors.inkCard, paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xxl },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  heroGreeting: { color: colors.primaryText, fontSize: 24, fontWeight: '900' },
+  heroGreeting: { color: colors.primaryText, fontSize: 24, fontFamily: fonts.display },
   streakCard: { backgroundColor: colors.streakBg, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.streakBorder },
   weekHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
-  weekEyebrow: { color: colors.warnText, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1 },
-  streakSentence: { color: colors.ink, fontSize: font.body, fontWeight: '800', marginBottom: spacing.md },
+  weekEyebrow: { color: colors.warnText, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1 },
+  streakSentence: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy, marginBottom: spacing.md },
   weekStrip: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   weekDay: { flex: 1, alignItems: 'center', gap: 4 },
   weekDotSlot: { height: 34, justifyContent: 'center' }, // keeps date labels aligned despite today's bigger flame
-  weekDayLabel: { color: colors.muted, fontSize: 10, fontWeight: '700' },
-  weekDayLabelToday: { color: colors.ink, fontWeight: '900' },
-  weekChevron: { color: colors.primary, fontSize: 18, fontWeight: '700' },
+  weekDayLabel: { color: colors.muted, fontSize: 10, fontFamily: fonts.bold },
+  weekDayLabelToday: { color: colors.ink, fontFamily: fonts.display },
+  weekChevron: { color: colors.primary, fontSize: 18, fontFamily: fonts.bold },
   heroOverall: { marginTop: spacing.xl + spacing.xs },
-  heroOverallEyebrow: { color: colors.onInkMuted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
-  heroLevel: { color: colors.primaryText, fontSize: font.h2, fontWeight: '900', marginTop: spacing.xs },
+  heroOverallEyebrow: { color: colors.onInkMuted, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.5 },
+  heroLevel: { color: colors.primaryText, fontSize: font.h2, fontFamily: fonts.display, marginTop: spacing.xs },
   heroBarTrack: { height: 8, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: radius.pill, overflow: 'hidden', marginTop: spacing.md },
   heroBarFill: { height: 8, backgroundColor: colors.accent, borderRadius: radius.pill },
 
@@ -432,39 +432,39 @@ const styles = StyleSheet.create({
   // Today — burns session-orange until done, then cools to brand green
   todayHero: { backgroundColor: colors.primary, borderRadius: radius.lg, padding: spacing.xl },
   todayHeroHot: { backgroundColor: colors.session },
-  todayHeroEyebrow: { color: 'rgba(255,255,255,0.85)', fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1 },
-  todayHeroTitle: { color: colors.primaryText, fontSize: font.title, fontWeight: '900', marginTop: spacing.xs },
-  todayHeroSub: { color: 'rgba(255,255,255,0.85)', fontSize: font.small, marginTop: spacing.xs },
+  todayHeroEyebrow: { color: 'rgba(255,255,255,0.85)', fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1 },
+  todayHeroTitle: { color: colors.primaryText, fontSize: font.title, fontFamily: fonts.display, marginTop: spacing.xs },
+  todayHeroSub: { color: 'rgba(255,255,255,0.85)', fontSize: font.small, marginTop: spacing.xs, fontFamily: fonts.regular },
   todayHeroBtn: { backgroundColor: colors.surface, borderRadius: radius.pill, paddingVertical: spacing.md + 2, alignItems: 'center', marginTop: spacing.lg },
-  todayHeroBtnText: { color: colors.session, fontSize: font.body, fontWeight: '800' }, // only shown on the hot card
+  todayHeroBtnText: { color: colors.session, fontSize: font.body, fontFamily: fonts.heavy }, // only shown on the hot card
   todayDonePill: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: radius.pill, paddingVertical: spacing.md + 2, alignItems: 'center', marginTop: spacing.lg },
-  todayDoneText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
+  todayDoneText: { color: colors.primaryText, fontSize: font.body, fontFamily: fonts.heavy },
 
   // Today — rest day (calm, not green)
   restCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.xs },
-  restEyebrow: { color: colors.primary, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1 },
-  restTitle: { color: colors.ink, fontSize: font.h2, fontWeight: '800', marginTop: 2 },
-  restSub: { color: colors.muted, fontSize: font.small, marginTop: 4 },
+  restEyebrow: { color: colors.primary, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1 },
+  restTitle: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy, marginTop: 2 },
+  restSub: { color: colors.muted, fontSize: font.small, marginTop: 4, fontFamily: fonts.regular },
 
   // Areas grouped card
   groupCard: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md },
   areaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
   areaRowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
   levelBox: { width: 38, height: 38, borderRadius: 10, backgroundColor: colors.track, alignItems: 'center', justifyContent: 'center' },
-  levelText: { color: colors.muted, fontSize: font.small, fontWeight: '900' },
+  levelText: { color: colors.muted, fontSize: font.small, fontFamily: fonts.display },
   levelTextOn: { color: colors.primaryText },
-  areaName: { color: colors.text, fontSize: font.body, fontWeight: '700' },
-  areaLockHint: { color: colors.muted, fontSize: font.small },
-  areaMaxedHint: { color: colors.primary, fontSize: font.small, fontWeight: '700' },
+  areaName: { color: colors.text, fontSize: font.body, fontFamily: fonts.bold },
+  areaLockHint: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
+  areaMaxedHint: { color: colors.primary, fontSize: font.small, fontFamily: fonts.bold },
   rowBarTrack: { height: 6, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden' },
   rowBarFill: { height: 6, backgroundColor: colors.primary, borderRadius: radius.pill },
-  chevron: { color: colors.muted, fontSize: 22 },
+  chevron: { color: colors.muted, fontSize: 22, fontFamily: fonts.regular },
 
   // Reminder
   reminderCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.md },
   reminderHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  reminderTitle: { color: colors.text, fontSize: font.body, fontWeight: '800' },
-  reminderSub: { color: colors.muted, fontSize: font.small, marginTop: 1 },
+  reminderTitle: { color: colors.text, fontSize: font.body, fontFamily: fonts.heavy },
+  reminderSub: { color: colors.muted, fontSize: font.small, marginTop: 1, fontFamily: fonts.regular },
   timeButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -476,15 +476,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
-  timeButtonText: { color: colors.text, fontSize: font.body, fontWeight: '800' },
-  timeButtonHint: { color: colors.primary, fontSize: font.small, fontWeight: '700' },
+  timeButtonText: { color: colors.text, fontSize: font.body, fontFamily: fonts.heavy },
+  timeButtonHint: { color: colors.primary, fontSize: font.small, fontFamily: fonts.bold },
 
   // Modals / sheets
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
 
-  overallEyebrow: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
-  overallLevel: { color: colors.ink, fontSize: font.title, fontWeight: '900' },
-  overallSub: { color: colors.muted, fontSize: font.small, marginTop: 2 },
+  overallEyebrow: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.5 },
+  overallLevel: { color: colors.ink, fontSize: font.title, fontFamily: fonts.display },
+  overallSub: { color: colors.muted, fontSize: font.small, marginTop: 2, fontFamily: fonts.regular },
   barTrack: { height: 10, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden', marginTop: 2 },
   barFill: { height: 10, backgroundColor: colors.primary, borderRadius: radius.pill },
 
@@ -493,19 +493,19 @@ const styles = StyleSheet.create({
 
   whatsNewList: { marginTop: spacing.sm, gap: spacing.sm },
   whatsNewRow: { flexDirection: 'row', gap: spacing.sm },
-  whatsNewDot: { color: colors.primary, fontSize: font.body, fontWeight: '900', lineHeight: 22 },
-  whatsNewText: { flex: 1, color: colors.text, fontSize: font.body, lineHeight: 22 },
+  whatsNewDot: { color: colors.primary, fontSize: font.body, fontFamily: fonts.display, lineHeight: 22 },
+  whatsNewText: { flex: 1, color: colors.text, fontSize: font.body, lineHeight: 22, fontFamily: fonts.regular },
   levelsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
-  levelsCat: { color: colors.text, fontSize: font.body, fontWeight: '700' },
-  levelsVal: { color: colors.primary, fontSize: font.body, fontWeight: '800' },
+  levelsCat: { color: colors.text, fontSize: font.body, fontFamily: fonts.bold },
+  levelsVal: { color: colors.primary, fontSize: font.body, fontFamily: fonts.heavy },
   levelsValLocked: { color: colors.muted },
 
   pullSheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm, width: '100%', maxWidth: 420, alignItems: 'center' },
   pullEmoji: { fontSize: 44 },
-  pullTitle: { color: colors.ink, fontSize: font.title, fontWeight: '800', textAlign: 'center' },
-  pullBody: { color: colors.muted, fontSize: font.body, lineHeight: 22, textAlign: 'center' },
+  pullTitle: { color: colors.ink, fontSize: font.title, fontFamily: fonts.heavy, textAlign: 'center' },
+  pullBody: { color: colors.muted, fontSize: font.body, lineHeight: 22, textAlign: 'center', fontFamily: fonts.regular },
   pullPrimary: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, paddingHorizontal: spacing.xl, alignItems: 'center', marginTop: spacing.sm, alignSelf: 'stretch' },
-  pullPrimaryText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
+  pullPrimaryText: { color: colors.primaryText, fontSize: font.body, fontFamily: fonts.heavy },
   pullSecondary: { paddingVertical: spacing.sm, alignItems: 'center', alignSelf: 'stretch' },
-  pullSecondaryText: { color: colors.muted, fontSize: font.body, fontWeight: '700' },
+  pullSecondaryText: { color: colors.muted, fontSize: font.body, fontFamily: fonts.bold },
 });
