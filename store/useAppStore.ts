@@ -20,10 +20,24 @@ export interface Profile {
   healthFlag: boolean; // true if any PAR-Q question was answered "yes"
 }
 
-/** What a completed workout looked like — shown on the finish screen and from the calendar. */
+export type WorkoutFeel = 'hard' | 'right' | 'easy';
+
+/** What a completed workout looked like — the headline stats shown from the calendar.
+ *  Optional fields are missing on days logged before they were recorded. */
 export interface WorkoutSummary {
   focus: string;
-  items: { name: string; sets: number | null; target: string }[];
+  /** How many distinct moves the day had. */
+  moves?: number;
+  /** Whole minutes from opening the workout to finishing it. */
+  durationMin?: number;
+  /** Total sets done across all moves (goal + work sets included). */
+  totalSets?: number;
+  /** Rough MET-based estimate — only present when the user has set a weight. */
+  calories?: number;
+  /** One-tap self-rating from the finish screen. */
+  feel?: WorkoutFeel;
+  /** Legacy — early summaries stored a per-exercise list; no longer written or displayed. */
+  items?: { name: string; sets: number | null; target: string }[];
 }
 
 interface AppState {
@@ -43,6 +57,8 @@ interface AppState {
   /** Per-day summaries of completed workouts, keyed by day-number. Days logged before this was
    *  recorded (incl. backfilled streak days) simply have no entry. */
   workoutLog: Record<number, WorkoutSummary>;
+  /** Body weight in kg — optional, used only for the calorie estimate. */
+  weightKg: number | null;
   /** Highest streak milestone the user has seen the celebration for; cleared when the streak resets. */
   streakMilestoneSeen: number;
   /** Highest overall level the user has acknowledged (dismissed the celebration for). The next
@@ -62,6 +78,9 @@ interface AppState {
   unlockPull: () => void;
   /** Mark today's workout complete, recording what it contained. */
   logToday: (dayNumber: number, summary: WorkoutSummary) => void;
+  /** Attach a feel rating to an already-logged day (tapped on the finish screen). */
+  rateWorkout: (dayNumber: number, feel: WorkoutFeel) => void;
+  setWeight: (kg: number | null) => void;
   /** Claim a benchmark (validated by the engine). */
   claimBenchmark: (benchmarkId: string) => void;
   unclaimBenchmark: (benchmarkId: string) => void;
@@ -87,6 +106,7 @@ export const useAppStore = create<AppState>()(
       streak: 0,
       loggedDays: [],
       workoutLog: {},
+      weightKg: null,
       streakMilestoneSeen: 0,
       overallLevelSeen: 0,
       whatsNewSeen: 0,
@@ -125,6 +145,15 @@ export const useAppStore = create<AppState>()(
           };
         }),
 
+      rateWorkout: (dayNumber, feel) =>
+        set((s) => {
+          const cur = s.workoutLog[dayNumber];
+          if (!cur) return s;
+          return { workoutLog: { ...s.workoutLog, [dayNumber]: { ...cur, feel } } };
+        }),
+
+      setWeight: (kg) => set({ weightKg: kg }),
+
       claimBenchmark: (benchmarkId) =>
         set((s) => {
           const b = BENCHMARK_BY_ID[benchmarkId];
@@ -158,6 +187,7 @@ export const useAppStore = create<AppState>()(
           streak: 0,
           loggedDays: [],
           workoutLog: {},
+          weightKg: null,
           streakMilestoneSeen: 0,
           overallLevelSeen: 0,
           whatsNewSeen: 0,
@@ -181,6 +211,7 @@ export const useAppStore = create<AppState>()(
         streak: s.streak,
         loggedDays: s.loggedDays,
         workoutLog: s.workoutLog,
+        weightKg: s.weightKg,
         streakMilestoneSeen: s.streakMilestoneSeen,
         overallLevelSeen: s.overallLevelSeen,
         whatsNewSeen: s.whatsNewSeen,

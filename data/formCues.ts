@@ -65,6 +65,7 @@ export const FORM_CUES: Record<string, string[]> = {
     "Easier: stay more upright. Harder: walk your feet forward so your body is closer to parallel with the floor.",
   ],
   pullup: [
+    "Scapular pulls: hang with straight arms, then pull your shoulder blades down and together — no elbow bend.",
     "Start from a dead or active hang.",
     "Pull your shoulder blades down and lead with your chest.",
     "Control the way down — slow negatives count.",

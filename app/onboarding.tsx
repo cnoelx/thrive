@@ -11,10 +11,10 @@ import { progressFromPlacement, startLevelsFromMax } from '@/engine/progression'
 import type { ProgressState } from '@/engine/progression';
 import { useAppStore } from '@/store/useAppStore';
 
-type Step = 'welcome' | 'name' | 'parq' | 'equipment' | 'goal' | 'experience';
+type Step = 'welcome' | 'name' | 'body' | 'parq' | 'equipment' | 'goal' | 'experience';
 // NOTE: 'parq' (safety screen) and 'goal' are intentionally left out of the flow for now. Their
 // screens still live in the code below — re-add them to ORDER to switch them back on.
-const ORDER: Step[] = ['welcome', 'name', 'equipment', 'experience'];
+const ORDER: Step[] = ['welcome', 'name', 'body', 'equipment', 'experience'];
 
 type PullEquipment = 'bar' | 'rings' | 'neither';
 const EQUIPMENT_CARDS: { id: PullEquipment; emoji: string; label: string; hint: string }[] = [
@@ -35,6 +35,7 @@ export default function Onboarding() {
   const onboarded = useAppStore((s) => s.onboarded);
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
   const setName = useAppStore((s) => s.setName);
+  const setWeight = useAppStore((s) => s.setWeight);
   const unlockPull = useAppStore((s) => s.unlockPull);
   const insets = useSafeAreaInsets();
 
@@ -46,6 +47,7 @@ export default function Onboarding() {
   const [goal, setGoal] = useState<GoalId | null>('health');
   const [experience, setExperience] = useState<Experience | null>(null);
   const [nameDraft, setNameDraft] = useState('');
+  const [weightDraft, setWeightDraft] = useState('');
   const [pullEquip, setPullEquip] = useState<PullEquipment | null>(null);
 
   // Placement (only for "I already train").
@@ -57,6 +59,8 @@ export default function Onboarding() {
   const finish = (initialProgress?: ProgressState) => {
     if (equipment && goal) {
       setName(nameDraft.trim());
+      const kg = Math.round(parseFloat(weightDraft.replace(',', '.')));
+      setWeight(Number.isFinite(kg) && kg > 0 ? kg : null);
       if (pullEquip === 'bar' || pullEquip === 'rings') unlockPull();
       completeOnboarding({ equipment, goal, healthFlag: parqYes }, initialProgress);
       router.replace('/');
@@ -127,6 +131,7 @@ export default function Onboarding() {
   const canAdvance =
     step === 'welcome' ||
     step === 'name' ||
+    step === 'body' ||
     step === 'parq' ||
     (step === 'equipment' && pullEquip !== null) ||
     (step === 'goal' && goal !== null) ||
@@ -152,6 +157,7 @@ export default function Onboarding() {
       <ScrollView contentContainerStyle={styles.scroll}>
         {step === 'welcome' && <Welcome />}
         {step === 'name' && <NameStep value={nameDraft} onChange={setNameDraft} />}
+        {step === 'body' && <WeightStep value={weightDraft} onChange={setWeightDraft} />}
         {step === 'parq' && <Parq parqYes={parqYes} setParqYes={setParqYes} />}
         {step === 'equipment' && <EquipmentStep value={pullEquip} onChange={setPullEquip} />}
         {step === 'goal' && (
@@ -244,6 +250,28 @@ function NameStep({ value, onChange }: { value: string; onChange: (v: string) =>
         returnKeyType="done"
         style={styles.nameInput}
       />
+    </View>
+  );
+}
+
+function WeightStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <View style={{ gap: spacing.md }}>
+      <Text style={styles.h1}>Your weight?</Text>
+      <Text style={styles.body}>Optional — only used to estimate calories after workouts. It stays on your phone.</Text>
+      <View style={styles.weightRow}>
+        <TextInput
+          value={value}
+          onChangeText={onChange}
+          placeholder="70"
+          placeholderTextColor={colors.muted}
+          keyboardType="numeric"
+          maxLength={3}
+          returnKeyType="done"
+          style={styles.weightInput}
+        />
+        <Text style={styles.weightUnit}>kg</Text>
+      </View>
     </View>
   );
 }
@@ -349,6 +377,18 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     marginTop: spacing.sm,
   },
+  weightRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, marginTop: spacing.sm },
+  weightInput: {
+    color: colors.ink,
+    fontSize: font.title,
+    fontWeight: '800',
+    borderBottomWidth: 2,
+    borderBottomColor: colors.primary,
+    paddingVertical: spacing.sm,
+    minWidth: 88,
+    textAlign: 'center',
+  },
+  weightUnit: { color: colors.muted, fontSize: font.h2, fontWeight: '700' },
 
   // Welcome (page 1, minimal: logo + text)
   welcomeWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },

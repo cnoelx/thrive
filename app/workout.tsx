@@ -2,14 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HowToSheet } from '@/components/HowToSheet';
 import { colors, font, radius, spacing } from '@/constants/theme';
 import { EXERCISE_BY_KEY, formatTarget } from '@/data/benchmarks';
+import { estimateCalories } from '@/engine/calories';
 import { todaysWorkout, type WorkoutItem } from '@/engine/dailyCard';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppStore, type WorkoutFeel } from '@/store/useAppStore';
 
 function todayNumber(): number {
   const now = new Date();
@@ -48,15 +49,12 @@ function clock(sec: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-// Summary rows for the finish card and the saved day log. Mixed (goal + work) exercises get a
-// precomposed line; plain items keep sets × target.
-function summarize(items: WorkoutItem[]): { name: string; sets: number | null; target: string }[] {
-  return items.map((it) => {
-    const mixed = it.chasing && it.workTarget !== it.target && (it.sets ?? 1) > 1;
-    if (!mixed) return { name: it.name, sets: it.sets, target: it.target };
-    return { name: it.name, sets: null, target: `goal try ${formatTarget(it.target)} · ${(it.sets ?? 1) - 1} × ${formatTarget(it.workTarget)}` };
-  });
-}
+const FEELS: { id: WorkoutFeel; emoji: string; label: string }[] = [
+  { id: 'hard', emoji: '🥵', label: 'Too hard' },
+  { id: 'right', emoji: '🙂', label: 'Just right' },
+  { id: 'easy', emoji: '😎', label: 'Too easy' },
+];
+
 
 export default function Workout() {
   const router = useRouter();
@@ -64,7 +62,9 @@ export default function Workout() {
   const progress = useAppStore((s) => s.progress);
   const pullUnlocked = useAppStore((s) => s.pullUnlocked);
   const logToday = useAppStore((s) => s.logToday);
+  const rateWorkout = useAppStore((s) => s.rateWorkout);
   const lastLoggedDay = useAppStore((s) => s.lastLoggedDay);
+  const weightKg = useAppStore((s) => s.weightKg);
 
   const day = todayNumber();
   const workout = useMemo(() => todaysWorkout(progress, pullUnlocked, new Date()), [progress, pullUnlocked]);
@@ -74,13 +74,24 @@ export default function Workout() {
   const [resting, setResting] = useState(false);
   const [restLeft, setRestLeft] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [durationMin, setDurationMin] = useState(0);
+  const [feel, setFeel] = useState<WorkoutFeel | null>(null);
   const [showHowTo, setShowHowTo] = useState(false);
+  const startedAt = useMemo(() => Date.now(), []);
 
   const goNext = () => {
     setResting(false);
     if (stepIndex + 1 >= steps.length) {
+      const mins = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
+      setDurationMin(mins);
       if (lastLoggedDay !== day) {
-        logToday(day, { focus: workout.focus, items: summarize(workout.items) });
+        logToday(day, {
+          focus: workout.focus,
+          moves: workout.items.length,
+          durationMin: mins,
+          totalSets: steps.length,
+          ...(weightKg ? { calories: estimateCalories(weightKg, mins) } : {}),
+        });
       }
       setFinished(true);
     } else {
@@ -118,27 +129,57 @@ export default function Workout() {
   }
 
   if (finished) {
+    const kcal = weightKg ? estimateCalories(weightKg, durationMin) : null;
     return (
-      <View style={styles.screenCenter}>
+      <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={[styles.finishScroll, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}>
         <Text style={styles.bigEmoji}>🎉</Text>
         <Text style={styles.completeTitle}>Nice work! 👏</Text>
         <Text style={styles.completeBody}>That&apos;s today done. See you tomorrow.</Text>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryFocus}>{workout.focus}</Text>
-          {summarize(workout.items).map((it, i) => (
-            <View key={i} style={styles.summaryRow}>
-              <Text style={styles.summaryName}>{it.name}</Text>
-              <Text style={styles.summaryTarget}>
-                {it.sets ? `${it.sets} × ` : ''}
-                {formatTarget(it.target)}
-              </Text>
+
+        <View style={styles.statRow}>
+          <View style={styles.statBox}>
+            <Text style={styles.statVal}>{workout.items.length}</Text>
+            <Text style={styles.statLabel}>{workout.items.length === 1 ? 'Move' : 'Moves'}</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statVal}>{steps.length}</Text>
+            <Text style={styles.statLabel}>Sets</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statVal}>{durationMin}</Text>
+            <Text style={styles.statLabel}>Min</Text>
+          </View>
+          {kcal !== null ? (
+            <View style={styles.statBox}>
+              <Text style={styles.statVal}>~{kcal}</Text>
+              <Text style={styles.statLabel}>kcal</Text>
             </View>
-          ))}
+          ) : null}
         </View>
+
+        <View style={styles.feelCard}>
+          <Text style={styles.feelTitle}>How did it feel?</Text>
+          <View style={styles.feelRow}>
+            {FEELS.map((f) => (
+              <Pressable
+                key={f.id}
+                onPress={() => {
+                  setFeel(f.id);
+                  rateWorkout(day, f.id);
+                }}
+                style={[styles.feelBtn, feel === f.id && styles.feelBtnOn]}
+              >
+                <Text style={styles.feelEmoji}>{f.emoji}</Text>
+                <Text style={[styles.feelLabel, feel === f.id && styles.feelLabelOn]}>{f.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
         <Pressable onPress={() => router.back()} style={styles.primaryBtn}>
           <Text style={styles.primaryText}>Done</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     );
   }
 
@@ -220,11 +261,21 @@ const styles = StyleSheet.create({
   completeTitle: { color: colors.ink, fontSize: font.title, fontWeight: '800', textAlign: 'center' },
   completeBody: { color: colors.muted, fontSize: font.body, textAlign: 'center', lineHeight: 22 },
 
-  summaryCard: { alignSelf: 'stretch', backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, marginTop: spacing.sm, gap: spacing.sm },
-  summaryFocus: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1 },
-  summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
-  summaryName: { color: colors.text, fontSize: font.small, fontWeight: '700', flexShrink: 1 },
-  summaryTarget: { color: colors.muted, fontSize: font.small, textAlign: 'right', flexShrink: 1 },
+  finishScroll: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, gap: spacing.md },
+
+  statRow: { flexDirection: 'row', alignSelf: 'stretch', gap: spacing.sm, marginTop: spacing.sm },
+  statBox: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingVertical: spacing.md, alignItems: 'center', gap: 2 },
+  statVal: { color: colors.ink, fontSize: font.h2, fontWeight: '900' },
+  statLabel: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '700' },
+
+  feelCard: { alignSelf: 'stretch', backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: spacing.md },
+  feelTitle: { color: colors.ink, fontSize: font.body, fontWeight: '800' },
+  feelRow: { flexDirection: 'row', gap: spacing.sm },
+  feelBtn: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
+  feelBtnOn: { borderColor: colors.primary, backgroundColor: '#F0FAF4' },
+  feelEmoji: { fontSize: 26 },
+  feelLabel: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '700' },
+  feelLabelOn: { color: colors.primary, fontWeight: '800' },
 
   header: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   close: { color: colors.muted, fontSize: 22, fontWeight: '700' },

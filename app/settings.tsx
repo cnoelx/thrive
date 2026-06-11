@@ -13,13 +13,21 @@ export default function Settings() {
   const insets = useSafeAreaInsets();
   const name = useAppStore((s) => s.name);
   const setName = useAppStore((s) => s.setName);
+  const weightKg = useAppStore((s) => s.weightKg);
+  const setWeight = useAppStore((s) => s.setWeight);
   const resetAll = useAppStore((s) => s.resetAll);
   const [draft, setDraft] = useState(name);
   const [editing, setEditing] = useState(false);
+  const [weightDraft, setWeightDraft] = useState(weightKg ? String(weightKg) : '');
 
   const saveName = () => {
     setName(draft.trim());
     setEditing(false);
+  };
+
+  const saveWeight = () => {
+    const n = Math.round(parseFloat(weightDraft.replace(',', '.')));
+    setWeight(Number.isFinite(n) && n > 0 ? n : null);
   };
 
   const confirmReset = () => {
@@ -43,7 +51,7 @@ export default function Settings() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <Pressable onPress={() => { saveName(); router.back(); }} hitSlop={10}>
+        <Pressable onPress={() => { saveName(); saveWeight(); router.back(); }} hitSlop={10}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title}>Settings</Text>
@@ -82,6 +90,27 @@ export default function Settings() {
           )}
         </View>
 
+        {/* Weight — optional, feeds the calorie estimate */}
+        <View style={styles.card}>
+          <Text style={styles.label}>YOUR WEIGHT</Text>
+          <View style={styles.weightRow}>
+            <TextInput
+              value={weightDraft}
+              onChangeText={setWeightDraft}
+              onBlur={saveWeight}
+              onSubmitEditing={saveWeight}
+              placeholder="—"
+              placeholderTextColor={colors.muted}
+              keyboardType="numeric"
+              maxLength={3}
+              returnKeyType="done"
+              style={styles.weightInput}
+            />
+            <Text style={styles.weightUnit}>kg</Text>
+          </View>
+          <Text style={styles.weightHint}>Optional — only used to estimate calories. Stays on your phone.</Text>
+        </View>
+
         {/* About */}
         <View style={styles.card}>
           <Text style={styles.aboutText}>Version {Constants.expoConfig?.version ?? '1.0.0'}</Text>
@@ -107,6 +136,11 @@ const styles = StyleSheet.create({
   nameInput: { color: colors.ink, fontSize: font.h2, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs },
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   nameText: { flex: 1, color: colors.ink, fontSize: font.h2, fontWeight: '800', paddingVertical: spacing.xs },
+
+  weightRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
+  weightInput: { color: colors.ink, fontSize: font.h2, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs, minWidth: 64, textAlign: 'center' },
+  weightUnit: { color: colors.muted, fontSize: font.body, fontWeight: '700' },
+  weightHint: { color: colors.muted, fontSize: font.small },
 
   aboutText: { color: colors.text, fontSize: font.body, fontWeight: '700' },
 

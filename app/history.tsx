@@ -4,12 +4,12 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, spacing } from '@/constants/theme';
-import { formatTarget } from '@/data/benchmarks';
 import { dayNumberFromDate, longestStreak, monthGrid, type MonthCell } from '@/engine/history';
 import { isRestDay } from '@/engine/streak';
 import { useAppStore } from '@/store/useAppStore';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const FEEL_LABELS = { hard: 'felt hard 🥵', right: 'felt right 🙂', easy: 'felt easy 😎' } as const;
 
 export default function History() {
   const router = useRouter();
@@ -132,17 +132,20 @@ export default function History() {
             {openLog ? (
               <>
                 <Text style={styles.sheetTitle}>{openLog.focus}</Text>
-                <View style={{ gap: spacing.sm, marginTop: spacing.xs }}>
-                  {openLog.items.map((it, i) => (
-                    <View key={i} style={styles.sheetRow}>
-                      <Text style={styles.sheetName}>{it.name}</Text>
-                      <Text style={styles.sheetTarget}>
-                        {it.sets ? `${it.sets} × ` : ''}
-                        {formatTarget(it.target)}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
+                <Text style={styles.sheetMeta}>
+                  {[
+                    (() => {
+                      const m = openLog.moves ?? openLog.items?.length;
+                      return m ? `${m} ${m === 1 ? 'move' : 'moves'}` : null;
+                    })(),
+                    openLog.totalSets ? `${openLog.totalSets} sets` : null,
+                    openLog.durationMin ? `${openLog.durationMin} min` : null,
+                    openLog.calories ? `~${openLog.calories} kcal` : null,
+                    openLog.feel ? FEEL_LABELS[openLog.feel] : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </Text>
               </>
             ) : (
               <>
@@ -199,10 +202,8 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.xs, width: '100%', maxWidth: 420 },
   sheetSub: { color: colors.muted, fontSize: font.eyebrow, fontWeight: '800', letterSpacing: 1.5 },
   sheetTitle: { color: colors.ink, fontSize: font.h2, fontWeight: '800' },
+  sheetMeta: { color: colors.muted, fontSize: font.small, fontWeight: '700' },
   sheetMuted: { color: colors.muted, fontSize: font.small, lineHeight: 19 },
-  sheetRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
-  sheetName: { color: colors.text, fontSize: font.small, fontWeight: '700', flexShrink: 1 },
-  sheetTarget: { color: colors.muted, fontSize: font.small, textAlign: 'right', flexShrink: 1 },
   sheetClose: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
   sheetCloseText: { color: colors.primaryText, fontSize: font.body, fontWeight: '800' },
 });
