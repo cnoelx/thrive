@@ -143,7 +143,10 @@ export default function Home() {
   };
 
   const onPickTime = (event: DateTimePickerEvent, selected?: Date) => {
-    if (event.type === 'set' && selected) setReminder(true, selected.getHours(), selected.getMinutes());
+    if (event.type === 'set' && selected) {
+      setReminder(true, selected.getHours(), selected.getMinutes());
+      setReminderCustomTime(true);
+    }
   };
   const openAndroidTimePicker = () =>
     DateTimePickerAndroid.open({ value: dateFromHM(reminderHour, reminderMinute), onChange: onPickTime, mode: 'time', is24Hour: false });
@@ -266,13 +269,7 @@ export default function Home() {
             <View style={styles.reminderHead}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.reminderTitle}>Workout reminders</Text>
-                <Text style={styles.reminderSub}>
-                  {!reminderEnabled
-                    ? 'Get nudged so you don’t lose your streak'
-                    : reminderCustomTime
-                      ? `Every workout day at ${timeLabel(reminderHour, reminderMinute)}`
-                      : 'Morning and evening on workout days — off once you’re done'}
-                </Text>
+                <Text style={styles.reminderSub}>On workout days — quietly skipped once you&apos;re done</Text>
               </View>
               <Switch
                 value={reminderEnabled}
@@ -283,18 +280,6 @@ export default function Home() {
             </View>
 
             {reminderEnabled ? (
-              <View style={styles.reminderTimeRow}>
-                <Text style={styles.reminderTimeLabel}>Set my own time</Text>
-                <Switch
-                  value={reminderCustomTime}
-                  onValueChange={setReminderCustomTime}
-                  trackColor={{ true: colors.primary, false: colors.track }}
-                  thumbColor="#ffffff"
-                />
-              </View>
-            ) : null}
-
-            {reminderEnabled && reminderCustomTime ? (
               Platform.OS === 'ios' ? (
                 <View style={styles.timeButton}>
                   <Text style={styles.timeButtonText}>Remind me at</Text>
@@ -302,8 +287,8 @@ export default function Home() {
                 </View>
               ) : (
                 <Pressable style={styles.timeButton} onPress={openAndroidTimePicker}>
-                  <Text style={styles.timeButtonText}>{timeLabel(reminderHour, reminderMinute)}</Text>
-                  <Text style={styles.timeButtonHint}>Change ›</Text>
+                  <Text style={styles.timeButtonText}>{reminderCustomTime ? timeLabel(reminderHour, reminderMinute) : 'Set a specific time'}</Text>
+                  <Text style={styles.timeButtonHint}>{reminderCustomTime ? 'Change ›' : 'Optional ›'}</Text>
                 </Pressable>
               )
             ) : null}
@@ -496,8 +481,6 @@ const styles = StyleSheet.create({
   reminderHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   reminderTitle: { color: colors.text, fontSize: font.body, fontFamily: fonts.heavy },
   reminderSub: { color: colors.muted, fontSize: font.small, marginTop: 1, fontFamily: fonts.regular },
-  reminderTimeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md },
-  reminderTimeLabel: { color: colors.text, fontSize: font.body, fontFamily: fonts.bold },
   timeButton: {
     flexDirection: 'row',
     alignItems: 'center',
