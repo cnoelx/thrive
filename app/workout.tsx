@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HowToSheet } from '@/components/HowToSheet';
@@ -10,6 +10,7 @@ import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { EXERCISE_BY_KEY, formatTarget } from '@/data/benchmarks';
 import { estimateCalories } from '@/engine/calories';
 import { todaysWorkout, type WorkoutItem } from '@/engine/dailyCard';
+import { refreshReminders, requestNotificationPermission } from '@/lib/notifications';
 import { useAppStore, type WorkoutFeel } from '@/store/useAppStore';
 
 function todayNumber(): number {
@@ -52,6 +53,9 @@ function clock(sec: number): string {
 // How old (in days) the stored weight may get before the finish screen asks about it.
 const WEIGHT_NUDGE_DAYS = 30;
 
+// How long a declined reminder offer stays quiet before the finish screen asks again.
+const REMINDER_REOFFER_DAYS = 7;
+
 // Sunrise — the live session's own bright, warm room (heat = effort; the home card glows the same
 // orange until done). Rest day and the finish screen stay on the app's cool light theme.
 const sunrise = {
@@ -81,6 +85,10 @@ export default function Workout() {
   const weightKg = useAppStore((s) => s.weightKg);
   const weightSetDay = useAppStore((s) => s.weightSetDay);
   const setWeight = useAppStore((s) => s.setWeight);
+  const reminderEnabled = useAppStore((s) => s.reminderEnabled);
+  const reminderOfferDay = useAppStore((s) => s.reminderOfferDay);
+  const setReminder = useAppStore((s) => s.setReminder);
+  const dismissReminderOffer = useAppStore((s) => s.dismissReminderOffer);
 
   const day = todayNumber();
   const workout = useMemo(() => todaysWorkout(progress, pullUnlocked, new Date()), [progress, pullUnlocked]);
@@ -146,6 +154,17 @@ export default function Workout() {
 
   if (finished) {
     const kcal = weightKg ? estimateCalories(weightKg, durationMin) : null;
+    const offerReminder = !reminderEnabled && (reminderOfferDay === null || day - reminderOfferDay >= REMINDER_REOFFER_DAYS);
+    const acceptReminder = async () => {
+      const ok = await requestNotificationPermission();
+      if (!ok) {
+        Alert.alert('Notifications are off', 'Allow notifications for Thrive in your phone settings to get reminders.');
+        dismissReminderOffer(day);
+        return;
+      }
+      setReminder(true, 8, 0);
+      await refreshReminders({ lastLoggedDay: day, lapsed: false, enabled: true, customTime: null });
+    };
     return (
       <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={[styles.finishScroll, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}>
         <Text style={styles.bigEmoji}>🎉</Text>
@@ -182,6 +201,21 @@ export default function Workout() {
               </Pressable>
               <Pressable onPress={() => router.push('/settings')} style={styles.weightUpdate}>
                 <Text style={styles.weightUpdateText}>Update</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
+        {offerReminder ? (
+          <View style={styles.remindCard}>
+            <Text style={styles.remindTitle}>Want a daily nudge?</Text>
+            <Text style={styles.remindSub}>A morning and evening reminder on workout days, so you don&apos;t lose your streak.</Text>
+            <View style={styles.remindRow}>
+              <Pressable onPress={acceptReminder} style={styles.remindYes}>
+                <Text style={styles.remindYesText}>Remind me</Text>
+              </Pressable>
+              <Pressable onPress={() => dismissReminderOffer(day)} style={styles.remindNo}>
+                <Text style={styles.remindNoText}>Not now</Text>
               </Pressable>
             </View>
           </View>
@@ -305,6 +339,15 @@ const styles = StyleSheet.create({
   weightYesText: { color: colors.primaryText, fontSize: font.small, fontFamily: fonts.heavy },
   weightUpdate: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center' },
   weightUpdateText: { color: colors.warnText, fontSize: font.small, fontFamily: fonts.heavy },
+
+  remindCard: { alignSelf: 'stretch', backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: spacing.xs },
+  remindTitle: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy },
+  remindSub: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
+  remindRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  remindYes: { flex: 1, backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center' },
+  remindYesText: { color: colors.primaryText, fontSize: font.small, fontFamily: fonts.heavy },
+  remindNo: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center' },
+  remindNoText: { color: colors.muted, fontSize: font.small, fontFamily: fonts.heavy },
 
   feelCard: { alignSelf: 'stretch', backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: spacing.md },
   feelTitle: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy },

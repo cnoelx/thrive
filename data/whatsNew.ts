@@ -7,8 +7,8 @@
 // cleanup. If an item wouldn't make a user think "oh, nice", leave it out. A short, high-signal list
 // is better than a thorough one.
 export const WHATS_NEW: { version: number; items: string[] } = {
-  version: 8,
+  version: 9,
   items: [
-    'Workouts have a new look — a warm sunrise session screen, and the home card glows orange until you’re done.',
+    'Workout reminders are on now — a morning and evening nudge on workout days that goes quiet the moment you finish.',
   ],
 };

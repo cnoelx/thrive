@@ -69,7 +69,14 @@ interface AppState {
   /** Highest "What's new" changelog version the user has dismissed. */
   whatsNewSeen: number;
   nudgeDismissedDay: number | null;
+  /** Day-number the finish-screen reminder offer was last declined — re-offered after a week. */
+  reminderOfferDay: number | null;
+  /** True once we've asked for notification permission on app open (asked exactly once). */
+  reminderPrompted: boolean;
   reminderEnabled: boolean;
+  /** When true, reminders fire once a day at reminderHour:reminderMinute instead of the default
+   *  morning + evening beats. The home "set my own time" switch. */
+  reminderCustomTime: boolean;
   reminderHour: number;
   reminderMinute: number;
   /** Set during onboarding (or later via the locked-Pull tile) when the user confirms they have a
@@ -90,6 +97,9 @@ interface AppState {
   markStreakMilestoneSeen: (milestone: number) => void;
   markWhatsNewSeen: (version: number) => void;
   dismissNudge: (dayNumber: number) => void;
+  dismissReminderOffer: (dayNumber: number) => void;
+  markReminderPrompted: () => void;
+  setReminderCustomTime: (on: boolean) => void;
   setReminder: (enabled: boolean, hour: number, minute: number) => void;
   setName: (name: string) => void;
   /** Dev/testing helper to wipe back to a clean first-launch state. */
@@ -114,7 +124,10 @@ export const useAppStore = create<AppState>()(
       overallLevelSeen: 0,
       whatsNewSeen: 0,
       nudgeDismissedDay: null,
+      reminderOfferDay: null,
+      reminderPrompted: false,
       reminderEnabled: false,
+      reminderCustomTime: false,
       reminderHour: 8,
       reminderMinute: 0,
       pullUnlocked: false,
@@ -174,6 +187,12 @@ export const useAppStore = create<AppState>()(
 
       dismissNudge: (dayNumber) => set({ nudgeDismissedDay: dayNumber }),
 
+      dismissReminderOffer: (dayNumber) => set({ reminderOfferDay: dayNumber }),
+
+      markReminderPrompted: () => set({ reminderPrompted: true }),
+
+      setReminderCustomTime: (on) => set({ reminderCustomTime: on }),
+
       setReminder: (enabled, hour, minute) => set({ reminderEnabled: enabled, reminderHour: hour, reminderMinute: minute }),
 
       setName: (name) => set({ name }),
@@ -196,7 +215,10 @@ export const useAppStore = create<AppState>()(
           overallLevelSeen: 0,
           whatsNewSeen: 0,
           nudgeDismissedDay: null,
+          reminderOfferDay: null,
+          reminderPrompted: false,
           reminderEnabled: false,
+          reminderCustomTime: false,
           reminderHour: 8,
           reminderMinute: 0,
           pullUnlocked: false,
@@ -221,7 +243,10 @@ export const useAppStore = create<AppState>()(
         overallLevelSeen: s.overallLevelSeen,
         whatsNewSeen: s.whatsNewSeen,
         nudgeDismissedDay: s.nudgeDismissedDay,
+        reminderOfferDay: s.reminderOfferDay,
+        reminderPrompted: s.reminderPrompted,
         reminderEnabled: s.reminderEnabled,
+        reminderCustomTime: s.reminderCustomTime,
         reminderHour: s.reminderHour,
         reminderMinute: s.reminderMinute,
         pullUnlocked: s.pullUnlocked,

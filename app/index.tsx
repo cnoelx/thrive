@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Redirect, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Celebration } from '@/components/Celebration';
@@ -13,7 +13,7 @@ import { todaysWorkout } from '@/engine/dailyCard';
 import { dateOfDayNumber, weekDays } from '@/engine/history';
 import { baselineLevel, completedLevel, effectiveCategoryIds, nextLevel } from '@/engine/progression';
 import { currentStreak, isRestDay, pendingStreakMilestone } from '@/engine/streak';
-import { cancelReminders, requestNotificationPermission, scheduleDailyReminder } from '@/lib/notifications';
+import { refreshReminders, requestNotificationPermission } from '@/lib/notifications';
 import { useAppStore } from '@/store/useAppStore';
 
 function todayNumber(): number {
@@ -57,6 +57,10 @@ export default function Home() {
   const overallLevelSeen = useAppStore((s) => s.overallLevelSeen);
   const markOverallLevelSeen = useAppStore((s) => s.markOverallLevelSeen);
   const reminderEnabled = useAppStore((s) => s.reminderEnabled);
+  const reminderPrompted = useAppStore((s) => s.reminderPrompted);
+  const markReminderPrompted = useAppStore((s) => s.markReminderPrompted);
+  const reminderCustomTime = useAppStore((s) => s.reminderCustomTime);
+  const setReminderCustomTime = useAppStore((s) => s.setReminderCustomTime);
   const reminderHour = useAppStore((s) => s.reminderHour);
   const reminderMinute = useAppStore((s) => s.reminderMinute);
   const setReminder = useAppStore((s) => s.setReminder);
@@ -70,6 +74,31 @@ export default function Home() {
   const doneToday = lastLoggedDay === day;
   const streakNow = currentStreak(streak, lastLoggedDay, day);
   const streakMilestone = pendingStreakMilestone(streakNow, streakMilestoneSeen);
+
+  const lapsed = streakNow === 0 && lastLoggedDay !== null;
+
+  // Ask for notification permission once, on first app open after onboarding. Granting defaults the
+  // reminders on; the effect below then schedules them.
+  useEffect(() => {
+    if (!onboarded || reminderPrompted) return;
+    (async () => {
+      const ok = await requestNotificationPermission();
+      markReminderPrompted();
+      if (ok) setReminder(true, 8, 0);
+    })();
+  }, [onboarded, reminderPrompted, markReminderPrompted, setReminder]);
+
+  // Keep the week's reminders fresh on every visit and after each completed workout — the queue
+  // re-lays from current state, so completed and rest days fall silent and lapses escalate.
+  useEffect(() => {
+    if (!onboarded) return;
+    refreshReminders({
+      lastLoggedDay,
+      lapsed,
+      enabled: reminderEnabled,
+      customTime: reminderCustomTime ? { hour: reminderHour, minute: reminderMinute } : null,
+    });
+  }, [onboarded, reminderEnabled, reminderCustomTime, reminderHour, reminderMinute, lastLoggedDay, lapsed]);
 
   if (!onboarded || !profile) return <Redirect href="/onboarding" />;
 
@@ -103,38 +132,21 @@ export default function Home() {
     (a, b) => Number(a.id === 'pull' && !pullUnlocked) - Number(b.id === 'pull' && !pullUnlocked),
   );
 
+  // Enabling re-asks for permission if needed; the schedule effect above reacts to reminderEnabled.
   const toggleReminder = async (value: boolean) => {
     if (value) {
       const ok = await requestNotificationPermission();
-      if (!ok) {
-        Alert.alert('Notifications are off', 'Allow notifications for Thrive in your phone settings to get reminders.');
-        return;
-      }
-      await scheduleDailyReminder(reminderHour, reminderMinute);
-      setReminder(true, reminderHour, reminderMinute);
-    } else {
-      await cancelReminders();
-      setReminder(false, reminderHour, reminderMinute);
+      markReminderPrompted();
+      if (!ok) return; // left off; user can grant in system settings
     }
-  };
-
-  const changeReminder = async (hour: number, minute: number) => {
-    setReminder(true, hour, minute);
-    await scheduleDailyReminder(hour, minute);
+    setReminder(value, reminderHour, reminderMinute);
   };
 
   const onPickTime = (event: DateTimePickerEvent, selected?: Date) => {
-    if (event.type === 'set' && selected) changeReminder(selected.getHours(), selected.getMinutes());
+    if (event.type === 'set' && selected) setReminder(true, selected.getHours(), selected.getMinutes());
   };
-
-  const openAndroidTimePicker = () => {
-    DateTimePickerAndroid.open({
-      value: dateFromHM(reminderHour, reminderMinute),
-      onChange: onPickTime,
-      mode: 'time',
-      is24Hour: false,
-    });
-  };
+  const openAndroidTimePicker = () =>
+    DateTimePickerAndroid.open({ value: dateFromHM(reminderHour, reminderMinute), onChange: onPickTime, mode: 'time', is24Hour: false });
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -249,12 +261,18 @@ export default function Home() {
             })}
           </View>
 
-          {/* Daily reminder */}
+          {/* Workout reminders */}
           <View style={[styles.reminderCard, styles.sectionGap]}>
             <View style={styles.reminderHead}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.reminderTitle}>Daily reminder</Text>
-                <Text style={styles.reminderSub}>Pick a time and we&apos;ll remind you each day</Text>
+                <Text style={styles.reminderTitle}>Workout reminders</Text>
+                <Text style={styles.reminderSub}>
+                  {!reminderEnabled
+                    ? 'Get nudged so you don’t lose your streak'
+                    : reminderCustomTime
+                      ? `Every workout day at ${timeLabel(reminderHour, reminderMinute)}`
+                      : 'Morning and evening on workout days — off once you’re done'}
+                </Text>
               </View>
               <Switch
                 value={reminderEnabled}
@@ -263,7 +281,20 @@ export default function Home() {
                 thumbColor="#ffffff"
               />
             </View>
+
             {reminderEnabled ? (
+              <View style={styles.reminderTimeRow}>
+                <Text style={styles.reminderTimeLabel}>Set my own time</Text>
+                <Switch
+                  value={reminderCustomTime}
+                  onValueChange={setReminderCustomTime}
+                  trackColor={{ true: colors.primary, false: colors.track }}
+                  thumbColor="#ffffff"
+                />
+              </View>
+            ) : null}
+
+            {reminderEnabled && reminderCustomTime ? (
               Platform.OS === 'ios' ? (
                 <View style={styles.timeButton}>
                   <Text style={styles.timeButtonText}>Remind me at</Text>
@@ -465,6 +496,8 @@ const styles = StyleSheet.create({
   reminderHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   reminderTitle: { color: colors.text, fontSize: font.body, fontFamily: fonts.heavy },
   reminderSub: { color: colors.muted, fontSize: font.small, marginTop: 1, fontFamily: fonts.regular },
+  reminderTimeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md },
+  reminderTimeLabel: { color: colors.text, fontSize: font.body, fontFamily: fonts.bold },
   timeButton: {
     flexDirection: 'row',
     alignItems: 'center',
