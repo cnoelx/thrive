@@ -268,9 +268,11 @@ export default function Home() {
           <View style={[styles.reminderCard, styles.sectionGap]}>
             <View style={styles.reminderHead}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.reminderTitle}>Set my own reminder time</Text>
+                <Text style={styles.reminderTitle}>Reminder time</Text>
                 <Text style={styles.reminderSub}>
-                  {reminderCustomTime ? 'Reminding you on workout days' : 'On by default — switch on to pick your time'}
+                  {reminderCustomTime
+                    ? 'Reminding you at your chosen time'
+                    : 'We’ll nudge you on workout days — switch on to set your own time'}
                 </Text>
               </View>
               <Switch
