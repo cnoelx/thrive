@@ -101,6 +101,7 @@ interface AppState {
   markReminderPrompted: () => void;
   setReminderCustomTime: (on: boolean) => void;
   setReminder: (enabled: boolean, hour: number, minute: number) => void;
+  setReminderEnabled: (on: boolean) => void;
   setName: (name: string) => void;
   /** Dev/testing helper to wipe back to a clean first-launch state. */
   resetAll: () => void;
@@ -128,7 +129,7 @@ export const useAppStore = create<AppState>()(
       reminderPrompted: false,
       reminderEnabled: false,
       reminderCustomTime: false,
-      reminderHour: 8,
+      reminderHour: 18,
       reminderMinute: 0,
       pullUnlocked: false,
 
@@ -195,6 +196,8 @@ export const useAppStore = create<AppState>()(
 
       setReminder: (enabled, hour, minute) => set({ reminderEnabled: enabled, reminderHour: hour, reminderMinute: minute }),
 
+      setReminderEnabled: (on) => set({ reminderEnabled: on }),
+
       setName: (name) => set({ name }),
 
       unlockPull: () => set({ pullUnlocked: true }),
@@ -219,7 +222,7 @@ export const useAppStore = create<AppState>()(
           reminderPrompted: false,
           reminderEnabled: false,
           reminderCustomTime: false,
-          reminderHour: 8,
+          reminderHour: 18,
           reminderMinute: 0,
           pullUnlocked: false,
         }),

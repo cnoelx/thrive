@@ -87,7 +87,7 @@ export default function Workout() {
   const setWeight = useAppStore((s) => s.setWeight);
   const reminderEnabled = useAppStore((s) => s.reminderEnabled);
   const reminderOfferDay = useAppStore((s) => s.reminderOfferDay);
-  const setReminder = useAppStore((s) => s.setReminder);
+  const setReminderEnabled = useAppStore((s) => s.setReminderEnabled);
   const dismissReminderOffer = useAppStore((s) => s.dismissReminderOffer);
 
   const day = todayNumber();
@@ -162,7 +162,7 @@ export default function Workout() {
         dismissReminderOffer(day);
         return;
       }
-      setReminder(true, 8, 0);
+      setReminderEnabled(true);
       await refreshReminders({ lastLoggedDay: day, lapsed: false, enabled: true, customTime: null });
     };
     return (

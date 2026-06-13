@@ -64,6 +64,7 @@ export default function Home() {
   const reminderHour = useAppStore((s) => s.reminderHour);
   const reminderMinute = useAppStore((s) => s.reminderMinute);
   const setReminder = useAppStore((s) => s.setReminder);
+  const setReminderEnabled = useAppStore((s) => s.setReminderEnabled);
   const name = useAppStore((s) => s.name);
   const pullUnlocked = useAppStore((s) => s.pullUnlocked);
   const unlockPull = useAppStore((s) => s.unlockPull);
@@ -84,9 +85,9 @@ export default function Home() {
     (async () => {
       const ok = await requestNotificationPermission();
       markReminderPrompted();
-      if (ok) setReminder(true, 8, 0);
+      if (ok) setReminderEnabled(true); // turns on the default morning/evening nudges
     })();
-  }, [onboarded, reminderPrompted, markReminderPrompted, setReminder]);
+  }, [onboarded, reminderPrompted, markReminderPrompted, setReminderEnabled]);
 
   // Keep the week's reminders fresh on every visit and after each completed workout — the queue
   // re-lays from current state, so completed and rest days fall silent and lapses escalate.
@@ -132,21 +133,20 @@ export default function Home() {
     (a, b) => Number(a.id === 'pull' && !pullUnlocked) - Number(b.id === 'pull' && !pullUnlocked),
   );
 
-  // Enabling re-asks for permission if needed; the schedule effect above reacts to reminderEnabled.
-  const toggleReminder = async (value: boolean) => {
-    if (value) {
+  // The switch is the "set my own time" control (default off → internal morning/evening). Turning it
+  // on while reminders aren't yet permitted re-asks; turning it off just falls back to the default.
+  const toggleCustomTime = async (value: boolean) => {
+    if (value && !reminderEnabled) {
       const ok = await requestNotificationPermission();
       markReminderPrompted();
-      if (!ok) return; // left off; user can grant in system settings
+      if (!ok) return; // can't schedule without permission
+      setReminderEnabled(true);
     }
-    setReminder(value, reminderHour, reminderMinute);
+    setReminderCustomTime(value);
   };
 
   const onPickTime = (event: DateTimePickerEvent, selected?: Date) => {
-    if (event.type === 'set' && selected) {
-      setReminder(true, selected.getHours(), selected.getMinutes());
-      setReminderCustomTime(true);
-    }
+    if (event.type === 'set' && selected) setReminder(true, selected.getHours(), selected.getMinutes());
   };
   const openAndroidTimePicker = () =>
     DateTimePickerAndroid.open({ value: dateFromHM(reminderHour, reminderMinute), onChange: onPickTime, mode: 'time', is24Hour: false });
@@ -264,22 +264,24 @@ export default function Home() {
             })}
           </View>
 
-          {/* Workout reminders */}
+          {/* Workout reminders — on by default; the switch sets your own time */}
           <View style={[styles.reminderCard, styles.sectionGap]}>
             <View style={styles.reminderHead}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.reminderTitle}>Workout reminders</Text>
-                <Text style={styles.reminderSub}>On workout days — quietly skipped once you&apos;re done</Text>
+                <Text style={styles.reminderTitle}>Set my own reminder time</Text>
+                <Text style={styles.reminderSub}>
+                  {reminderCustomTime ? 'Reminding you on workout days' : 'On by default — switch on to pick your time'}
+                </Text>
               </View>
               <Switch
-                value={reminderEnabled}
-                onValueChange={toggleReminder}
+                value={reminderCustomTime}
+                onValueChange={toggleCustomTime}
                 trackColor={{ true: colors.primary, false: colors.track }}
                 thumbColor="#ffffff"
               />
             </View>
 
-            {reminderEnabled ? (
+            {reminderCustomTime ? (
               Platform.OS === 'ios' ? (
                 <View style={styles.timeButton}>
                   <Text style={styles.timeButtonText}>Remind me at</Text>
@@ -287,8 +289,8 @@ export default function Home() {
                 </View>
               ) : (
                 <Pressable style={styles.timeButton} onPress={openAndroidTimePicker}>
-                  <Text style={styles.timeButtonText}>{reminderCustomTime ? timeLabel(reminderHour, reminderMinute) : 'Set a specific time'}</Text>
-                  <Text style={styles.timeButtonHint}>{reminderCustomTime ? 'Change ›' : 'Optional ›'}</Text>
+                  <Text style={styles.timeButtonText}>{timeLabel(reminderHour, reminderMinute)}</Text>
+                  <Text style={styles.timeButtonHint}>Change ›</Text>
                 </Pressable>
               )
             ) : null}
