@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 
 import { CATEGORY_IDS, EXERCISE_BY_KEY, benchmarksFor } from '@/data/benchmarks';
-import { SUPERMAN_KEY, todaysWorkout } from '@/engine/dailyCard';
+import { MAX_SETS, SUPERMAN_KEY, todaysWorkout } from '@/engine/dailyCard';
 import { ProgressState, claim, effectiveCategoryIds, emptyProgress } from '@/engine/progression';
 
 function claimLevel(state: ProgressState, c: (typeof CATEGORY_IDS)[number], level: number): ProgressState {
@@ -37,6 +37,14 @@ describe('weekly schedule', () => {
     expect(w.items.length).toBe(4);
   });
 
+  it('caps every set-based exercise at MAX_SETS', () => {
+    const w = todaysWorkout(emptyProgress(), true, dateForDay(1)); // squat/pushups/barrow/plank scheduled at 3
+    for (const it of w.items) {
+      if (it.sets !== null) expect(it.sets).toBeLessThanOrEqual(MAX_SETS);
+    }
+    expect(w.items.find((i) => i.exKey === 'squat')!.sets).toBe(2); // was 3 in the schedule
+  });
+
   it('reps read from the current level (L1 at the start)', () => {
     const w = todaysWorkout(emptyProgress(), true, dateForDay(1));
     const squat = w.items.find((i) => i.exKey === 'squat')!;
@@ -57,7 +65,7 @@ describe('capped & maxed exercises stay in the workout (maintenance)', () => {
     const tue = todaysWorkout(maxedState(), true, dateForDay(2));
     expect(tue.items.length).toBe(4); // nothing dropped
     const dsq = tue.items.find((i) => i.exKey === 'deepsquat')!;
-    expect(dsq.target).toBe('free 120s'); // L5 top, held as maintenance
+    expect(dsq.target).toBe('free 90s'); // L5 top, held as maintenance
   });
 
   it('an exercise that caps below its category (Balance, L8) maintains at its top target', () => {

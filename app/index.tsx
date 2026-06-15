@@ -119,6 +119,9 @@ export default function Home() {
         : `Every area's at Level ${overall} — the next tier's within reach everywhere. Keep going!`;
   const todayWk = todaysWorkout(progress, pullUnlocked, new Date());
   const movePreview = todayWk.rest ? '' : `${todayWk.items.length} moves`;
+  // A streak of 3+ that just broke (missed a workout day) — acknowledge it kindly instead of
+  // silently resetting to zero. `streak` still holds the lost length until the next workout.
+  const lostStreak = streakNow === 0 && streak >= 3 && lastLoggedDay !== null;
   // The week card always says something: streak first, then today's state.
   const weekLine =
     streakNow >= 2
@@ -127,7 +130,9 @@ export default function Home() {
         ? 'Workout done — rest easy, see you tomorrow. 🔥'
         : todayWk.rest
           ? 'Rest day — recovery is training too. 🌿'
-          : 'Today’s session is waiting for you.';
+          : lostStreak
+            ? `Your ${streak}-day run ended — start a new one today 🔥`
+            : 'Today’s session is waiting for you.';
   // A locked Pull sinks to the bottom of the areas list (stable sort keeps the rest in order).
   const orderedCats = [...CATEGORIES].sort(
     (a, b) => Number(a.id === 'pull' && !pullUnlocked) - Number(b.id === 'pull' && !pullUnlocked),

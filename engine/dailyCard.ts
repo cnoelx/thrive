@@ -5,6 +5,10 @@ import { CategoryId, EXERCISE_BY_KEY, categoryCeiling, exerciseTarget } from '@/
 import { DAY_KEYS, WEEKLY_SCHEDULE } from '@/data/schedule';
 import { ProgressState, baselineLevel, completedLevel, levelCap, nextLevel } from '@/engine/progression';
 
+// Cap on sets per exercise, applied to every workout at every level — two sets is plenty without
+// burning people out (one fresh goal set + one work set when chasing). Raise this to lengthen.
+export const MAX_SETS = 2;
+
 // Superman — back/posture fallback for users with no bar/rings. NOT a category exercise: it never
 // shows a category chip, never contributes to levels, and never completes Pull. Its target derives
 // from the user's overall level (baselineLevel with Pull excluded) across the 10 levels below.
@@ -75,7 +79,7 @@ export function todaysWorkout(state: ProgressState, pullUnlocked: boolean, date:
       categoryId: ex.categoryId,
       name: ex.name,
       why: ex.why,
-      sets: it.sets,
+      sets: it.sets === null ? null : Math.min(it.sets, MAX_SETS),
       restSec: it.restSec,
       target,
       workTarget: chasing && completed >= 1 ? exerciseTarget(it.exKey, completed) : target,

@@ -263,12 +263,28 @@ export default function Workout() {
     }
   };
 
+  // Undo an accidental Done: from rest, drop back to the set you just finished; otherwise step back.
+  const canGoBack = resting || stepIndex > 0;
+  const goBack = () => {
+    if (resting) {
+      setResting(false);
+    } else if (stepIndex > 0) {
+      setResting(false);
+      setStepIndex(stepIndex - 1);
+    }
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: sunrise.bg }}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <Text style={styles.close}>✕</Text>
         </Pressable>
+        {canGoBack ? (
+          <Pressable onPress={goBack} hitSlop={10}>
+            <Ionicons name="arrow-undo-outline" size={22} color={sunrise.muted} />
+          </Pressable>
+        ) : null}
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${pct}%` }]} />
         </View>
