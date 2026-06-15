@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
   },
-  benchRowDone: { backgroundColor: '#F3FAF6', borderColor: colors.primary },
+  benchRowDone: { backgroundColor: colors.doneSoft, borderColor: colors.done },
   benchTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   benchTitle: { color: colors.text, fontSize: font.body, fontFamily: fonts.bold },
   benchTarget: { color: colors.text, fontSize: font.small, marginTop: 1, fontFamily: fonts.regular },
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   claimBtnOff: { backgroundColor: colors.track },
   claimText: { color: colors.primaryText, fontSize: font.small, fontFamily: fonts.heavy },
   claimTextOff: { color: colors.muted },
-  doneCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  doneCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.done, alignItems: 'center', justifyContent: 'center' },
   doneTick: { color: colors.primaryText, fontSize: 15, fontFamily: fonts.display },
 
   body: { color: colors.text, fontSize: font.body, fontFamily: fonts.regular },

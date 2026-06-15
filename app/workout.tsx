@@ -470,7 +470,7 @@ const styles = StyleSheet.create({
   feelTitle: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy },
   feelRow: { flexDirection: 'row', gap: spacing.sm },
   feelBtn: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
-  feelBtnOn: { borderColor: colors.primary, backgroundColor: '#F0FAF4' },
+  feelBtnOn: { borderColor: colors.primary, backgroundColor: '#F3F4F6' },
   feelEmoji: { fontSize: 26 },
   feelLabel: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.bold },
   feelLabelOn: { color: colors.primary, fontFamily: fonts.heavy },

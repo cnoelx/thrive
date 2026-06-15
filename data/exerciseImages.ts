@@ -6,6 +6,10 @@ import type { ImageSourcePropType } from 'react-native';
 // Note: lunge uses a walking-lunge demo, side plank a side-bridge, bar row an inverted-row, prone
 // leg raise a quadruped rear leg raise, deep squat hold the squat's bottom position — same
 // movement pattern, close enough as a visual reference.
+// Single looping demo animations (GIF/WebP), played via expo-image — preferred over the 2-frame
+// toggle below when present. Populated as consistent animated assets land in assets/exercises/anim/.
+export const EXERCISE_ANIMATIONS: Record<string, ImageSourcePropType> = {};
+
 export const EXERCISE_IMAGES: Record<string, [ImageSourcePropType, ImageSourcePropType]> = {
   squat: [require('../assets/exercises/squat/start.jpg'), require('../assets/exercises/squat/end.jpg')],
   pushups: [require('../assets/exercises/pushups/start.jpg'), require('../assets/exercises/pushups/end.jpg')],

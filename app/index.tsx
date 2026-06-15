@@ -456,8 +456,8 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg },
   sectionGap: { marginTop: SECTION_GAP },
 
-  // Today — burns session-orange until done, then cools to brand green
-  todayHero: { backgroundColor: colors.primary, borderRadius: radius.lg, padding: spacing.xl },
+  // Today — burns session-orange until done, then cools to "done" green
+  todayHero: { backgroundColor: colors.done, borderRadius: radius.lg, padding: spacing.xl },
   todayHeroHot: { backgroundColor: colors.session },
   todayHeroEyebrow: { color: 'rgba(255,255,255,0.85)', fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1 },
   todayHeroTitle: { color: colors.primaryText, fontSize: font.title, fontFamily: fonts.display, marginTop: spacing.xs },

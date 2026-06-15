@@ -7,28 +7,32 @@ export const colors = {
   muted: '#6B7280',
   border: '#E6E8EC',
   track: '#ECEEF1',
-  primary: '#16A34A',
+  primary: '#111827', // ink — primary actions & buttons (brand moved off green to ink + ember)
   primaryText: '#FFFFFF',
   warnBg: '#FEF3C7',
   warnText: '#92400E',
 
+  // Completion is the one job green keeps — it's the universal "done" signal, not the brand.
+  done: '#16A34A', // calm green — completed/claimed ticks and the cooled "done today" card
+  doneSoft: '#DCFCE7', // soft green wash behind a completed row
+
   ink: '#0C1410', // near-black for bold headings
 
   // Dark hero block on the home screen
-  inkCard: '#0C1410', // ink-black hero background (green-tinted near-black)
+  inkCard: '#0C1410', // ink-black hero background
   onInkMuted: '#8A9590', // muted text on the dark hero
-  accent: '#22C55E', // vivid green highlight on dark
+  accent: '#FB923C', // ember highlight on dark — the brand accent
   streakInk: '#FBBF24', // amber streak text on dark
   streakBg: '#FEF3C7', // warm amber — THIS WEEK card background
   streakBorder: '#FCD34D', // amber border around the streak card
-  session: '#EA580C', // hot orange — a pending or live workout session (cools to green when done)
+  session: '#EA580C', // hot orange — a pending or live workout session (cools to "done" green)
 } as const;
 
 // Per-area identity colours — used for level badges and progress bars so the five training areas
-// read at a glance. Actions and "done" states stay `primary` green everywhere.
-// move = brand green (the heart of the program), cardio = rose (heart rate), mobility = teal (calm).
+// read at a glance. Primary actions are ink; the green `done` token marks completion.
+// move = ember (the heart of the program), cardio = rose (heart rate), mobility = teal (calm).
 export const categoryColors: Record<string, { main: string; soft: string }> = {
-  move: { main: '#16A34A', soft: '#DCFCE7' },
+  move: { main: '#EA580C', soft: '#FED7AA' },
   push: { main: '#2563EB', soft: '#DBEAFE' },
   pull: { main: '#7C3AED', soft: '#EDE9FE' },
   cardio: { main: '#E11D48', soft: '#FFE4E6' },

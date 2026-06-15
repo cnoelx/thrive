@@ -1,11 +1,12 @@
 // "How to do it" sheet — demo frames + form cues for one exercise. Shared by the workout player
 // and the category goal list; render it only while open (mounting resets the demo animation).
 
+import { Image as ExpoImage } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
-import { EXERCISE_IMAGES } from '@/data/exerciseImages';
+import { EXERCISE_ANIMATIONS, EXERCISE_IMAGES } from '@/data/exerciseImages';
 import { FORM_CUES } from '@/data/formCues';
 
 interface Props {
@@ -17,9 +18,10 @@ interface Props {
 export function HowToSheet({ exKey, name, onClose }: Props) {
   const [frame, setFrame] = useState(0);
 
-  // Flip the start/finish demo frames while open (reads like an animation).
+  // Flip the start/finish demo frames while open (reads like an animation). Skipped when a real
+  // looping animation exists for this move — that plays itself.
   useEffect(() => {
-    if (!EXERCISE_IMAGES[exKey]) return;
+    if (EXERCISE_ANIMATIONS[exKey] || !EXERCISE_IMAGES[exKey]) return;
     setFrame(0);
     const id = setInterval(() => setFrame((f) => (f === 0 ? 1 : 0)), 700);
     return () => clearInterval(id);
@@ -31,7 +33,9 @@ export function HowToSheet({ exKey, name, onClose }: Props) {
         <Pressable style={styles.sheet} onPress={() => {}}>
           <Text style={styles.sub}>HOW TO DO IT</Text>
           <Text style={styles.title}>{name}</Text>
-          {EXERCISE_IMAGES[exKey] ? (
+          {EXERCISE_ANIMATIONS[exKey] ? (
+            <ExpoImage source={EXERCISE_ANIMATIONS[exKey]} style={styles.img} contentFit="contain" />
+          ) : EXERCISE_IMAGES[exKey] ? (
             <Image source={EXERCISE_IMAGES[exKey][frame]} style={styles.img} resizeMode="contain" />
           ) : null}
           {(FORM_CUES[exKey] ?? []).map((cue, i) => (
