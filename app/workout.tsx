@@ -94,14 +94,15 @@ export default function Workout() {
   const workout = useMemo(() => todaysWorkout(progress, pullUnlocked, new Date()), [progress, pullUnlocked]);
   const steps = useMemo(() => buildCircuit(workout.items), [workout.items]);
 
+  const [started, setStarted] = useState(false); // false = showing the pre-workout overview
   const [stepIndex, setStepIndex] = useState(0);
   const [resting, setResting] = useState(false);
   const [restLeft, setRestLeft] = useState(0);
   const [finished, setFinished] = useState(false);
   const [durationMin, setDurationMin] = useState(0);
   const [feel, setFeel] = useState<WorkoutFeel | null>(null);
-  const [showHowTo, setShowHowTo] = useState(false);
-  const startedAt = useMemo(() => Date.now(), []);
+  const [infoItem, setInfoItem] = useState<{ exKey: string; name: string } | null>(null);
+  const [startedAt, setStartedAt] = useState(0); // set when the user taps Begin
 
   const goNext = () => {
     setResting(false);
@@ -247,6 +248,59 @@ export default function Workout() {
     );
   }
 
+  // Pre-workout overview — see today's moves (and any equipment you'll need) before you start.
+  if (!started) {
+    const needsBar = workout.items.some((i) => i.categoryId === 'pull');
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+          <Pressable onPress={() => router.back()} hitSlop={10}>
+            <Text style={styles.close}>✕</Text>
+          </Pressable>
+        </View>
+        <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 96 }}>
+          <Text style={styles.ovEyebrow}>TODAY&apos;S WORKOUT</Text>
+          <Text style={styles.ovTitle}>{workout.focus}</Text>
+          <Text style={styles.ovMeta}>{workout.items.length} moves · {steps.length} sets</Text>
+          {needsBar ? (
+            <View style={styles.ovEquip}>
+              <Ionicons name="barbell-outline" size={18} color={colors.warnText} />
+              <Text style={styles.ovEquipText}>You&apos;ll need a bar or rings for the pulling moves.</Text>
+            </View>
+          ) : null}
+          <View style={{ gap: spacing.sm, marginTop: spacing.lg }}>
+            {workout.items.map((it, i) => (
+              <View key={i} style={styles.ovRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.ovName}>{it.name}</Text>
+                  <Text style={styles.ovTarget}>
+                    {it.sets ? `${it.sets} × ` : ''}
+                    {formatTarget(it.target)}
+                  </Text>
+                </View>
+                <Pressable onPress={() => setInfoItem({ exKey: it.exKey, name: it.name })} hitSlop={8}>
+                  <Ionicons name="information-circle-outline" size={22} color={colors.muted} />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+        <View style={[styles.ovFooter, { paddingBottom: insets.bottom + spacing.md }]}>
+          <Pressable
+            onPress={() => {
+              setStartedAt(Date.now());
+              setStarted(true);
+            }}
+            style={styles.beginBtn}
+          >
+            <Text style={styles.beginBtnText}>Begin workout →</Text>
+          </Pressable>
+        </View>
+        {infoItem ? <HowToSheet exKey={infoItem.exKey} name={infoItem.name} onClose={() => setInfoItem(null)} /> : null}
+      </View>
+    );
+  }
+
   const step = steps[stepIndex];
   const next = steps[stepIndex + 1];
   const isLast = stepIndex + 1 >= steps.length;
@@ -309,7 +363,7 @@ export default function Workout() {
           <>
             <View style={styles.nameRow}>
               <Text style={styles.exerciseName}>{step.item.name}</Text>
-              <Pressable onPress={() => setShowHowTo(true)} hitSlop={10}>
+              <Pressable onPress={() => setInfoItem({ exKey: step.item.exKey, name: step.item.name })} hitSlop={10}>
                 <Ionicons name="information-circle-outline" size={22} color={sunrise.muted} />
               </Pressable>
             </View>
@@ -330,7 +384,7 @@ export default function Workout() {
         )}
       </View>
 
-      {showHowTo ? <HowToSheet exKey={step.item.exKey} name={step.item.name} onClose={() => setShowHowTo(false)} /> : null}
+      {infoItem ? <HowToSheet exKey={infoItem.exKey} name={infoItem.name} onClose={() => setInfoItem(null)} /> : null}
     </View>
   );
 }
@@ -373,6 +427,19 @@ const styles = StyleSheet.create({
   feelEmoji: { fontSize: 26 },
   feelLabel: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.bold },
   feelLabelOn: { color: colors.primary, fontFamily: fonts.heavy },
+
+  // Pre-workout overview
+  ovEyebrow: { color: colors.session, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1 },
+  ovTitle: { color: colors.ink, fontSize: font.title, fontFamily: fonts.display, marginTop: 2 },
+  ovMeta: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: 2 },
+  ovEquip: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.warnBg, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.lg },
+  ovEquipText: { flex: 1, color: colors.warnText, fontSize: font.small, fontFamily: fonts.bold },
+  ovRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md },
+  ovName: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy },
+  ovTarget: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: 1 },
+  ovFooter: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.lg, paddingTop: spacing.md, backgroundColor: colors.bg, borderTopWidth: 1, borderTopColor: colors.border },
+  beginBtn: { backgroundColor: colors.session, borderRadius: radius.pill, paddingVertical: spacing.md + 2, alignItems: 'center' },
+  beginBtnText: { color: '#FFFFFF', fontSize: font.body, fontFamily: fonts.heavy },
 
   header: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   close: { color: sunrise.muted, fontSize: 22, fontFamily: fonts.bold },

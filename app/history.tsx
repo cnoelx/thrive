@@ -10,7 +10,7 @@ import { isRestDay } from '@/engine/streak';
 import { useAppStore } from '@/store/useAppStore';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const FEEL_LABELS = { hard: 'felt hard 🥵', right: 'felt right 🙂', easy: 'felt easy 😎' } as const;
+const FEEL_LABELS = { hard: 'Felt hard 🥵', right: 'Felt right 🙂', easy: 'Felt easy 😎' } as const;
 
 export default function History() {
   const router = useRouter();
@@ -50,7 +50,10 @@ export default function History() {
             <Text style={styles.statLabel}>Workouts</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNum}>🔥 {longestStreak(loggedDays)}</Text>
+            <View style={styles.statNumRow}>
+              <Ionicons name="flame" size={18} color={colors.session} />
+              <Text style={styles.statNum}>{longestStreak(loggedDays)}</Text>
+            </View>
             <Text style={styles.statLabel}>Best streak</Text>
           </View>
           <View style={styles.statCard}>
@@ -130,20 +133,40 @@ export default function History() {
             {openLog ? (
               <>
                 <Text style={styles.sheetTitle}>{openLog.focus}</Text>
-                <Text style={styles.sheetMeta}>
-                  {[
-                    (() => {
-                      const m = openLog.moves ?? openLog.items?.length;
-                      return m ? `${m} ${m === 1 ? 'move' : 'moves'}` : null;
-                    })(),
-                    openLog.totalSets ? `${openLog.totalSets} sets` : null,
-                    openLog.durationMin ? `${openLog.durationMin} min` : null,
-                    openLog.calories ? `~${openLog.calories} kcal` : null,
-                    openLog.feel ? FEEL_LABELS[openLog.feel] : null,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </Text>
+                <View style={styles.sheetStats}>
+                  {(() => {
+                    const moves = openLog.moves ?? openLog.items?.length;
+                    return moves ? (
+                      <View style={styles.sStat}>
+                        <Text style={styles.sStatVal}>{moves}</Text>
+                        <Text style={styles.sStatLbl}>{moves === 1 ? 'Move' : 'Moves'}</Text>
+                      </View>
+                    ) : null;
+                  })()}
+                  {openLog.totalSets ? (
+                    <View style={styles.sStat}>
+                      <Text style={styles.sStatVal}>{openLog.totalSets}</Text>
+                      <Text style={styles.sStatLbl}>Sets</Text>
+                    </View>
+                  ) : null}
+                  {openLog.durationMin ? (
+                    <View style={styles.sStat}>
+                      <Text style={styles.sStatVal}>{openLog.durationMin}</Text>
+                      <Text style={styles.sStatLbl}>Min</Text>
+                    </View>
+                  ) : null}
+                  {openLog.calories ? (
+                    <View style={styles.sStat}>
+                      <Text style={styles.sStatVal}>~{openLog.calories}</Text>
+                      <Text style={styles.sStatLbl}>kcal</Text>
+                    </View>
+                  ) : null}
+                </View>
+                {openLog.feel ? (
+                  <View style={styles.feelPill}>
+                    <Text style={styles.feelPillText}>{FEEL_LABELS[openLog.feel]}</Text>
+                  </View>
+                ) : null}
               </>
             ) : (
               <>
@@ -168,6 +191,7 @@ const styles = StyleSheet.create({
 
   statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   statCard: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.md, alignItems: 'center', gap: 2 },
+  statNumRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   statNum: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.display },
   statLabel: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
 
@@ -196,7 +220,12 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.xs, width: '100%', maxWidth: 420 },
   sheetSub: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.5 },
   sheetTitle: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy },
-  sheetMeta: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold },
+  sheetStats: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  sStat: { flex: 1, backgroundColor: colors.bg, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center', gap: 2 },
+  sStatVal: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.display },
+  sStatLbl: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.regular },
+  feelPill: { alignSelf: 'flex-start', backgroundColor: colors.bg, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, marginTop: spacing.md },
+  feelPillText: { color: colors.text, fontSize: font.small, fontFamily: fonts.bold },
   sheetMuted: { color: colors.muted, fontSize: font.small, lineHeight: 19, fontFamily: fonts.regular },
   sheetClose: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
   sheetCloseText: { color: colors.primaryText, fontSize: font.body, fontFamily: fonts.heavy },
