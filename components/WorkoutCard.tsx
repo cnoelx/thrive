@@ -1,13 +1,19 @@
-// Shareable workout card — the branded "I trained today" image, designed to screenshot and post.
-// Design: solid warm session-orange (OTA-safe — a true gradient needs a native module, deferred to
-// the next APK build), faint flame watermark, focus name as hero, a streak·time·kcal meta line
-// (flame only marks the streak), the moves listed with reps, tagline footer.
+// Shareable workout card — the branded "I trained today" image, designed to capture and post.
+// Design: warm ember gradient (#FDBA74→#F97316→#C2410C at ~152°), faint flame watermark, focus name
+// as hero, a streak·time·kcal meta line (flame only marks the streak), the moves listed with reps,
+// tagline footer.
 
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 
-import { colors, fonts } from '@/constants/theme';
+import { fonts } from '@/constants/theme';
 import { formatTarget } from '@/data/benchmarks';
+
+// Ember gradient (light apricot top → deep burnt orange bottom). start/end approximate a 152° CSS angle.
+const EMBER = ['#FDBA74', '#F97316', '#C2410C'] as const;
+const EMBER_START = { x: 0.27, y: 0.06 };
+const EMBER_END = { x: 0.73, y: 0.94 };
 
 export interface WorkoutCardData {
   focus: string;
@@ -28,9 +34,7 @@ function shortReps(target: string): string {
 export function WorkoutCard({ focus, dateLabel, streak, durationMin, calories, items }: WorkoutCardData) {
   const tail = [durationMin ? `${durationMin} min` : null, calories ? `~${calories} kcal` : null].filter(Boolean);
   return (
-    <View style={styles.card}>
-      {/* a soft deeper-orange wash bottom-right hints at depth without a native gradient */}
-      <View style={styles.deepen} />
+    <LinearGradient colors={EMBER} start={EMBER_START} end={EMBER_END} style={styles.card}>
       <Ionicons name="flame" size={200} color="rgba(255,255,255,0.08)" style={styles.watermark} />
 
       <View style={styles.headerRow}>
@@ -71,13 +75,12 @@ export function WorkoutCard({ focus, dateLabel, streak, durationMin, calories, i
       </View>
 
       <Text style={styles.tagline}>strong for modern life</Text>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { width: W, borderRadius: 24, padding: 26, overflow: 'hidden', backgroundColor: colors.session },
-  deepen: { position: 'absolute', right: -60, bottom: -80, width: 280, height: 280, borderRadius: 140, backgroundColor: 'rgba(154,52,18,0.45)' },
+  card: { width: W, borderRadius: 24, padding: 26, overflow: 'hidden' },
   watermark: { position: 'absolute', left: -50, top: -44 },
 
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

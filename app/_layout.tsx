@@ -5,7 +5,9 @@ import * as Updates from 'expo-updates';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, LogBox, Text, View } from 'react-native';
 
+import { UpdateModal } from '@/components/UpdateModal';
 import { colors, font, fonts, spacing } from '@/constants/theme';
+import { useApkUpdate } from '@/lib/useApkUpdate';
 import { useAppStore } from '@/store/useAppStore';
 
 // expo-notifications warns that *push* (remote) notifications don't work in Expo Go (removed in
@@ -22,6 +24,8 @@ export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Outfit_500Medium, Outfit_700Bold, Outfit_800ExtraBold, Outfit_900Black });
   // Updates.isEnabled is false in Expo Go and dev builds, so this gate only runs in production.
   const [updating, setUpdating] = useState(Updates.isEnabled && !__DEV__);
+  // Separate from OTA: prompts for a newer sideloaded APK (native/version bumps). No-op in dev/Expo Go.
+  const apk = useApkUpdate(!__DEV__);
 
   useEffect(() => {
     if (!updating) return;
@@ -71,6 +75,16 @@ export default function RootLayout() {
     <>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
+      {apk.manifest && (
+        <UpdateModal
+          manifest={apk.manifest}
+          currentVersion={apk.currentVersion}
+          phase={apk.phase}
+          progress={apk.progress}
+          onUpdate={apk.start}
+          onSkip={apk.skip}
+        />
+      )}
     </>
   );
 }

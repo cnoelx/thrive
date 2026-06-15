@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -14,8 +15,12 @@ import { estimateCalories } from '@/engine/calories';
 import { todaysWorkout, type WorkoutItem } from '@/engine/dailyCard';
 import { dayLabel } from '@/engine/history';
 import { currentStreak } from '@/engine/streak';
+import { FINISH_CUE, introCue, restCue, setCue } from '@/engine/voiceCues';
 import { refreshReminders, requestNotificationPermission } from '@/lib/notifications';
+import { say, stopSpeaking } from '@/lib/speech';
 import { useAppStore, type WorkoutFeel } from '@/store/useAppStore';
+
+const KEEP_AWAKE_TAG = 'workout';
 
 function todayNumber(): number {
   const now = new Date();
@@ -94,6 +99,8 @@ export default function Workout() {
   const reminderOfferDay = useAppStore((s) => s.reminderOfferDay);
   const setReminderEnabled = useAppStore((s) => s.setReminderEnabled);
   const dismissReminderOffer = useAppStore((s) => s.dismissReminderOffer);
+  const voiceCoach = useAppStore((s) => s.voiceCoach);
+  const setVoiceCoach = useAppStore((s) => s.setVoiceCoach);
 
   const day = todayNumber();
   const workout = useMemo(() => todaysWorkout(progress, pullUnlocked, new Date()), [progress, pullUnlocked]);
@@ -109,6 +116,13 @@ export default function Workout() {
   const [showShare, setShowShare] = useState(false);
   const [infoItem, setInfoItem] = useState<{ exKey: string; name: string } | null>(null);
   const [startedAt, setStartedAt] = useState(0); // set when the user taps Begin
+
+  // Speak a cue when voice coaching is on. Cues fire from the transition points (Begin, Done, rest,
+  // finish) rather than from effects, so each line maps to one user action — no double-speak.
+  const coach = (line: string) => {
+    if (voiceCoach) say(line);
+  };
+  const stepCue = (s: CircuitStep) => setCue({ name: s.item.name, target: s.target, isCheck: !!EXERCISE_BY_KEY[s.item.exKey]?.check });
 
   const goNext = () => {
     setResting(false);
@@ -126,9 +140,11 @@ export default function Workout() {
           items: workout.items.map((it) => ({ name: it.name, sets: it.sets, target: it.target })),
         });
       }
+      coach(FINISH_CUE);
       setFinished(true);
     } else {
       setStepIndex(stepIndex + 1);
+      coach(stepCue(steps[stepIndex + 1]));
     }
   };
 
@@ -147,6 +163,18 @@ export default function Workout() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resting, restLeft]);
+
+  // Keep the screen awake through the live session so the coach can talk and the timer stays visible.
+  useEffect(() => {
+    if (!started || finished) return;
+    activateKeepAwakeAsync(KEEP_AWAKE_TAG);
+    return () => {
+      deactivateKeepAwake(KEEP_AWAKE_TAG);
+    };
+  }, [started, finished]);
+
+  // Silence the coach when leaving the workout.
+  useEffect(() => () => stopSpeaking(), []);
 
   if (steps.length === 0) {
     return (
@@ -296,6 +324,7 @@ export default function Workout() {
             onPress={() => {
               setStartedAt(Date.now());
               setStarted(true);
+              coach(`${introCue(workout.focus)} ${stepCue(steps[0])}`);
             }}
             style={styles.beginBtn}
           >
@@ -318,6 +347,7 @@ export default function Workout() {
     if (step.restSec && step.restSec > 0) {
       setRestLeft(step.restSec);
       setResting(true);
+      coach(restCue(step.restSec, next ? next.item.name : null));
     } else {
       goNext();
     }
@@ -328,10 +358,18 @@ export default function Workout() {
   const goBack = () => {
     if (resting) {
       setResting(false);
+      coach(stepCue(step)); // re-announce the set you just finished
     } else if (stepIndex > 0) {
       setResting(false);
       setStepIndex(stepIndex - 1);
+      coach(stepCue(steps[stepIndex - 1]));
     }
+  };
+
+  const toggleVoice = () => {
+    const on = !voiceCoach;
+    setVoiceCoach(on);
+    if (!on) stopSpeaking();
   };
 
   return (
@@ -348,6 +386,9 @@ export default function Workout() {
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${pct}%` }]} />
         </View>
+        <Pressable onPress={toggleVoice} hitSlop={10}>
+          <Ionicons name={voiceCoach ? 'volume-high' : 'volume-mute'} size={22} color={voiceCoach ? sunrise.hot : sunrise.muted} />
+        </Pressable>
       </View>
 
       <View style={styles.body}>

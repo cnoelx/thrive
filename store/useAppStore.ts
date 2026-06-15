@@ -83,6 +83,9 @@ interface AppState {
   /** Set during onboarding (or later via the locked-Pull tile) when the user confirms they have a
    *  bar/rings. Once true, Pull joins category math and the schedule includes real pull moves. */
   pullUnlocked: boolean;
+  /** Screen-on voice coaching during workouts (TTS calls out moves + rest). Muted per-session via the
+   *  player's speaker toggle, which writes back here. */
+  voiceCoach: boolean;
 
   completeOnboarding: (profile: Profile, initialProgress?: ProgressState) => void;
   unlockPull: () => void;
@@ -103,6 +106,7 @@ interface AppState {
   setReminderCustomTime: (on: boolean) => void;
   setReminder: (enabled: boolean, hour: number, minute: number) => void;
   setReminderEnabled: (on: boolean) => void;
+  setVoiceCoach: (on: boolean) => void;
   setName: (name: string) => void;
   /** Dev/testing helper to wipe back to a clean first-launch state. */
   resetAll: () => void;
@@ -133,6 +137,7 @@ export const useAppStore = create<AppState>()(
       reminderHour: 18,
       reminderMinute: 0,
       pullUnlocked: false,
+      voiceCoach: true,
 
       completeOnboarding: (profile, initialProgress) =>
         set({
@@ -199,6 +204,8 @@ export const useAppStore = create<AppState>()(
 
       setReminderEnabled: (on) => set({ reminderEnabled: on }),
 
+      setVoiceCoach: (on) => set({ voiceCoach: on }),
+
       setName: (name) => set({ name }),
 
       unlockPull: () => set({ pullUnlocked: true }),
@@ -226,6 +233,7 @@ export const useAppStore = create<AppState>()(
           reminderHour: 18,
           reminderMinute: 0,
           pullUnlocked: false,
+          voiceCoach: true,
         }),
     }),
     {
@@ -254,6 +262,7 @@ export const useAppStore = create<AppState>()(
         reminderHour: s.reminderHour,
         reminderMinute: s.reminderMinute,
         pullUnlocked: s.pullUnlocked,
+        voiceCoach: s.voiceCoach,
       }),
     },
   ),
