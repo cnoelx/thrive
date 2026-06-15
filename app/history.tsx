@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ShareCardModal } from '@/components/ShareCardModal';
+import { type WorkoutCardData } from '@/components/WorkoutCard';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
-import { dayNumberFromDate, longestStreak, monthGrid, type MonthCell } from '@/engine/history';
+import { dayLabel, dayNumberFromDate, longestStreak, monthGrid, type MonthCell } from '@/engine/history';
 import { isRestDay } from '@/engine/streak';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -22,6 +24,7 @@ export default function History() {
   const today = dayNumberFromDate(now);
   const [shown, setShown] = useState({ year: now.getFullYear(), month: now.getMonth() });
   const [openCell, setOpenCell] = useState<MonthCell | null>(null);
+  const [shareData, setShareData] = useState<WorkoutCardData | null>(null);
   const openLog = openCell ? workoutLog[openCell.dayNumber] : undefined;
   const atCurrentMonth = shown.year === now.getFullYear() && shown.month === now.getMonth();
 
@@ -174,12 +177,33 @@ export default function History() {
                 <Text style={styles.sheetMuted}>No details for this day — summaries started being saved with a later update.</Text>
               </>
             )}
+            {openLog?.items?.length && openCell ? (
+              <Pressable
+                onPress={() => {
+                  setShareData({
+                    focus: openLog.focus,
+                    dateLabel: dayLabel(openCell.dayNumber),
+                    streak: 0,
+                    durationMin: openLog.durationMin,
+                    calories: openLog.calories,
+                    items: openLog.items!.map((it) => ({ name: it.name, target: it.target })),
+                  });
+                  setOpenCell(null);
+                }}
+                style={styles.sheetShare}
+              >
+                <Ionicons name="share-social-outline" size={18} color={colors.session} />
+                <Text style={styles.sheetShareText}>Share</Text>
+              </Pressable>
+            ) : null}
             <Pressable onPress={() => setOpenCell(null)} style={styles.sheetClose}>
               <Text style={styles.sheetCloseText}>Got it</Text>
             </Pressable>
           </Pressable>
         </Pressable>
       </Modal>
+
+      {shareData ? <ShareCardModal data={shareData} onClose={() => setShareData(null)} /> : null}
     </View>
   );
 }
@@ -227,6 +251,8 @@ const styles = StyleSheet.create({
   feelPill: { alignSelf: 'flex-start', backgroundColor: colors.bg, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, marginTop: spacing.md },
   feelPillText: { color: colors.text, fontSize: font.small, fontFamily: fonts.bold },
   sheetMuted: { color: colors.muted, fontSize: font.small, lineHeight: 19, fontFamily: fonts.regular },
-  sheetClose: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
+  sheetShare: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing.sm, borderWidth: 1, borderColor: colors.session, borderRadius: radius.pill, paddingVertical: spacing.md, marginTop: spacing.md },
+  sheetShareText: { color: colors.session, fontSize: font.body, fontFamily: fonts.heavy },
+  sheetClose: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.sm },
   sheetCloseText: { color: colors.primaryText, fontSize: font.body, fontFamily: fonts.heavy },
 });

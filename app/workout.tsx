@@ -6,10 +6,13 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HowToSheet } from '@/components/HowToSheet';
+import { ShareCardModal } from '@/components/ShareCardModal';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { EXERCISE_BY_KEY, formatTarget } from '@/data/benchmarks';
 import { estimateCalories } from '@/engine/calories';
 import { todaysWorkout, type WorkoutItem } from '@/engine/dailyCard';
+import { dayLabel } from '@/engine/history';
+import { currentStreak } from '@/engine/streak';
 import { refreshReminders, requestNotificationPermission } from '@/lib/notifications';
 import { useAppStore, type WorkoutFeel } from '@/store/useAppStore';
 
@@ -82,6 +85,7 @@ export default function Workout() {
   const logToday = useAppStore((s) => s.logToday);
   const rateWorkout = useAppStore((s) => s.rateWorkout);
   const lastLoggedDay = useAppStore((s) => s.lastLoggedDay);
+  const streak = useAppStore((s) => s.streak);
   const weightKg = useAppStore((s) => s.weightKg);
   const weightSetDay = useAppStore((s) => s.weightSetDay);
   const setWeight = useAppStore((s) => s.setWeight);
@@ -101,6 +105,7 @@ export default function Workout() {
   const [finished, setFinished] = useState(false);
   const [durationMin, setDurationMin] = useState(0);
   const [feel, setFeel] = useState<WorkoutFeel | null>(null);
+  const [showShare, setShowShare] = useState(false);
   const [infoItem, setInfoItem] = useState<{ exKey: string; name: string } | null>(null);
   const [startedAt, setStartedAt] = useState(0); // set when the user taps Begin
 
@@ -243,9 +248,28 @@ export default function Workout() {
           </View>
         </View>
 
+        <Pressable onPress={() => setShowShare(true)} style={styles.shareBtn}>
+          <Ionicons name="share-social-outline" size={18} color={colors.session} />
+          <Text style={styles.shareBtnText}>Share workout</Text>
+        </Pressable>
+
         <Pressable onPress={() => router.back()} style={styles.primaryBtn}>
           <Text style={styles.primaryText}>Done</Text>
         </Pressable>
+
+        {showShare ? (
+          <ShareCardModal
+            data={{
+              focus: workout.focus,
+              dateLabel: dayLabel(day),
+              streak: currentStreak(streak, lastLoggedDay, day),
+              durationMin,
+              calories: kcal ?? undefined,
+              items: workout.items.map((it) => ({ name: it.name, target: it.target })),
+            }}
+            onClose={() => setShowShare(false)}
+          />
+        ) : null}
       </ScrollView>
     );
   }
@@ -420,6 +444,9 @@ const styles = StyleSheet.create({
   remindYesText: { color: colors.primaryText, fontSize: font.small, fontFamily: fonts.heavy },
   remindNo: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center' },
   remindNoText: { color: colors.muted, fontSize: font.small, fontFamily: fonts.heavy },
+
+  shareBtn: { flexDirection: 'row', alignSelf: 'stretch', justifyContent: 'center', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.session, borderRadius: radius.pill, paddingVertical: spacing.md + 2, marginTop: spacing.lg },
+  shareBtnText: { color: colors.session, fontSize: font.body, fontFamily: fonts.heavy },
 
   feelCard: { alignSelf: 'stretch', backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: spacing.md },
   feelTitle: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy },

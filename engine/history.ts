@@ -15,6 +15,14 @@ export function dateOfDayNumber(d: number): number {
   return new Date(d * 86400000 + 43200000).getDate();
 }
 
+const MONTH_NAMES = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+
+/** A day number as "JUNE 15, 2026" — for the share card and day summaries. */
+export function dayLabel(d: number): string {
+  const dt = new Date(d * 86400000 + 43200000);
+  return `${MONTH_NAMES[dt.getMonth()]} ${dt.getDate()}, ${dt.getFullYear()}`;
+}
+
 /** The current week as day numbers, Monday → Sunday, containing `today`. */
 export function weekDays(today: number): number[] {
   const weekday = (((today + 4) % 7) + 7) % 7; // 0 = Sunday
