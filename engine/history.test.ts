@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { backfillStreakDays, dateOfDayNumber, dayNumberFromDate, longestStreak, monthGrid, weekDays } from '@/engine/history';
+import { backfillStreakDays, dateOfDayNumber, dayNumberFromDate, longestStreak, monthGrid, streakEndingAt, weekDays } from '@/engine/history';
 import { isRestDay } from '@/engine/streak';
 
 // Same reference week as streak.test.ts: 4 Mon · 5 Tue · 6 Wed · 7 Thu · 8 Fri · 9 Sat · 10 Sun · 11 Mon
@@ -50,6 +50,17 @@ describe('longestStreak', () => {
   });
   it('returns the longest of multiple runs', () => {
     expect(longestStreak([4, 5, 11, 12, 13])).toBe(3); // 2-run then 3-run
+  });
+});
+
+describe('streakEndingAt', () => {
+  it('counts consecutive workout days ending on the given day (Sunday rest skipped)', () => {
+    expect(streakEndingAt([8, 9, 11], 11)).toBe(3); // Fri Sat · (Sun rest) · Mon
+    expect(streakEndingAt([8, 9, 11], 9)).toBe(2); // ending Saturday
+  });
+  it('is 0 when that day itself was not completed, and breaks on a miss', () => {
+    expect(streakEndingAt([8, 9, 11], 10)).toBe(0); // Sunday rest — not logged
+    expect(streakEndingAt([4, 5, 7], 7)).toBe(1); // Wed missed → only Thu counts
   });
 });
 

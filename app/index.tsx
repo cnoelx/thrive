@@ -186,11 +186,12 @@ export default function Home() {
             </View>
             <Text style={styles.streakSentence}>{weekLine}</Text>
             <View style={styles.weekStrip}>
-              {weekDays(day).map((d) => {
+              {weekDays(day).map((d, i) => {
                 const done = loggedDays.includes(d);
                 const isToday = d === day;
                 return (
                   <View key={d} style={styles.weekDay}>
+                    <Text style={[styles.weekDow, isToday && styles.weekDayLabelToday]}>{'MTWTFSS'[i]}</Text>
                     <View style={styles.weekDotSlot}>
                       {done ? (
                         <Ionicons name="flame" size={isToday ? 30 : 22} color={colors.session} />
@@ -441,6 +442,7 @@ const styles = StyleSheet.create({
   streakSentence: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy, marginBottom: spacing.md },
   weekStrip: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   weekDay: { flex: 1, alignItems: 'center', gap: 4 },
+  weekDow: { color: colors.muted, fontSize: 10, fontFamily: fonts.heavy, letterSpacing: 0.5 },
   weekDotSlot: { height: 34, justifyContent: 'center' }, // keeps date labels aligned despite today's bigger flame
   weekDayLabel: { color: colors.muted, fontSize: 10, fontFamily: fonts.bold },
   weekDayLabelToday: { color: colors.ink, fontFamily: fonts.display },

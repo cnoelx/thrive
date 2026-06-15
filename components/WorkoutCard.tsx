@@ -18,7 +18,7 @@ export interface WorkoutCardData {
   items: { name: string; target: string }[];
 }
 
-const W = Math.min(Dimensions.get('window').width - 40, 360);
+const W = Math.min(Dimensions.get('window').width - 56, 360);
 
 // Trim parentheticals / arrow-suffixes so the reps column stays tidy (the full version lives in-app).
 function shortReps(target: string): string {

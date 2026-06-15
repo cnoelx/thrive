@@ -2,10 +2,10 @@
 // screenshot crops cleanly — the manual share path until the native capture/share ships in a build.
 
 import { Ionicons } from '@expo/vector-icons';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { font, fonts, spacing } from '@/constants/theme';
+import { spacing } from '@/constants/theme';
 import { WorkoutCard, type WorkoutCardData } from '@/components/WorkoutCard';
 
 export function ShareCardModal({ data, onClose }: { data: WorkoutCardData; onClose: () => void }) {
@@ -17,18 +17,12 @@ export function ShareCardModal({ data, onClose }: { data: WorkoutCardData; onClo
           <Ionicons name="close" size={28} color="rgba(255,255,255,0.9)" />
         </Pressable>
         <WorkoutCard {...data} />
-        <View style={styles.hintRow}>
-          <Ionicons name="camera-outline" size={16} color="rgba(255,255,255,0.7)" />
-          <Text style={styles.hint}>Screenshot to share with friends</Text>
-        </View>
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(8,10,12,0.94)', alignItems: 'center', justifyContent: 'center', gap: spacing.xl },
+  backdrop: { flex: 1, backgroundColor: 'rgba(8,10,12,0.94)', alignItems: 'center', justifyContent: 'center' },
   close: { position: 'absolute', right: spacing.lg },
-  hintRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  hint: { color: 'rgba(255,255,255,0.7)', fontSize: font.small, fontFamily: fonts.regular },
 });

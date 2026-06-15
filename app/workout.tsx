@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HowToSheet } from '@/components/HowToSheet';
 import { ShareCardModal } from '@/components/ShareCardModal';
+import { WorkoutCard } from '@/components/WorkoutCard';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { EXERCISE_BY_KEY, formatTarget } from '@/data/benchmarks';
 import { estimateCalories } from '@/engine/calories';
@@ -162,6 +163,14 @@ export default function Workout() {
 
   if (finished) {
     const kcal = weightKg ? estimateCalories(weightKg, durationMin) : null;
+    const cardData = {
+      focus: workout.focus,
+      dateLabel: dayLabel(day),
+      streak: currentStreak(streak, lastLoggedDay, day),
+      durationMin,
+      calories: kcal ?? undefined,
+      items: workout.items.map((it) => ({ name: it.name, target: it.target })),
+    };
     const offerReminder = !reminderEnabled && (reminderOfferDay === null || day - reminderOfferDay >= REMINDER_REOFFER_DAYS);
     const acceptReminder = async () => {
       const ok = await requestNotificationPermission();
@@ -179,25 +188,8 @@ export default function Workout() {
         <Text style={styles.completeTitle}>Nice work! 👏</Text>
         <Text style={styles.completeBody}>That&apos;s today done. See you tomorrow.</Text>
 
-        <View style={styles.statRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statVal}>{workout.items.length}</Text>
-            <Text style={styles.statLabel}>{workout.items.length === 1 ? 'Move' : 'Moves'}</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statVal}>{steps.length}</Text>
-            <Text style={styles.statLabel}>Sets</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statVal}>{durationMin}</Text>
-            <Text style={styles.statLabel}>Min</Text>
-          </View>
-          {kcal !== null ? (
-            <View style={styles.statBox}>
-              <Text style={styles.statVal}>~{kcal}</Text>
-              <Text style={styles.statLabel}>kcal</Text>
-            </View>
-          ) : null}
+        <View style={styles.cardWrap}>
+          <WorkoutCard {...cardData} />
         </View>
 
         {weightKg && weightSetDay !== null && day - weightSetDay >= WEIGHT_NUDGE_DAYS ? (
@@ -257,19 +249,7 @@ export default function Workout() {
           <Text style={styles.primaryText}>Done</Text>
         </Pressable>
 
-        {showShare ? (
-          <ShareCardModal
-            data={{
-              focus: workout.focus,
-              dateLabel: dayLabel(day),
-              streak: currentStreak(streak, lastLoggedDay, day),
-              durationMin,
-              calories: kcal ?? undefined,
-              items: workout.items.map((it) => ({ name: it.name, target: it.target })),
-            }}
-            onClose={() => setShowShare(false)}
-          />
-        ) : null}
+        {showShare ? <ShareCardModal data={cardData} onClose={() => setShowShare(false)} /> : null}
       </ScrollView>
     );
   }
@@ -423,10 +403,7 @@ const styles = StyleSheet.create({
 
   finishScroll: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, gap: spacing.md },
 
-  statRow: { flexDirection: 'row', alignSelf: 'stretch', gap: spacing.sm, marginTop: spacing.sm },
-  statBox: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingVertical: spacing.md, alignItems: 'center', gap: 2 },
-  statVal: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.display },
-  statLabel: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.bold },
+  cardWrap: { marginVertical: spacing.sm },
 
   weightCard: { alignSelf: 'stretch', backgroundColor: colors.warnBg, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.md },
   weightCardText: { color: colors.warnText, fontSize: font.body, fontFamily: fonts.heavy, textAlign: 'center' },

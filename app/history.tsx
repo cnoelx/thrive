@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ShareCardModal } from '@/components/ShareCardModal';
 import { type WorkoutCardData } from '@/components/WorkoutCard';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
-import { dayLabel, dayNumberFromDate, longestStreak, monthGrid, type MonthCell } from '@/engine/history';
+import { dayLabel, dayNumberFromDate, monthGrid, streakEndingAt, type MonthCell } from '@/engine/history';
 import { isRestDay } from '@/engine/streak';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -34,7 +34,23 @@ export default function History() {
     setShown((s) => (s.month === 11 ? { year: s.year + 1, month: 0 } : { year: s.year, month: s.month + 1 }));
 
   const weeks = monthGrid(shown.year, shown.month);
-  const monthCount = weeks.flat().filter((c) => c !== null && loggedDays.includes(c.dayNumber)).length;
+
+  // Tapping a completed day: show the full card if its move list was saved, else the stats sheet.
+  const openDay = (cell: MonthCell) => {
+    const log = workoutLog[cell.dayNumber];
+    if (log?.items?.length) {
+      setShareData({
+        focus: log.focus,
+        dateLabel: dayLabel(cell.dayNumber),
+        streak: streakEndingAt(loggedDays, cell.dayNumber),
+        durationMin: log.durationMin,
+        calories: log.calories,
+        items: log.items.map((it) => ({ name: it.name, target: it.target })),
+      });
+    } else {
+      setOpenCell(cell);
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -46,25 +62,6 @@ export default function History() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}>
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNum}>{loggedDays.length}</Text>
-            <Text style={styles.statLabel}>Workouts</Text>
-          </View>
-          <View style={styles.statCard}>
-            <View style={styles.statNumRow}>
-              <Ionicons name="flame" size={18} color={colors.session} />
-              <Text style={styles.statNum}>{longestStreak(loggedDays)}</Text>
-            </View>
-            <Text style={styles.statLabel}>Best streak</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNum}>{monthCount}</Text>
-            <Text style={styles.statLabel}>In {MONTHS[shown.month].slice(0, 3)}</Text>
-          </View>
-        </View>
-
         <View style={styles.card}>
           {/* Month switcher */}
           <View style={styles.monthRow}>
@@ -100,7 +97,7 @@ export default function History() {
                 const future = cell.dayNumber > today;
                 const rest = isRestDay(cell.dayNumber);
                 return (
-                  <Pressable key={cell.dayNumber} style={styles.dayCell} disabled={!done} onPress={() => setOpenCell(cell)}>
+                  <Pressable key={cell.dayNumber} style={styles.dayCell} disabled={!done} onPress={() => openDay(cell)}>
                     <View style={[styles.dayDot, !done && isToday && styles.dayDotToday]}>
                       {done ? (
                         <Ionicons name="flame" size={18} color={colors.session} />
@@ -177,25 +174,6 @@ export default function History() {
                 <Text style={styles.sheetMuted}>No details for this day — summaries started being saved with a later update.</Text>
               </>
             )}
-            {openLog?.items?.length && openCell ? (
-              <Pressable
-                onPress={() => {
-                  setShareData({
-                    focus: openLog.focus,
-                    dateLabel: dayLabel(openCell.dayNumber),
-                    streak: 0,
-                    durationMin: openLog.durationMin,
-                    calories: openLog.calories,
-                    items: openLog.items!.map((it) => ({ name: it.name, target: it.target })),
-                  });
-                  setOpenCell(null);
-                }}
-                style={styles.sheetShare}
-              >
-                <Ionicons name="share-social-outline" size={18} color={colors.session} />
-                <Text style={styles.sheetShareText}>Share</Text>
-              </Pressable>
-            ) : null}
             <Pressable onPress={() => setOpenCell(null)} style={styles.sheetClose}>
               <Text style={styles.sheetCloseText}>Got it</Text>
             </Pressable>
@@ -212,12 +190,6 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
   back: { color: colors.primary, fontSize: font.body, fontFamily: fonts.bold },
   title: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy },
-
-  statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
-  statCard: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.md, alignItems: 'center', gap: 2 },
-  statNumRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  statNum: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.display },
-  statLabel: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
 
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border },
 
@@ -251,8 +223,6 @@ const styles = StyleSheet.create({
   feelPill: { alignSelf: 'flex-start', backgroundColor: colors.bg, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, marginTop: spacing.md },
   feelPillText: { color: colors.text, fontSize: font.small, fontFamily: fonts.bold },
   sheetMuted: { color: colors.muted, fontSize: font.small, lineHeight: 19, fontFamily: fonts.regular },
-  sheetShare: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing.sm, borderWidth: 1, borderColor: colors.session, borderRadius: radius.pill, paddingVertical: spacing.md, marginTop: spacing.md },
-  sheetShareText: { color: colors.session, fontSize: font.body, fontFamily: fonts.heavy },
-  sheetClose: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.sm },
+  sheetClose: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
   sheetCloseText: { color: colors.primaryText, fontSize: font.body, fontFamily: fonts.heavy },
 });

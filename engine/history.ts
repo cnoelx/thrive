@@ -62,6 +62,20 @@ export function longestStreak(loggedDays: number[]): number {
   return best;
 }
 
+/** The streak length ending exactly on `day` (consecutive scheduled workout days completed up to
+ *  and including it). 0 if `day` itself wasn't completed. Lets a past day's card show its streak. */
+export function streakEndingAt(loggedDays: number[], day: number): number {
+  const set = new Set(loggedDays);
+  if (!set.has(day)) return 0;
+  let n = 1;
+  let d = previousWorkoutDay(day);
+  while (set.has(d)) {
+    n++;
+    d = previousWorkoutDay(d);
+  }
+  return n;
+}
+
 export interface MonthCell {
   dayNumber: number;
   /** Day of the month, 1-based. */
