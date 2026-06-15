@@ -24,10 +24,10 @@ export const WEEKLY_SCHEDULE: Record<DayKey, DaySchedule> = {
   mon: {
     focus: 'Full Body',
     items: [
-      { exKey: 'squat', sets: 3, restSec: 60 },
-      { exKey: 'pushups', sets: 3, restSec: 60 },
-      { exKey: 'barrow', sets: 3, restSec: 60 },
-      { exKey: 'plank', sets: 3, restSec: 45 },
+      { exKey: 'squat', sets: 2, restSec: 60 },
+      { exKey: 'pushups', sets: 2, restSec: 60 },
+      { exKey: 'barrow', sets: 2, restSec: 60 },
+      { exKey: 'plank', sets: 2, restSec: 45 },
     ],
   },
   tue: {
@@ -42,16 +42,16 @@ export const WEEKLY_SCHEDULE: Record<DayKey, DaySchedule> = {
   wed: {
     focus: 'Legs & Core',
     items: [
-      { exKey: 'lunge', sets: 3, restSec: 60 },
-      { exKey: 'glutebridge', sets: 3, restSec: 45 },
+      { exKey: 'lunge', sets: 2, restSec: 60 },
+      { exKey: 'glutebridge', sets: 2, restSec: 45 },
       { exKey: 'pronelegraise', sets: 2, restSec: 45 },
-      { exKey: 'sideplank', sets: 3, restSec: 45 },
+      { exKey: 'sideplank', sets: 2, restSec: 45 },
     ],
   },
   thu: {
     focus: 'Upper Body',
     items: [
-      { exKey: 'pullup', sets: 3, restSec: 90 },
+      { exKey: 'pullup', sets: 2, restSec: 90 },
       { exKey: 'pushups', sets: 2, restSec: 60, note: 'lighter' },
       { exKey: 'balance', sets: 2, restSec: 30 },
     ],
@@ -59,10 +59,10 @@ export const WEEKLY_SCHEDULE: Record<DayKey, DaySchedule> = {
   fri: {
     focus: 'Strength & Core',
     items: [
-      { exKey: 'squat', sets: 3, restSec: 60 },
-      { exKey: 'barrow', sets: 3, restSec: 60 },
-      { exKey: 'glutebridge', sets: 3, restSec: 45 },
-      { exKey: 'plank', sets: 3, restSec: 45 },
+      { exKey: 'squat', sets: 2, restSec: 60 },
+      { exKey: 'barrow', sets: 2, restSec: 60 },
+      { exKey: 'glutebridge', sets: 2, restSec: 45 },
+      { exKey: 'plank', sets: 2, restSec: 45 },
     ],
   },
   sat: {
