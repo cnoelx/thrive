@@ -116,6 +116,8 @@ export default function Workout() {
           durationMin: mins,
           totalSets: steps.length,
           ...(weightKg ? { calories: estimateCalories(weightKg, mins) } : {}),
+          // Stored for the shareable workout card (name + the goal target per move).
+          items: workout.items.map((it) => ({ name: it.name, sets: it.sets, target: it.target })),
         });
       }
       setFinished(true);

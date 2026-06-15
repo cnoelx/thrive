@@ -36,7 +36,8 @@ export interface WorkoutSummary {
   calories?: number;
   /** One-tap self-rating from the finish screen. */
   feel?: WorkoutFeel;
-  /** Legacy — early summaries stored a per-exercise list; no longer written or displayed. */
+  /** Per-move list (name + goal target) — stored for the shareable workout card. Missing on days
+   *  logged during the window when it wasn't being written. */
   items?: { name: string; sets: number | null; target: string }[];
 }
 
