@@ -14,8 +14,7 @@ export type { UpdateManifest } from '@/lib/updateCheck';
 
 // The raw latest.json on GitHub Releases. `releases/latest/download/<asset>` always resolves to the
 // newest published release, so this URL is stable across versions.
-// TODO(build): replace OWNER/REPO with the real repo once the GitHub Release is set up.
-export const MANIFEST_URL = 'https://github.com/OWNER/REPO/releases/latest/download/latest.json';
+export const MANIFEST_URL = 'https://github.com/cnoelx/thrive/releases/latest/download/latest.json';
 
 const FLAG_GRANT_READ_URI_PERMISSION = 1;
 const APK_MIME = 'application/vnd.android.package-archive';
