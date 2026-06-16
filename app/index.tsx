@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
   weekDayLabel: { color: colors.muted, fontSize: 10, fontFamily: fonts.bold },
   weekDayLabelToday: { color: colors.ink, fontFamily: fonts.display },
   weekChevron: { color: colors.link, fontSize: 18, fontFamily: fonts.bold },
-  heroOverall: { marginTop: spacing.xl + spacing.xs },
+  heroOverall: { marginTop: spacing.lg + spacing.xs },
   heroOverallEyebrow: { color: colors.onInkMuted, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.5 },
   heroLevel: { color: colors.primaryText, fontSize: font.h2, fontFamily: fonts.display, marginTop: spacing.xs },
   heroBarTrack: { height: 8, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: radius.pill, overflow: 'hidden', marginTop: spacing.md },
