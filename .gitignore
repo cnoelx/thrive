@@ -44,3 +44,6 @@ app-example
 
 # generated release manifest (uploaded to GitHub Releases, not committed)
 latest.json
+
+# raw exercise-demo keyframes (large; only the stitched anim/*.webp is shipped)
+assets/exercises/anim_src/

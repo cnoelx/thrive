@@ -34,7 +34,7 @@ export function HowToSheet({ exKey, name, onClose }: Props) {
           <Text style={styles.sub}>HOW TO DO IT</Text>
           <Text style={styles.title}>{name}</Text>
           {EXERCISE_ANIMATIONS[exKey] ? (
-            <ExpoImage source={EXERCISE_ANIMATIONS[exKey]} style={styles.img} contentFit="contain" />
+            <ExpoImage source={EXERCISE_ANIMATIONS[exKey]} style={[styles.img, { backgroundColor: '#fff' }]} contentFit="contain" />
           ) : EXERCISE_IMAGES[exKey] ? (
             <Image source={EXERCISE_IMAGES[exKey][frame]} style={styles.img} resizeMode="contain" />
           ) : null}
