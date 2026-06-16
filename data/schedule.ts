@@ -33,7 +33,7 @@ export const WEEKLY_SCHEDULE: Record<DayKey, DaySchedule> = {
   tue: {
     focus: 'Cardio & Mobility',
     items: [
-      { exKey: 'walkrun', sets: null, note: '20–30 min, conversational pace' },
+      { exKey: 'walkrun', sets: null, restSec: 60, note: '20–30 min, conversational pace' },
       { exKey: 'deepsquat', sets: 2, restSec: 30, note: 'check' },
       { exKey: 'ankle', sets: 1, note: 'knee-to-wall, both sides' },
       { exKey: 'overhead', sets: 1, note: 'wall test' },

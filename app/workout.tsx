@@ -122,7 +122,7 @@ export default function Workout() {
   const coach = (line: string) => {
     if (voiceCoach) say(line);
   };
-  const stepCue = (s: CircuitStep) => setCue({ name: s.item.name, target: s.target, isCheck: !!EXERCISE_BY_KEY[s.item.exKey]?.check });
+  const stepCue = (s: CircuitStep) => setCue({ name: s.item.name, target: s.target });
 
   const goNext = () => {
     setResting(false);

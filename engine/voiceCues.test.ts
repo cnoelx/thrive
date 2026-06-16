@@ -38,11 +38,11 @@ describe('spokenTarget', () => {
 
 describe('cues', () => {
   it('setCue speaks name + spoken target', () => {
-    expect(setCue({ name: 'Push-ups', target: 'wall ×8', isCheck: false })).toBe('Push-ups. wall, 8 reps.');
+    expect(setCue({ name: 'Push-ups', target: 'wall ×8' })).toBe('Push-ups. wall, 8 reps.');
   });
 
-  it('setCue marks a one-time check without reps', () => {
-    expect(setCue({ name: 'Overhead Reach', target: 'ribs stay down', isCheck: true })).toBe('Overhead Reach. One-time check.');
+  it('setCue speaks a checkpoint as name + its position (no "one-time check" label)', () => {
+    expect(setCue({ name: 'Overhead Reach', target: 'ribs stay down' })).toBe('Overhead Reach. ribs stay down.');
   });
 
   it('restCue names the next move when present', () => {

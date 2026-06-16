@@ -16,9 +16,10 @@ export function spokenTarget(target: string): string {
   return /^\d+$/.test(t) ? `${t} reps` : t; // bare number (incl. once parentheticals are dropped) → reps
 }
 
-/** What to say when a set becomes the active one. */
-export function setCue(opts: { name: string; target: string; isCheck: boolean }): string {
-  if (opts.isCheck) return `${opts.name}. One-time check.`;
+/** What to say when a move becomes the active one — the move name + its reps/time, nothing in between.
+ *  Checkpoints just read their position target (e.g. "Ankle Mobility. Knee over toes."); the on-screen
+ *  "one-time check" label is not spoken. */
+export function setCue(opts: { name: string; target: string }): string {
   return `${opts.name}. ${spokenTarget(opts.target)}.`;
 }
 
