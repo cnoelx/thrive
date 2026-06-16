@@ -352,7 +352,7 @@ function LevelRow({ label, selected, onPress }: { label: string; selected: boole
 
 const styles = StyleSheet.create({
   scroll: { padding: spacing.lg, paddingBottom: spacing.xl, gap: spacing.md, flexGrow: 1 },
-  kicker: { color: colors.primary, fontSize: font.small, fontFamily: fonts.bold, letterSpacing: 1 },
+  kicker: { color: colors.link, fontSize: font.small, fontFamily: fonts.bold, letterSpacing: 1 },
   h1: { color: colors.ink, fontSize: font.title, fontFamily: fonts.heavy },
   body: { color: colors.muted, fontSize: font.body, lineHeight: 22, fontFamily: fonts.regular },
   equipCard: {
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
     fontSize: font.title,
     fontFamily: fonts.heavy,
     borderBottomWidth: 2,
-    borderBottomColor: colors.primary,
+    borderBottomColor: colors.link,
     paddingVertical: spacing.sm,
     marginTop: spacing.sm,
   },
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     fontSize: font.title,
     fontFamily: fonts.heavy,
     borderBottomWidth: 2,
-    borderBottomColor: colors.primary,
+    borderBottomColor: colors.link,
     paddingVertical: spacing.sm,
     minWidth: 88,
     textAlign: 'center',
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
   parqCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.lg },
   parqRow: { flexDirection: 'row', gap: spacing.sm, paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: colors.border },
   parqRowFirst: { borderTopWidth: 0 },
-  parqDot: { color: colors.primary, fontSize: font.body, lineHeight: 20, fontFamily: fonts.display },
+  parqDot: { color: colors.link, fontSize: font.body, lineHeight: 20, fontFamily: fonts.display },
   parqQ: { flex: 1, color: colors.text, fontSize: font.small, lineHeight: 20, fontFamily: fonts.regular },
   toggle: {
     flexDirection: 'row',

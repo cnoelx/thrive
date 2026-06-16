@@ -284,7 +284,7 @@ export default function Home() {
               <Switch
                 value={reminderCustomTime}
                 onValueChange={toggleCustomTime}
-                trackColor={{ true: colors.primary, false: colors.track }}
+                trackColor={{ true: colors.link, false: colors.track }}
                 thumbColor="#ffffff"
               />
             </View>
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
   weekDotSlot: { height: 34, justifyContent: 'center' }, // keeps date labels aligned despite today's bigger flame
   weekDayLabel: { color: colors.muted, fontSize: 10, fontFamily: fonts.bold },
   weekDayLabelToday: { color: colors.ink, fontFamily: fonts.display },
-  weekChevron: { color: colors.primary, fontSize: 18, fontFamily: fonts.bold },
+  weekChevron: { color: colors.link, fontSize: 18, fontFamily: fonts.bold },
   heroOverall: { marginTop: spacing.xl + spacing.xs },
   heroOverallEyebrow: { color: colors.onInkMuted, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.5 },
   heroLevel: { color: colors.primaryText, fontSize: font.h2, fontFamily: fonts.display, marginTop: spacing.xs },
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
 
   // Today — rest day (calm, not green)
   restCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.xs },
-  restEyebrow: { color: colors.primary, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1 },
+  restEyebrow: { color: colors.link, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1 },
   restTitle: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy, marginTop: 2 },
   restSub: { color: colors.muted, fontSize: font.small, marginTop: 4, fontFamily: fonts.regular },
 
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   timeButtonText: { color: colors.text, fontSize: font.body, fontFamily: fonts.heavy },
-  timeButtonHint: { color: colors.primary, fontSize: font.small, fontFamily: fonts.bold },
+  timeButtonHint: { color: colors.link, fontSize: font.small, fontFamily: fonts.bold },
 
   // Modals / sheets
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
 
   whatsNewList: { marginTop: spacing.sm, gap: spacing.sm },
   whatsNewRow: { flexDirection: 'row', gap: spacing.sm },
-  whatsNewDot: { color: colors.primary, fontSize: font.body, fontFamily: fonts.display, lineHeight: 22 },
+  whatsNewDot: { color: colors.link, fontSize: font.body, fontFamily: fonts.display, lineHeight: 22 },
   whatsNewText: { flex: 1, color: colors.text, fontSize: font.body, lineHeight: 22, fontFamily: fonts.regular },
   levelsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
   levelsCat: { color: colors.text, fontSize: font.body, fontFamily: fonts.bold },

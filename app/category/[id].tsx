@@ -186,7 +186,7 @@ export default function CategoryScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, backgroundColor: colors.bg },
   header: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
-  back: { color: colors.primary, fontSize: font.body, fontFamily: fonts.bold },
+  back: { color: colors.link, fontSize: font.body, fontFamily: fonts.bold },
 
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   levelBox: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

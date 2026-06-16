@@ -9,6 +9,7 @@ export const colors = {
   track: '#ECEEF1',
   primary: '#111827', // ink — primary actions & buttons (brand moved off green to ink + ember)
   primaryText: '#FFFFFF',
+  link: '#EA580C', // ember — tappable accents & small highlights on light surfaces (back links, "Change", chevrons, bullet dots, input underlines, the reminder switch)
   warnBg: '#FEF3C7',
   warnText: '#92400E',
 

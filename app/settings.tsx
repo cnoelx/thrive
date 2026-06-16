@@ -89,7 +89,7 @@ export default function Settings() {
                 }}
                 hitSlop={10}
               >
-                <Ionicons name="create-outline" size={22} color={colors.primary} />
+                <Ionicons name="create-outline" size={22} color={colors.link} />
               </Pressable>
             </View>
           )}
@@ -132,18 +132,18 @@ export default function Settings() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
-  back: { color: colors.primary, fontSize: font.body, fontFamily: fonts.bold },
+  back: { color: colors.link, fontSize: font.body, fontFamily: fonts.bold },
   title: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy },
 
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.sm },
   label: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.5 },
 
-  nameInput: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy, borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs },
+  nameInput: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy, borderBottomWidth: 2, borderBottomColor: colors.link, paddingVertical: spacing.xs },
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   nameText: { flex: 1, color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy, paddingVertical: spacing.xs },
 
   weightRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
-  weightInput: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy, borderBottomWidth: 2, borderBottomColor: colors.primary, paddingVertical: spacing.xs, minWidth: 64, textAlign: 'center' },
+  weightInput: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy, borderBottomWidth: 2, borderBottomColor: colors.link, paddingVertical: spacing.xs, minWidth: 64, textAlign: 'center' },
   weightUnit: { color: colors.muted, fontSize: font.body, fontFamily: fonts.bold },
   weightHint: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
 

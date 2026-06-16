@@ -188,14 +188,14 @@ export default function History() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
-  back: { color: colors.primary, fontSize: font.body, fontFamily: fonts.bold },
+  back: { color: colors.link, fontSize: font.body, fontFamily: fonts.bold },
   title: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy },
 
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border },
 
   monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   monthBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  monthBtnText: { color: colors.primary, fontSize: 24, fontFamily: fonts.heavy },
+  monthBtnText: { color: colors.link, fontSize: 24, fontFamily: fonts.heavy },
   monthBtnOff: { color: colors.track },
   monthTitle: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy },
 
