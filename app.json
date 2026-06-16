@@ -14,7 +14,8 @@
     "android": {
       "package": "com.thrive.fitness",
       "adaptiveIcon": {
-        "backgroundColor": "#16A34A",
+        "backgroundColor": "#EA580C",
+        "backgroundImage": "./assets/images/adaptive-icon-background.png",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "edgeToEdgeEnabled": true,
@@ -33,9 +34,9 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#16A34A",
+          "backgroundColor": "#EA580C",
           "dark": {
-            "backgroundColor": "#0E2A1E"
+            "backgroundColor": "#C2410C"
           }
         }
       ],
