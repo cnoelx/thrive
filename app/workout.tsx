@@ -375,19 +375,21 @@ export default function Workout() {
   return (
     <View style={{ flex: 1, backgroundColor: sunrise.bg }}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <Text style={styles.close}>✕</Text>
-        </Pressable>
-        {canGoBack ? (
-          <Pressable onPress={goBack} hitSlop={10}>
-            <Ionicons name="arrow-undo-outline" size={22} color={sunrise.muted} />
-          </Pressable>
-        ) : null}
+        {/* Undo (step back) on the left with a label; the exit ✕ sits on the right, well away from it.
+            The fixed-width slot keeps the progress bar from shifting when Undo appears. */}
+        <View style={styles.undoSlot}>
+          {canGoBack ? (
+            <Pressable onPress={goBack} hitSlop={10} style={styles.undoBtn}>
+              <Ionicons name="arrow-undo-outline" size={20} color={sunrise.muted} />
+              <Text style={styles.undoText}>Undo</Text>
+            </Pressable>
+          ) : null}
+        </View>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${pct}%` }]} />
         </View>
-        <Pressable onPress={toggleVoice} hitSlop={10}>
-          <Ionicons name={voiceCoach ? 'volume-high' : 'volume-mute'} size={22} color={voiceCoach ? sunrise.hot : sunrise.muted} />
+        <Pressable onPress={() => router.back()} hitSlop={10}>
+          <Text style={styles.close}>✕</Text>
         </Pressable>
       </View>
 
@@ -429,6 +431,14 @@ export default function Workout() {
             </Pressable>
           </>
         )}
+      </View>
+
+      {/* Voice control lives down by the workout, labelled, instead of a bare icon in the header. */}
+      <View style={[styles.muteBar, { paddingBottom: insets.bottom + spacing.md }]}>
+        <Pressable onPress={toggleVoice} hitSlop={10} style={styles.muteBtn}>
+          <Ionicons name={voiceCoach ? 'volume-high' : 'volume-mute'} size={18} color={voiceCoach ? sunrise.hot : sunrise.muted} />
+          <Text style={[styles.muteText, voiceCoach && { color: sunrise.hot }]}>{voiceCoach ? 'Voice on' : 'Muted'}</Text>
+        </Pressable>
       </View>
 
       {infoItem ? <HowToSheet exKey={infoItem.exKey} name={infoItem.name} onClose={() => setInfoItem(null)} /> : null}
@@ -490,6 +500,12 @@ const styles = StyleSheet.create({
 
   header: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   close: { color: sunrise.muted, fontSize: 22, fontFamily: fonts.bold },
+  undoSlot: { width: 76, justifyContent: 'center' },
+  undoBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  undoText: { color: sunrise.muted, fontSize: font.small, fontFamily: fonts.bold },
+  muteBar: { alignItems: 'center', paddingTop: spacing.sm },
+  muteBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: spacing.sm, paddingHorizontal: spacing.lg, borderRadius: radius.pill },
+  muteText: { color: sunrise.muted, fontSize: font.small, fontFamily: fonts.bold },
   progressTrack: { flex: 1, height: 8, backgroundColor: sunrise.track, borderRadius: radius.pill, overflow: 'hidden' },
   progressFill: { height: 8, backgroundColor: sunrise.hot, borderRadius: radius.pill },
 

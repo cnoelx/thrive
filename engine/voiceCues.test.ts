@@ -51,7 +51,7 @@ describe('cues', () => {
   });
 
   it('introCue and finish line', () => {
-    expect(introCue('Full Body')).toBe("Full Body. Let's go.");
+    expect(introCue('Full Body')).toBe("Full Body. Let's go!");
     expect(FINISH_CUE).toMatch(/complete/i);
   });
 });

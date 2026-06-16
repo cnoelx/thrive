@@ -30,7 +30,7 @@ export function restCue(restSec: number, nextName: string | null): string {
 
 /** Spoken when the session starts, before the first set cue. */
 export function introCue(focus: string): string {
-  return `${focus}. Let's go.`;
+  return `${focus}. Let's go!`;
 }
 
-export const FINISH_CUE = 'Workout complete. Nice work.';
+export const FINISH_CUE = 'Workout complete! Great work — see you next time!';
