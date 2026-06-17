@@ -76,6 +76,7 @@ export const FORM_CUES: Record<string, string[]> = {
     "Land softly with relaxed shoulders.",
     "Build duration before speed.",
     "Use walk-jog intervals before continuous jogging.",
+    "No safe place to run outside? A treadmill or elliptical counts just the same — and the elliptical is gentle on the knees.",
   ],
   deepsquat: [
     "Lower into a deep squat with heels down.",
