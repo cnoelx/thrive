@@ -1,13 +1,11 @@
-// Achievements ("trophy shelf") — pure, side-effect-free definitions + unlock logic. Each achievement
-// is a predicate over a small context derived from the user's progress + history. No React/Expo here,
-// so it's unit-tested in isolation; the screen + celebration wiring sit on top.
+// Achievements ("trophy shelf") — pure definitions + unlock logic. The shelf is physical *feats*:
+// each unlocks when its specific benchmark is claimed (consistency is handled separately by the
+// streak system + celebrations). "Program complete" is the one capstone. No React/Expo here.
 
-import { CATEGORY_IDS, MAX_LEVEL } from '@/data/benchmarks';
-import { longestStreak, weekDays } from '@/engine/history';
-import { ProgressState, baselineLevel, isCategoryMaxed } from '@/engine/progression';
-import { isRestDay, previousWorkoutDay } from '@/engine/streak';
+import { MAX_LEVEL } from '@/data/benchmarks';
+import { ProgressState, baselineLevel } from '@/engine/progression';
 
-export type AchievementGroup = 'consistency' | 'functional' | 'progression' | 'volume';
+export type AchievementGroup = 'push' | 'pull' | 'legs' | 'cardio' | 'milestone';
 
 export interface Achievement {
   id: string;
@@ -18,80 +16,43 @@ export interface Achievement {
   unlocked: (c: AchievementContext) => boolean;
 }
 
-/** Raw state the context is derived from — the screen passes these straight from the store. */
 export interface AchievementInputs {
   progress: ProgressState;
   pullUnlocked: boolean;
-  loggedDays: number[];
 }
 
-/** Pre-computed values the predicates read, so each `unlocked` stays a cheap comparison. */
 export interface AchievementContext {
-  totalWorkouts: number;
-  longestStreak: number;
-  overallLevel: number;
-  maxedAreas: number;
   allMaxed: boolean;
-  comeback: boolean;
-  perfectWeek: boolean;
   claimed: (benchmarkId: string) => boolean;
-}
-
-/** Number of separate workout runs (a run starts on a logged day whose previous workout day wasn't
- *  logged). Two-plus runs after hitting a real streak = the user broke a streak and came back. */
-function runCount(loggedDays: number[]): number {
-  const set = new Set(loggedDays);
-  let runs = 0;
-  for (const d of set) if (!set.has(previousWorkoutDay(d))) runs++;
-  return runs;
-}
-
-/** True if some calendar week has every one of its scheduled (non-rest) days logged. */
-function hasPerfectWeek(loggedDays: number[]): boolean {
-  const set = new Set(loggedDays);
-  for (const monday of new Set(loggedDays.map((d) => weekDays(d)[0]))) {
-    const scheduled = weekDays(monday).filter((d) => !isRestDay(d));
-    if (scheduled.length > 0 && scheduled.every((d) => set.has(d))) return true;
-  }
-  return false;
 }
 
 export function achievementContext(i: AchievementInputs): AchievementContext {
   return {
-    totalWorkouts: i.loggedDays.length,
-    longestStreak: longestStreak(i.loggedDays),
-    overallLevel: baselineLevel(i.progress, i.pullUnlocked),
-    maxedAreas: CATEGORY_IDS.filter((c) => isCategoryMaxed(i.progress, c)).length,
     allMaxed: baselineLevel(i.progress, i.pullUnlocked) >= MAX_LEVEL,
-    comeback: runCount(i.loggedDays) >= 2 && longestStreak(i.loggedDays) >= 3,
-    perfectWeek: hasPerfectWeek(i.loggedDays),
     claimed: (id) => !!i.progress.claimed[id],
   };
 }
 
+// Most feats just check that a specific ladder rung has been claimed.
+const at = (benchmarkId: string) => (c: AchievementContext) => c.claimed(benchmarkId);
+
 export const ACHIEVEMENTS: Achievement[] = [
-  // Consistency
-  { id: 'first-workout', title: 'First step', desc: 'Finish your first workout.', icon: 'flag', group: 'consistency', unlocked: (c) => c.totalWorkouts >= 1 },
-  { id: 'streak-7', title: 'On a roll', desc: 'Reach a 7-day streak.', icon: 'flame', group: 'consistency', unlocked: (c) => c.longestStreak >= 7 },
-  { id: 'streak-30', title: 'Committed', desc: 'Reach a 30-day streak.', icon: 'flame', group: 'consistency', unlocked: (c) => c.longestStreak >= 30 },
-  { id: 'streak-100', title: 'Unstoppable', desc: 'Reach a 100-day streak.', icon: 'flame', group: 'consistency', unlocked: (c) => c.longestStreak >= 100 },
-  { id: 'perfect-week', title: 'Perfect week', desc: 'Train every scheduled day in a week.', icon: 'calendar', group: 'consistency', unlocked: (c) => c.perfectWeek },
-  { id: 'comeback', title: 'Comeback', desc: 'Pick it back up after a break.', icon: 'rotate', group: 'consistency', unlocked: (c) => c.comeback },
-  // Functional firsts
-  { id: 'full-pushups', title: 'Full push-ups', desc: 'Reach 5 full push-ups.', icon: 'pushup', group: 'functional', unlocked: (c) => c.claimed('pushups-l5') },
-  { id: 'first-pullup', title: 'First pull-up', desc: 'Pull your own bodyweight up.', icon: 'pullup', group: 'functional', unlocked: (c) => c.claimed('pullup-l5') },
-  { id: 'plank-90', title: '90-second plank', desc: 'Hold a 90-second plank.', icon: 'clock', group: 'functional', unlocked: (c) => c.claimed('plank-l5') },
-  { id: 'no-hands-floor', title: 'No-hands floor', desc: 'Get off the floor with no hands.', icon: 'stand', group: 'functional', unlocked: (c) => c.claimed('sittostand-l5') },
-  { id: 'free-deep-squat', title: 'Free deep squat', desc: 'Hold a free deep squat.', icon: 'squat', group: 'functional', unlocked: (c) => c.claimed('deepsquat-l3') },
-  // Progression
-  { id: 'level-1', title: 'Level up', desc: 'Reach overall Level 1.', icon: 'bolt', group: 'progression', unlocked: (c) => c.overallLevel >= 1 },
-  { id: 'level-5', title: 'Well-rounded', desc: 'Reach overall Level 5.', icon: 'bolt', group: 'progression', unlocked: (c) => c.overallLevel >= 5 },
-  { id: 'area-master', title: 'Area master', desc: 'Max out a training area.', icon: 'medal', group: 'progression', unlocked: (c) => c.maxedAreas >= 1 },
-  { id: 'complete', title: 'Complete', desc: 'Max out the whole program.', icon: 'trophy', group: 'progression', unlocked: (c) => c.allMaxed },
-  // Volume
-  { id: 'workouts-25', title: '25 workouts', desc: 'Log 25 workouts.', icon: 'number', group: 'volume', unlocked: (c) => c.totalWorkouts >= 25 },
-  { id: 'workouts-50', title: '50 workouts', desc: 'Log 50 workouts.', icon: 'number', group: 'volume', unlocked: (c) => c.totalWorkouts >= 50 },
-  { id: 'workouts-100', title: '100 workouts', desc: 'Log 100 workouts.', icon: 'number', group: 'volume', unlocked: (c) => c.totalWorkouts >= 100 },
+  // Push
+  { id: 'first-pushup', title: 'First push-up', desc: 'Do 5 full push-ups.', icon: 'pushup', group: 'push', unlocked: at('pushups-l5') },
+  { id: 'onearm-pushup', title: 'One-arm push-up', desc: 'Press up on a single arm.', icon: 'pushup', group: 'push', unlocked: at('pushups-l10') },
+  // Pull (5-pull-up award unlocks at the 6-rep rung — if you can do 6 you can do 5)
+  { id: 'first-pullup', title: 'First pull-up', desc: 'Pull your bodyweight up once.', icon: 'pullup', group: 'pull', unlocked: at('pullup-l5') },
+  { id: 'pullup-5', title: '5 pull-ups', desc: 'Five clean pull-ups.', icon: 'pullup', group: 'pull', unlocked: at('pullup-l7') },
+  { id: 'pullup-10', title: '10 pull-ups', desc: 'Ten clean pull-ups.', icon: 'pullup', group: 'pull', unlocked: at('pullup-l8') },
+  { id: 'onearm-pullup', title: 'One-arm pull-up', desc: 'The one-arm pull-up.', icon: 'pullup', group: 'pull', unlocked: at('pullup-l10') },
+  // Legs
+  { id: 'squats-50', title: '50 squats', desc: 'Fifty bodyweight squats.', icon: 'squat', group: 'legs', unlocked: at('squat-l5') },
+  { id: 'pistol-squat', title: 'Pistol squat', desc: 'A full single-leg squat.', icon: 'squat', group: 'legs', unlocked: at('squat-l10') },
+  // Cardio
+  { id: 'run-5k', title: 'First 5K', desc: 'Cover five kilometres.', icon: 'run', group: 'cardio', unlocked: at('walkrun-l7') },
+  { id: 'run-10k', title: '10K', desc: 'Cover ten kilometres.', icon: 'run', group: 'cardio', unlocked: at('walkrun-l10') },
+  // Milestone
+  { id: 'complete', title: 'Program complete', desc: 'Max out every area.', icon: 'trophy', group: 'milestone', unlocked: (c) => c.allMaxed },
 ];
 
 /** The ids currently earned, given the context. */

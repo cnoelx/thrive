@@ -9,17 +9,16 @@ import { ACHIEVEMENTS, type AchievementGroup, achievementContext, unlockedIds } 
 import { useAppStore } from '@/store/useAppStore';
 
 const GROUPS: { id: AchievementGroup; label: string }[] = [
-  { id: 'consistency', label: 'CONSISTENCY' },
-  { id: 'functional', label: 'FUNCTIONAL FIRSTS' },
-  { id: 'progression', label: 'PROGRESSION' },
-  { id: 'volume', label: 'VOLUME' },
+  { id: 'push', label: 'PUSH' },
+  { id: 'pull', label: 'PULL' },
+  { id: 'legs', label: 'LEGS' },
+  { id: 'cardio', label: 'CARDIO' },
+  { id: 'milestone', label: 'MILESTONE' },
 ];
 
 // Achievement icon keys → Ionicons glyphs.
 const ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
-  flag: 'flag', flame: 'flame', calendar: 'calendar', rotate: 'refresh',
-  pushup: 'body', pullup: 'barbell', clock: 'time', stand: 'accessibility', squat: 'body',
-  bolt: 'flash', medal: 'medal', trophy: 'trophy', number: 'stats-chart',
+  pushup: 'fitness', pullup: 'barbell', squat: 'body', run: 'walk', trophy: 'trophy',
 };
 
 export default function Achievements() {
@@ -27,12 +26,11 @@ export default function Achievements() {
   const insets = useSafeAreaInsets();
   const progress = useAppStore((s) => s.progress);
   const pullUnlocked = useAppStore((s) => s.pullUnlocked);
-  const loggedDays = useAppStore((s) => s.loggedDays);
   const markAchievementsSeen = useAppStore((s) => s.markAchievementsSeen);
 
   const earned = useMemo(
-    () => new Set(unlockedIds(achievementContext({ progress, pullUnlocked, loggedDays }))),
-    [progress, pullUnlocked, loggedDays],
+    () => new Set(unlockedIds(achievementContext({ progress, pullUnlocked }))),
+    [progress, pullUnlocked],
   );
 
   // Opening the shelf means you've seen what you've earned — clear the hero dot.
