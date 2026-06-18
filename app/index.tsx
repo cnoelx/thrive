@@ -79,7 +79,7 @@ export default function Home() {
   const streakMilestone = pendingStreakMilestone(streakNow, streakMilestoneSeen);
 
   const lapsed = streakNow === 0 && lastLoggedDay !== null;
-  const hasUnseenAch = unlockedIds(achievementContext({ progress, pullUnlocked })).some((id) => !achievementsSeen.includes(id));
+  const hasUnseenAch = unlockedIds(achievementContext({ progress })).some((id) => !achievementsSeen.includes(id));
 
   // Ask for notification permission once, on first app open after onboarding. Granting defaults the
   // reminders on; the effect below then schedules them.

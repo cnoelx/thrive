@@ -1,11 +1,10 @@
 // Achievements ("trophy shelf") — pure definitions + unlock logic. The shelf is physical *feats*:
 // each unlocks when its specific benchmark is claimed (consistency is handled separately by the
-// streak system + celebrations). "Program complete" is the one capstone. No React/Expo here.
+// streak system + celebrations). No React/Expo here, so it's unit-tested in isolation.
 
-import { MAX_LEVEL } from '@/data/benchmarks';
-import { ProgressState, baselineLevel } from '@/engine/progression';
+import { ProgressState } from '@/engine/progression';
 
-export type AchievementGroup = 'push' | 'pull' | 'legs' | 'cardio' | 'milestone';
+export type AchievementGroup = 'push' | 'pull' | 'legs' | 'cardio';
 
 export interface Achievement {
   id: string;
@@ -18,22 +17,17 @@ export interface Achievement {
 
 export interface AchievementInputs {
   progress: ProgressState;
-  pullUnlocked: boolean;
 }
 
 export interface AchievementContext {
-  allMaxed: boolean;
   claimed: (benchmarkId: string) => boolean;
 }
 
 export function achievementContext(i: AchievementInputs): AchievementContext {
-  return {
-    allMaxed: baselineLevel(i.progress, i.pullUnlocked) >= MAX_LEVEL,
-    claimed: (id) => !!i.progress.claimed[id],
-  };
+  return { claimed: (id) => !!i.progress.claimed[id] };
 }
 
-// Most feats just check that a specific ladder rung has been claimed.
+// Every feat just checks that a specific ladder rung has been claimed.
 const at = (benchmarkId: string) => (c: AchievementContext) => c.claimed(benchmarkId);
 
 export const ACHIEVEMENTS: Achievement[] = [
@@ -51,8 +45,6 @@ export const ACHIEVEMENTS: Achievement[] = [
   // Cardio
   { id: 'run-5k', title: 'First 5K', desc: 'Cover five kilometres.', icon: 'run', group: 'cardio', unlocked: at('walkrun-l7') },
   { id: 'run-10k', title: '10K', desc: 'Cover ten kilometres.', icon: 'run', group: 'cardio', unlocked: at('walkrun-l10') },
-  // Milestone
-  { id: 'complete', title: 'Program complete', desc: 'Max out every area.', icon: 'trophy', group: 'milestone', unlocked: (c) => c.allMaxed },
 ];
 
 /** The ids currently earned, given the context. */

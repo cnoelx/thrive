@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { CATEGORY_IDS, CategoryId, benchmarksFor } from '@/data/benchmarks';
+import { CategoryId, benchmarksFor } from '@/data/benchmarks';
 import { type AchievementInputs, achievementContext, unlockedIds } from '@/engine/achievements';
 import { ProgressState, claim, emptyProgress } from '@/engine/progression';
 
@@ -11,7 +11,7 @@ function claimLevel(state: ProgressState, c: CategoryId, level: number): Progres
   return s;
 }
 
-const inputs = (over: Partial<AchievementInputs>): AchievementInputs => ({ progress: emptyProgress(), pullUnlocked: true, ...over });
+const inputs = (over: Partial<AchievementInputs>): AchievementInputs => ({ progress: emptyProgress(), ...over });
 const earned = (over: Partial<AchievementInputs>) => unlockedIds(achievementContext(inputs(over)));
 
 describe('achievements', () => {
@@ -26,7 +26,7 @@ describe('achievements', () => {
   });
 
   it('pull feats unlock at their rungs — 5-award fires at the 6-rep rung (L7)', () => {
-    expect(earned({ progress: claimLevel(emptyProgress(), 'pull', 5) })).toEqual(expect.arrayContaining(['first-pullup']));
+    expect(earned({ progress: claimLevel(emptyProgress(), 'pull', 5) })).toContain('first-pullup');
     const atSix = earned({ progress: claimLevel(emptyProgress(), 'pull', 7) });
     expect(atSix).toContain('pullup-5');
     expect(atSix).not.toContain('pullup-10');
@@ -40,12 +40,5 @@ describe('achievements', () => {
     expect(earned({ progress: claimLevel(emptyProgress(), 'move', 10) })).toContain('pistol-squat');
     expect(earned({ progress: claimLevel(emptyProgress(), 'cardio', 7) })).toContain('run-5k');
     expect(earned({ progress: claimLevel(emptyProgress(), 'cardio', 10) })).toContain('run-10k');
-  });
-
-  it('program complete unlocks only when every area is maxed', () => {
-    expect(earned({})).not.toContain('complete');
-    let p = emptyProgress();
-    for (let l = 1; l <= 10; l++) for (const c of CATEGORY_IDS) p = claimLevel(p, c, l);
-    expect(earned({ progress: p })).toContain('complete');
   });
 });

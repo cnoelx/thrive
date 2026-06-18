@@ -13,7 +13,6 @@ const GROUPS: { id: AchievementGroup; label: string }[] = [
   { id: 'pull', label: 'PULL' },
   { id: 'legs', label: 'LEGS' },
   { id: 'cardio', label: 'CARDIO' },
-  { id: 'milestone', label: 'MILESTONE' },
 ];
 
 // Achievement icon keys → Ionicons glyphs.
@@ -25,13 +24,9 @@ export default function Achievements() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const progress = useAppStore((s) => s.progress);
-  const pullUnlocked = useAppStore((s) => s.pullUnlocked);
   const markAchievementsSeen = useAppStore((s) => s.markAchievementsSeen);
 
-  const earned = useMemo(
-    () => new Set(unlockedIds(achievementContext({ progress, pullUnlocked }))),
-    [progress, pullUnlocked],
-  );
+  const earned = useMemo(() => new Set(unlockedIds(achievementContext({ progress }))), [progress]);
 
   // Opening the shelf means you've seen what you've earned — clear the hero dot.
   useEffect(() => {
