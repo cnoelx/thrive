@@ -102,4 +102,10 @@ export const FORM_CUES: Record<string, string[]> = {
     "Find the furthest distance where the heel stays planted.",
     "Test both sides.",
   ],
+  forwardfold: [
+    "Stand tall, then hinge from the hips with soft knees.",
+    "Let your head and arms hang heavy toward the floor.",
+    "Reach as far as is comfortable — never force or bounce.",
+    "Note how far you get: shins, toes, floor, or knees.",
+  ],
 };

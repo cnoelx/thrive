@@ -13,11 +13,12 @@ const GROUPS: { id: AchievementGroup; label: string }[] = [
   { id: 'pull', label: 'PULL' },
   { id: 'legs', label: 'LEGS' },
   { id: 'cardio', label: 'CARDIO' },
+  { id: 'mobility', label: 'MOBILITY' },
 ];
 
 // Achievement icon keys → Ionicons glyphs.
 const ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
-  pushup: 'fitness', pullup: 'barbell', squat: 'body', run: 'walk', trophy: 'trophy',
+  pushup: 'fitness', pullup: 'barbell', squat: 'body', run: 'walk', fold: 'accessibility', trophy: 'trophy',
 };
 
 export default function Achievements() {

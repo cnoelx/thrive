@@ -41,4 +41,11 @@ describe('achievements', () => {
     expect(earned({ progress: claimLevel(emptyProgress(), 'cardio', 7) })).toContain('run-5k');
     expect(earned({ progress: claimLevel(emptyProgress(), 'cardio', 10) })).toContain('run-10k');
   });
+
+  it('mobility feats unlock from the forward-fold check (toes at L2, head-to-knees at L5)', () => {
+    const atToes = earned({ progress: claimLevel(emptyProgress(), 'mobility', 2) });
+    expect(atToes).toContain('toe-touch');
+    expect(atToes).not.toContain('head-to-knees');
+    expect(earned({ progress: claimLevel(emptyProgress(), 'mobility', 5) })).toContain('head-to-knees');
+  });
 });

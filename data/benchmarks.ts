@@ -58,6 +58,7 @@ const EXERCISES: Exercise[] = [
   { key: "deepsquat", categoryId: "mobility", name: "Deep Squat Hold", why: "Rest, garden, floor play", sets: null, targets: ["support 15s", "support 30s", "free 30s", "free 60s", "free 90s"] },
   { key: "overhead", categoryId: "mobility", name: "Overhead Reach", why: "Shelves, posture (wall test)", sets: null, check: true, targets: ["ribs stick out a lot", "ribs stick out a little", "ribs stay down", "ribs down + slight backbend", "full, pain-free"] },
   { key: "ankle", categoryId: "mobility", name: "Ankle Mobility", why: "Squat deep, descend safely (knee-to-wall)", sets: null, check: true, targets: ["heel lifts", "slight lift", "knee over toes", "knee well past", "no heel lift"] },
+  { key: "forwardfold", categoryId: "mobility", name: "Forward Fold", why: "Touch your toes — hamstrings & lower back for everyday bending", sets: null, check: true, targets: ["fingertips to shins", "hands to toes", "palms to floor", "palms flat behind heels", "head to knees"] },
 ];
 
 export const EXERCISE_BY_KEY = Object.fromEntries(EXERCISES.map((e) => [e.key, e])) as Record<string, Exercise>;

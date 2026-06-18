@@ -4,7 +4,7 @@
 
 import { ProgressState } from '@/engine/progression';
 
-export type AchievementGroup = 'push' | 'pull' | 'legs' | 'cardio';
+export type AchievementGroup = 'push' | 'pull' | 'legs' | 'cardio' | 'mobility';
 
 export interface Achievement {
   id: string;
@@ -45,6 +45,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   // Cardio
   { id: 'run-5k', title: 'First 5K', desc: 'Cover five kilometres.', icon: 'run', group: 'cardio', unlocked: at('walkrun-l7') },
   { id: 'run-10k', title: '10K', desc: 'Cover ten kilometres.', icon: 'run', group: 'cardio', unlocked: at('walkrun-l10') },
+  // Mobility
+  { id: 'toe-touch', title: 'Touch your toes', desc: 'Reach your toes in a forward fold.', icon: 'fold', group: 'mobility', unlocked: at('forwardfold-l2') },
+  { id: 'head-to-knees', title: 'Head to knees', desc: 'Fold flat — head to your knees.', icon: 'fold', group: 'mobility', unlocked: at('forwardfold-l5') },
 ];
 
 /** The ids currently earned, given the context. */

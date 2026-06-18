@@ -37,6 +37,7 @@ export const WEEKLY_SCHEDULE: Record<DayKey, DaySchedule> = {
       { exKey: 'deepsquat', sets: 2, restSec: 30, note: 'check' },
       { exKey: 'ankle', sets: 1, note: 'knee-to-wall, both sides' },
       { exKey: 'overhead', sets: 1, note: 'wall test' },
+      { exKey: 'forwardfold', sets: 1, note: 'reach down slowly' },
     ],
   },
   wed: {

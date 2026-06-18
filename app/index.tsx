@@ -80,6 +80,9 @@ export default function Home() {
 
   const lapsed = streakNow === 0 && lastLoggedDay !== null;
   const hasUnseenAch = unlockedIds(achievementContext({ progress })).some((id) => !achievementsSeen.includes(id));
+  // Perfect week = every scheduled (non-rest) day of the current week is logged.
+  const weekScheduled = weekDays(day).filter((d) => !isRestDay(d));
+  const perfectWeek = weekScheduled.length > 0 && weekScheduled.every((d) => loggedDays.includes(d));
 
   // Ask for notification permission once, on first app open after onboarding. Granting defaults the
   // reminders on; the effect below then schedules them.
@@ -189,7 +192,10 @@ export default function Home() {
           <Pressable onPress={() => router.push('/history')} style={styles.streakCard}>
             <View style={styles.weekHeader}>
               <Text style={styles.weekEyebrow}>THIS WEEK</Text>
-              <Text style={styles.weekChevron}>›</Text>
+              <View style={styles.weekHeaderRight}>
+                {perfectWeek ? <Text style={styles.perfectTag}>🔥 Perfect week</Text> : null}
+                <Text style={styles.weekChevron}>›</Text>
+              </View>
             </View>
             <Text style={styles.streakSentence}>{weekLine}</Text>
             <View style={styles.weekStrip}>
@@ -446,6 +452,8 @@ const styles = StyleSheet.create({
   heroDot: { position: 'absolute', top: -1, right: -1, width: 9, height: 9, borderRadius: 5, backgroundColor: colors.session, borderWidth: 1.5, borderColor: colors.inkCard },
   streakCard: { backgroundColor: colors.streakBg, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.streakBorder },
   weekHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
+  weekHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  perfectTag: { color: colors.session, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 0.5 },
   weekEyebrow: { color: colors.warnText, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1 },
   streakSentence: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy, marginBottom: spacing.md },
   weekStrip: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

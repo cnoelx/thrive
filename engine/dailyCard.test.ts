@@ -63,7 +63,7 @@ describe('weekly schedule', () => {
 describe('capped & maxed exercises stay in the workout (maintenance)', () => {
   it('maxed Mobility still appears on its day at the L5 target', () => {
     const tue = todaysWorkout(maxedState(), true, dateForDay(2));
-    expect(tue.items.length).toBe(4); // nothing dropped
+    expect(tue.items.length).toBe(5); // nothing dropped (walk/run + 4 mobility checks)
     const dsq = tue.items.find((i) => i.exKey === 'deepsquat')!;
     expect(dsq.target).toBe('free 90s'); // L5 top, held as maintenance
   });
