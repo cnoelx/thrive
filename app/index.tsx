@@ -9,6 +9,7 @@ import { Celebration } from '@/components/Celebration';
 import { categoryColors, colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, MAX_LEVEL, benchmarksFor, categoryCeiling } from '@/data/benchmarks';
 import { WHATS_NEW } from '@/data/whatsNew';
+import { achievementContext, unlockedIds } from '@/engine/achievements';
 import { todaysWorkout } from '@/engine/dailyCard';
 import { dateOfDayNumber, weekDays } from '@/engine/history';
 import { baselineLevel, completedLevel, effectiveCategoryIds, nextLevel } from '@/engine/progression';
@@ -50,6 +51,7 @@ export default function Home() {
   const lastLoggedDay = useAppStore((s) => s.lastLoggedDay);
   const streak = useAppStore((s) => s.streak);
   const loggedDays = useAppStore((s) => s.loggedDays);
+  const achievementsSeen = useAppStore((s) => s.achievementsSeen);
   const streakMilestoneSeen = useAppStore((s) => s.streakMilestoneSeen);
   const markStreakMilestoneSeen = useAppStore((s) => s.markStreakMilestoneSeen);
   const whatsNewSeen = useAppStore((s) => s.whatsNewSeen);
@@ -77,6 +79,7 @@ export default function Home() {
   const streakMilestone = pendingStreakMilestone(streakNow, streakMilestoneSeen);
 
   const lapsed = streakNow === 0 && lastLoggedDay !== null;
+  const hasUnseenAch = unlockedIds(achievementContext({ progress, pullUnlocked, loggedDays })).some((id) => !achievementsSeen.includes(id));
 
   // Ask for notification permission once, on first app open after onboarding. Granting defaults the
   // reminders on; the effect below then schedules them.
@@ -163,6 +166,10 @@ export default function Home() {
         <View style={styles.hero}>
           <View style={styles.heroTop}>
             <Text style={[styles.heroGreeting, { flex: 1 }]}>{name ? `Hi, ${name} 👋` : 'Hi there 👋'}</Text>
+            <Pressable onPress={() => router.push('/achievements')} hitSlop={10}>
+              <Ionicons name="trophy-outline" size={23} color={colors.onInkMuted} />
+              {hasUnseenAch ? <View style={styles.heroDot} /> : null}
+            </Pressable>
             <Pressable onPress={() => router.push('/settings')} hitSlop={10}>
               <Ionicons name="settings-outline" size={24} color={colors.onInkMuted} />
             </Pressable>
@@ -436,6 +443,7 @@ const styles = StyleSheet.create({
   hero: { backgroundColor: colors.inkCard, paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xxl },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   heroGreeting: { color: colors.primaryText, fontSize: 24, fontFamily: fonts.display },
+  heroDot: { position: 'absolute', top: -1, right: -1, width: 9, height: 9, borderRadius: 5, backgroundColor: colors.session, borderWidth: 1.5, borderColor: colors.inkCard },
   streakCard: { backgroundColor: colors.streakBg, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.streakBorder },
   weekHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   weekEyebrow: { color: colors.warnText, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1 },

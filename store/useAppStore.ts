@@ -86,6 +86,8 @@ interface AppState {
   /** Screen-on voice coaching during workouts (TTS calls out moves + rest). Muted per-session via the
    *  player's speaker toggle, which writes back here. */
   voiceCoach: boolean;
+  /** Achievement ids the user has already seen earned — drives the "new" dot on the hero trophy. */
+  achievementsSeen: string[];
 
   completeOnboarding: (profile: Profile, initialProgress?: ProgressState) => void;
   unlockPull: () => void;
@@ -107,6 +109,8 @@ interface AppState {
   setReminder: (enabled: boolean, hour: number, minute: number) => void;
   setReminderEnabled: (on: boolean) => void;
   setVoiceCoach: (on: boolean) => void;
+  /** Record the full set of earned achievement ids as "seen" (clears the hero dot). */
+  markAchievementsSeen: (ids: string[]) => void;
   setName: (name: string) => void;
   /** Dev/testing helper to wipe back to a clean first-launch state. */
   resetAll: () => void;
@@ -138,6 +142,7 @@ export const useAppStore = create<AppState>()(
       reminderMinute: 0,
       pullUnlocked: false,
       voiceCoach: true,
+      achievementsSeen: [],
 
       completeOnboarding: (profile, initialProgress) =>
         set({
@@ -206,6 +211,8 @@ export const useAppStore = create<AppState>()(
 
       setVoiceCoach: (on) => set({ voiceCoach: on }),
 
+      markAchievementsSeen: (ids) => set({ achievementsSeen: ids }),
+
       setName: (name) => set({ name }),
 
       unlockPull: () => set({ pullUnlocked: true }),
@@ -234,6 +241,7 @@ export const useAppStore = create<AppState>()(
           reminderMinute: 0,
           pullUnlocked: false,
           voiceCoach: true,
+          achievementsSeen: [],
         }),
     }),
     {
@@ -263,6 +271,7 @@ export const useAppStore = create<AppState>()(
         reminderMinute: s.reminderMinute,
         pullUnlocked: s.pullUnlocked,
         voiceCoach: s.voiceCoach,
+        achievementsSeen: s.achievementsSeen,
       }),
     },
   ),
