@@ -12,6 +12,7 @@ export const EXERCISE_ANIMATIONS: Record<string, ImageSourcePropType> = {
   squat: require('../assets/exercises/anim/squat.webp'),
   pushups: require('../assets/exercises/anim/pushups.webp'),
   plank: require('../assets/exercises/anim/plank.webp'),
+  barrow: require('../assets/exercises/anim/barrow.webp'),
 };
 
 export const EXERCISE_IMAGES: Record<string, [ImageSourcePropType, ImageSourcePropType]> = {
