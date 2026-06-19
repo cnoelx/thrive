@@ -36,11 +36,11 @@ function dateFromHM(h: number, m: number): Date {
 // Friendly streak line — a few variations, picked deterministically by streak length so it's stable
 // for a given value but varies as the streak grows.
 const STREAK_MESSAGES: ((n: number) => string)[] = [
-  (n) => `🔥 You're on a ${n}-day streak — awesome!`,
-  (n) => `🔥 ${n} days in a row. You're on fire!`,
-  (n) => `🔥 ${n}-day streak — keep it rolling!`,
-  (n) => `🔥 ${n} days straight. Look at you go!`,
-  (n) => `🔥 ${n}-day streak. Unstoppable!`,
+  (n) => `You're on a ${n}-day streak — awesome!`,
+  (n) => `${n} days in a row. You're on fire!`,
+  (n) => `${n}-day streak — keep it rolling!`,
+  (n) => `${n} days straight. Look at you go!`,
+  (n) => `${n}-day streak. Unstoppable!`,
 ];
 
 export default function Home() {
@@ -134,11 +134,11 @@ export default function Home() {
     streakNow >= 2
       ? STREAK_MESSAGES[streakNow % STREAK_MESSAGES.length](streakNow)
       : doneToday
-        ? 'Workout done — rest easy, see you tomorrow. 🔥'
+        ? 'Workout done — rest easy, see you tomorrow.'
         : todayWk.rest
           ? 'Rest day — recovery is training too. 🌿'
           : lostStreak
-            ? `Your ${streak}-day run ended — start a new one today 🔥`
+            ? `Your ${streak}-day run ended — start a new one today`
             : 'Today’s session is waiting for you.';
   // A locked Pull sinks to the bottom of the areas list (stable sort keeps the rest in order).
   const orderedCats = [...CATEGORIES].sort(
@@ -194,7 +194,12 @@ export default function Home() {
             <View style={styles.weekHeader}>
               <Text style={styles.weekEyebrow}>THIS WEEK</Text>
               <View style={styles.weekHeaderRight}>
-                {perfectWeek ? <Text style={styles.perfectTag}>🔥 Perfect week</Text> : null}
+                {perfectWeek ? (
+                  <View style={styles.perfectTag}>
+                    <Flame tone="done" size={13} />
+                    <Text style={styles.perfectTagText}>Perfect week</Text>
+                  </View>
+                ) : null}
                 <Text style={styles.weekChevron}>›</Text>
               </View>
             </View>
@@ -338,7 +343,7 @@ export default function Home() {
 
       {!showCelebration && streakMilestone ? (
         <Celebration
-          title={`🔥 ${streakMilestone}-day streak!`}
+          title={`${streakMilestone}-day streak!`}
           body={`${streakMilestone} workouts in a row — keep the fire going!`}
           onDone={() => markStreakMilestoneSeen(streakMilestone)}
         />
@@ -466,7 +471,8 @@ const styles = StyleSheet.create({
   streakCard: { backgroundColor: colors.streakBg, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.streakBorder },
   weekHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   weekHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  perfectTag: { color: colors.session, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 0.5 },
+  perfectTag: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  perfectTagText: { color: colors.session, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 0.5 },
   weekEyebrow: { color: colors.link, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1 },
   streakSentence: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy, marginBottom: spacing.md },
   weekStrip: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
