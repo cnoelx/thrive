@@ -13,7 +13,7 @@ import { WHATS_NEW } from '@/data/whatsNew';
 import { achievementContext, unlockedIds } from '@/engine/achievements';
 import { todaysWorkout } from '@/engine/dailyCard';
 import { dateOfDayNumber, weekDays } from '@/engine/history';
-import { baselineLevel, completedLevel, effectiveCategoryIds, nextLevel } from '@/engine/progression';
+import { baselineLevel, completedLevel, effectiveCategoryIds, levelCap, nextLevel } from '@/engine/progression';
 import { currentStreak, isRestDay, pendingStreakMilestone } from '@/engine/streak';
 import { refreshReminders, requestNotificationPermission } from '@/lib/notifications';
 import { useAppStore } from '@/store/useAppStore';
@@ -260,6 +260,8 @@ export default function Home() {
               const nextBenches = locked || maxed ? [] : benchmarksFor(cat.id, nextLevel(progress, cat.id));
               const claimedNext = nextBenches.filter((b) => progress.claimed[b.id]).length;
               const fillPct = nextBenches.length ? (claimedNext / nextBenches.length) * 100 : 0;
+              // Can actually advance now (next level isn't runway-locked behind the other areas).
+              const canLevelUp = !locked && !maxed && nextLevel(progress, cat.id) <= levelCap(progress, pullUnlocked);
               return (
                 <Pressable
                   key={cat.id}
@@ -278,9 +280,12 @@ export default function Home() {
                     ) : maxed ? (
                       <Text style={[styles.areaMaxedHint, { color: categoryColors[cat.id].main }]}>Maxed out ✓</Text>
                     ) : (
-                      <View style={styles.rowBarTrack}>
-                        <View style={[styles.rowBarFill, { width: `${fillPct}%`, backgroundColor: categoryColors[cat.id].main }]} />
-                      </View>
+                      <>
+                        <View style={styles.rowBarTrack}>
+                          <View style={[styles.rowBarFill, { width: `${fillPct}%`, backgroundColor: categoryColors[cat.id].main }]} />
+                        </View>
+                        {canLevelUp ? <Text style={styles.areaLevelUp}>Ready to level up? →</Text> : null}
+                      </>
                     )}
                   </View>
                   <Text style={styles.chevron}>›</Text>
@@ -524,6 +529,7 @@ const styles = StyleSheet.create({
   areaName: { color: colors.text, fontSize: font.body, fontFamily: fonts.bold },
   areaLockHint: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
   areaMaxedHint: { color: colors.primary, fontSize: font.small, fontFamily: fonts.bold },
+  areaLevelUp: { color: colors.link, fontSize: font.small, fontFamily: fonts.heavy },
   rowBarTrack: { height: 6, backgroundColor: colors.track, borderRadius: radius.pill, overflow: 'hidden' },
   rowBarFill: { height: 6, backgroundColor: colors.primary, borderRadius: radius.pill },
   chevron: { color: colors.muted, fontSize: 22, fontFamily: fonts.regular },
