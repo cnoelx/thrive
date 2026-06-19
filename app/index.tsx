@@ -6,6 +6,7 @@ import { Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Celebration } from '@/components/Celebration';
+import { Flame } from '@/components/Flame';
 import { categoryColors, colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, MAX_LEVEL, benchmarksFor, categoryCeiling } from '@/data/benchmarks';
 import { WHATS_NEW } from '@/data/whatsNew';
@@ -207,11 +208,11 @@ export default function Home() {
                     <Text style={[styles.weekDow, isToday && styles.weekDayLabelToday]}>{'MTWTFSS'[i]}</Text>
                     <View style={styles.weekDotSlot}>
                       {done ? (
-                        <Ionicons name="flame" size={isToday ? 30 : 22} color={colors.session} />
+                        <Flame tone="done" size={isToday ? 30 : 22} />
                       ) : isRestDay(d) ? (
                         <Ionicons name="bed-outline" size={isToday ? 24 : 18} color={colors.muted} />
                       ) : (
-                        <Ionicons name="flame-outline" size={isToday ? 30 : 22} color={isToday ? colors.session : colors.muted} />
+                        <Flame tone={isToday ? 'active' : 'idle'} size={isToday ? 30 : 22} />
                       )}
                     </View>
                     <Text style={[styles.weekDayLabel, isToday && styles.weekDayLabelToday]}>{dateOfDayNumber(d)}</Text>

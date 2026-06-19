@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Flame } from '@/components/Flame';
 import { ShareCardModal } from '@/components/ShareCardModal';
 import { type WorkoutCardData } from '@/components/WorkoutCard';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
@@ -107,7 +108,7 @@ export default function History() {
                   <Pressable key={cell.dayNumber} style={styles.dayCell} disabled={!done} onPress={() => openDay(cell)}>
                     <View style={[styles.dayDot, isToday && styles.dayDotToday]}>
                       {done ? (
-                        <Ionicons name="flame" size={18} color={colors.session} />
+                        <Flame tone="done" size={18} />
                       ) : rest && !future ? (
                         <Ionicons name="bed-outline" size={16} color={colors.muted} />
                       ) : (
@@ -122,7 +123,7 @@ export default function History() {
 
           {/* Legend */}
           <View style={styles.legendRow}>
-            <Ionicons name="flame" size={14} color={colors.session} />
+            <Flame tone="done" size={14} />
             <Text style={styles.legendText}>Workout done</Text>
             <Ionicons name="bed-outline" size={14} color={colors.muted} style={{ marginLeft: spacing.md }} />
             <Text style={styles.legendText}>Rest day</Text>
@@ -140,7 +141,7 @@ export default function History() {
             return (
               <Pressable key={cell.dayNumber} onPress={() => openDay(cell)} style={[styles.logRow, i > 0 && styles.logRowDivider]}>
                 <View style={styles.logFlame}>
-                  <Ionicons name="flame" size={16} color={colors.session} />
+                  <Flame tone="done" size={16} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.logFocus}>{log?.focus ?? 'Workout done'}</Text>
