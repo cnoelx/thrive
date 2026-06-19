@@ -10,6 +10,8 @@ import type { ImageSourcePropType } from 'react-native';
 // toggle below when present. Populated as consistent animated assets land in assets/exercises/anim/.
 export const EXERCISE_ANIMATIONS: Record<string, ImageSourcePropType> = {
   squat: require('../assets/exercises/anim/squat.webp'),
+  pushups: require('../assets/exercises/anim/pushups.webp'),
+  plank: require('../assets/exercises/anim/plank.webp'),
 };
 
 export const EXERCISE_IMAGES: Record<string, [ImageSourcePropType, ImageSourcePropType]> = {
