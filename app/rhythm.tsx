@@ -264,10 +264,12 @@ function LocationPicker({
   onPick: (loc: IndiaLocation) => void;
 }) {
   const [query, setQuery] = useState('');
+  // Only filter once they type — the list is ~1100 entries, far too many to render all at once. The
+  // source array is pre-sorted alphabetically, so a filtered slice stays in order.
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = q ? INDIA_LOCATIONS.filter((l) => l.city.toLowerCase().includes(q) || l.state.toLowerCase().includes(q)) : INDIA_LOCATIONS;
-    return [...list].sort((a, b) => a.city.localeCompare(b.city));
+    if (!q) return [];
+    return INDIA_LOCATIONS.filter((l) => l.city.toLowerCase().includes(q) || l.state.toLowerCase().includes(q)).slice(0, 80);
   }, [query]);
 
   return (
@@ -276,16 +278,16 @@ function LocationPicker({
         <Pressable onPress={onBack} hitSlop={10} style={styles.headerSide}>
           <Text style={styles.back}>‹ {current ? 'Back' : 'Cancel'}</Text>
         </Pressable>
-        <Text style={styles.title}>Your city</Text>
+        <Text style={styles.title}>Your location</Text>
         <View style={styles.headerSide} />
       </View>
 
       <View style={{ paddingHorizontal: spacing.lg }}>
-        <Text style={styles.pickerHint}>Pick your city (or the nearest one) so we can show your sunrise and sunset.</Text>
+        <Text style={styles.pickerHint}>Search your city or district (or the nearest one) so we can show your sunrise and sunset.</Text>
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Search city or state"
+          placeholder="Search city or district"
           placeholderTextColor={colors.muted}
           style={styles.search}
           autoCorrect={false}
@@ -293,16 +295,21 @@ function LocationPicker({
       </View>
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.xl }}>
-        {results.map((loc, i) => (
-          <Pressable key={`${loc.city}-${loc.state}`} onPress={() => onPick(loc)} style={[styles.cityRow, i > 0 && styles.cityRowDivider]}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.cityName}>{loc.city}</Text>
-              <Text style={styles.cityState}>{loc.state}</Text>
-            </View>
-            {current?.city === loc.city && current?.state === loc.state ? <Ionicons name="checkmark" size={20} color={colors.done} /> : null}
-          </Pressable>
-        ))}
-        {results.length === 0 ? <Text style={styles.muted}>No match — try the nearest big city.</Text> : null}
+        {!query.trim() ? (
+          <Text style={styles.muted}>Start typing to find your city or district.</Text>
+        ) : results.length ? (
+          results.map((loc, i) => (
+            <Pressable key={`${loc.city}-${loc.state}`} onPress={() => onPick(loc)} style={[styles.cityRow, i > 0 && styles.cityRowDivider]}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cityName}>{loc.city}</Text>
+                <Text style={styles.cityState}>{loc.state}</Text>
+              </View>
+              {current?.city === loc.city && current?.state === loc.state ? <Ionicons name="checkmark" size={20} color={colors.done} /> : null}
+            </Pressable>
+          ))
+        ) : (
+          <Text style={styles.muted}>No match — try your district or the nearest town.</Text>
+        )}
       </ScrollView>
     </View>
   );
