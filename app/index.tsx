@@ -10,7 +10,8 @@ import { categoryColors, colors, font, fonts, radius, spacing } from '@/constant
 import { CATEGORIES, MAX_LEVEL, benchmarksFor, categoryCeiling } from '@/data/benchmarks';
 import { WHATS_NEW } from '@/data/whatsNew';
 import { achievementContext, unlockedIds } from '@/engine/achievements';
-import { todaysWorkout } from '@/engine/dailyCard';
+import { todaysWorkout, workoutForDay } from '@/engine/dailyCard';
+import { DAY_KEYS } from '@/data/schedule';
 import { dateOfDayNumber, weekDays } from '@/engine/history';
 import { baselineLevel, completedLevel, effectiveCategoryIds, nextLevel } from '@/engine/progression';
 import { currentStreak, isRestDay, pendingStreakMilestone } from '@/engine/streak';
@@ -125,6 +126,8 @@ export default function Home() {
         : `Every area's at Level ${overall} — the next tier's within reach everywhere. Keep going!`;
   const todayWk = todaysWorkout(progress, pullUnlocked, new Date());
   const movePreview = todayWk.rest ? '' : `${todayWk.items.length} moves`;
+  // The week's distinct sessions (skip the rest day) — any can be started on demand from the list below.
+  const sessions = DAY_KEYS.map((key) => ({ key, wk: workoutForDay(progress, pullUnlocked, key) })).filter((s) => !s.wk.rest);
   // A streak of 3+ that just broke (missed a workout day) — acknowledge it kindly instead of
   // silently resetting to zero. `streak` still holds the lost length until the next workout.
   const lostStreak = streakNow === 0 && streak >= 3 && lastLoggedDay !== null;
@@ -244,6 +247,30 @@ export default function Home() {
               )}
             </View>
           )}
+
+          {/* Workouts — start any session on demand (freestyle: doesn't log or affect the streak) */}
+          <View style={styles.sectionGap}>
+            <Text style={styles.workoutsEyebrow}>WORKOUTS</Text>
+            <Text style={styles.workoutsSub}>Start any session, anytime — bonus work that won&apos;t touch your streak.</Text>
+            <View style={styles.groupCard}>
+              {sessions.map((s, i) => (
+                <Pressable
+                  key={s.key}
+                  onPress={() => router.push(`/workout?day=${s.key}`)}
+                  style={[styles.areaRow, i > 0 && styles.areaRowDivider]}
+                >
+                  <View style={styles.sessionIcon}>
+                    <Ionicons name={s.wk.focus.includes('Cardio') ? 'walk-outline' : 'barbell-outline'} size={18} color={colors.session} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.areaName}>{s.wk.focus}</Text>
+                    <Text style={styles.sessionMoves}>{s.wk.items.length} moves</Text>
+                  </View>
+                  <Text style={styles.chevron}>›</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
 
           {/* Training areas — one grouped card, per-row progress */}
           <View style={[styles.groupCard, styles.sectionGap]}>
@@ -488,6 +515,12 @@ const styles = StyleSheet.create({
   restEyebrow: { color: colors.link, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1 },
   restTitle: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy, marginTop: 2 },
   restSub: { color: colors.muted, fontSize: font.small, marginTop: 4, fontFamily: fonts.regular },
+
+  // Workouts (on-demand sessions)
+  workoutsEyebrow: { color: colors.link, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1, marginBottom: 2 },
+  workoutsSub: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginBottom: spacing.md },
+  sessionIcon: { width: 38, height: 38, borderRadius: 10, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
+  sessionMoves: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: 2 },
 
   // Areas grouped card
   groupCard: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md },

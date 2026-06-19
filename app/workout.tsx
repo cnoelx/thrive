@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +12,8 @@ import { WorkoutCard } from '@/components/WorkoutCard';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { EXERCISE_BY_KEY, formatTarget } from '@/data/benchmarks';
 import { estimateCalories } from '@/engine/calories';
-import { todaysWorkout, type WorkoutItem } from '@/engine/dailyCard';
+import { todaysWorkout, workoutForDay, type WorkoutItem } from '@/engine/dailyCard';
+import { DAY_KEYS, type DayKey } from '@/data/schedule';
 import { dayLabel } from '@/engine/history';
 import { currentStreak } from '@/engine/streak';
 import { FINISH_CUE, introCue, restCue, setCue } from '@/engine/voiceCues';
@@ -112,7 +113,15 @@ export default function Workout() {
   const setVoiceCoach = useAppStore((s) => s.setVoiceCoach);
 
   const day = todayNumber();
-  const workout = useMemo(() => todaysWorkout(progress, pullUnlocked, new Date()), [progress, pullUnlocked]);
+  // Launched with ?day=<key> from the home "Workouts" list = a freestyle session: full guided workout,
+  // but it never logs or touches the streak/calendar. No param = today's scheduled workout.
+  const params = useLocalSearchParams<{ day?: string }>();
+  const freestyleDay = params.day && (DAY_KEYS as readonly string[]).includes(params.day) ? (params.day as DayKey) : null;
+  const freestyle = freestyleDay !== null;
+  const workout = useMemo(
+    () => (freestyleDay ? workoutForDay(progress, pullUnlocked, freestyleDay) : todaysWorkout(progress, pullUnlocked, new Date())),
+    [progress, pullUnlocked, freestyleDay],
+  );
   const steps = useMemo(() => buildCircuit(workout.items), [workout.items]);
 
   const [started, setStarted] = useState(false); // false = showing the pre-workout overview
@@ -140,7 +149,7 @@ export default function Workout() {
     if (stepIndex + 1 >= steps.length) {
       const mins = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
       setDurationMin(mins);
-      if (lastLoggedDay !== day) {
+      if (!freestyle && lastLoggedDay !== day) {
         logToday(day, {
           focus: workout.focus,
           moves: workout.items.length,
@@ -260,6 +269,27 @@ export default function Workout() {
       calories: kcal ?? undefined,
       items: workout.items.map((it) => ({ name: it.name, sets: it.sets, target: it.target })),
     };
+    // Freestyle session: a clean "nice work" + share, no logging / feel / nudges (it doesn't count).
+    if (freestyle) {
+      return (
+        <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={[styles.finishScroll, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}>
+          <Text style={styles.bigEmoji}>💪</Text>
+          <Text style={styles.completeTitle}>Nice work!</Text>
+          <Text style={styles.completeBody}>That&apos;s {workout.focus} done — a bonus session, just for the work.</Text>
+          <View style={styles.cardWrap}>
+            <WorkoutCard {...cardData} />
+          </View>
+          <Pressable onPress={() => setShowShare(true)} style={styles.shareBtn}>
+            <Ionicons name="share-social-outline" size={18} color={colors.session} />
+            <Text style={styles.shareBtnText}>Share workout</Text>
+          </Pressable>
+          <Pressable onPress={() => router.back()} style={styles.primaryBtn}>
+            <Text style={styles.primaryText}>Done</Text>
+          </Pressable>
+          {showShare ? <ShareCardModal data={cardData} onClose={() => setShowShare(false)} /> : null}
+        </ScrollView>
+      );
+    }
     const offerReminder = !reminderEnabled && (reminderOfferDay === null || day - reminderOfferDay >= REMINDER_REOFFER_DAYS);
     const acceptReminder = async () => {
       const ok = await requestNotificationPermission();
@@ -354,7 +384,7 @@ export default function Workout() {
           </Pressable>
         </View>
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 96 }}>
-          <Text style={styles.ovEyebrow}>TODAY&apos;S WORKOUT</Text>
+          <Text style={styles.ovEyebrow}>{freestyle ? 'WORKOUT' : "TODAY'S WORKOUT"}</Text>
           <Text style={styles.ovTitle}>{workout.focus}</Text>
           <Text style={styles.ovMeta}>{workout.items.length} moves · {steps.length} sets</Text>
           {needsBar ? (

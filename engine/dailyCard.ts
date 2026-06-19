@@ -2,7 +2,7 @@
 // from the user's current level for each exercise, so the card "auto-evolves" as they level up.
 
 import { CategoryId, EXERCISE_BY_KEY, categoryCeiling, exerciseTarget } from '@/data/benchmarks';
-import { DAY_KEYS, WEEKLY_SCHEDULE } from '@/data/schedule';
+import { DAY_KEYS, DayKey, WEEKLY_SCHEDULE } from '@/data/schedule';
 import { ProgressState, baselineLevel, completedLevel, levelCap, nextLevel } from '@/engine/progression';
 
 // Superman — back/posture fallback for users with no bar/rings. NOT a category exercise: it never
@@ -53,7 +53,12 @@ export interface TodaysWorkout {
 }
 
 export function todaysWorkout(state: ProgressState, pullUnlocked: boolean, date: Date): TodaysWorkout {
-  const dayKey = DAY_KEYS[date.getDay()] ?? 'mon';
+  return workoutForDay(state, pullUnlocked, DAY_KEYS[date.getDay()] ?? 'mon');
+}
+
+// Build the workout for a specific scheduled day — used both for today and for on-demand sessions the
+// user picks from the home "Workouts" list. Reps/time still come from the user's current level.
+export function workoutForDay(state: ProgressState, pullUnlocked: boolean, dayKey: DayKey): TodaysWorkout {
   const sched = WEEKLY_SCHEDULE[dayKey];
 
   // Build today's items. When Pull is locked, drop pull-category items and add ONE Superman to the
