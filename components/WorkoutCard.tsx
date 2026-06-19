@@ -87,7 +87,7 @@ export function WorkoutCard({ focus, dateLabel, streak, durationMin, calories, i
       </View>
 
       <View style={{ marginTop: 40 * s }}>
-        <Text style={{ fontSize: 42 * s, lineHeight: 44 * s, fontFamily: fonts.display, letterSpacing: -0.5, color: t.pri }}>{focus}</Text>
+        <Text style={{ fontSize: 42 * s, lineHeight: 52 * s, fontFamily: fonts.display, letterSpacing: -0.5, color: t.pri }}>{focus}</Text>
         <View style={[styles.metaRow, { gap: 7 * s, marginTop: 13 * s }]}>
           {streak >= 2 ? (
             <>
