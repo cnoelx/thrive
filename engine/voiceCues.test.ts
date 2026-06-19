@@ -26,7 +26,7 @@ describe('spokenTarget', () => {
 
   it('drops the on-screen parenthetical detail', () => {
     expect(spokenTarget('10 (5/leg)')).toBe('10 reps');
-    expect(spokenTarget('incline ×8 (hands on a counter)')).toBe('incline, 8 reps');
+    expect(spokenTarget('high incline ×8 (hands on a counter)')).toBe('high incline, 8 reps');
     expect(spokenTarget('negatives ×5 (lower down slowly)')).toBe('negatives, 5 reps');
   });
 
