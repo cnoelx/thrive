@@ -22,7 +22,7 @@ export function StoryFrame({ data, theme, width }: { data: WorkoutCardData; them
   return (
     <LinearGradient colors={BACKDROP[theme]} start={BACKDROP_START} end={BACKDROP_END} style={[styles.frame, { width, height }]}>
       <View style={styles.cardShadow}>
-        <WorkoutCard {...data} theme={theme} width={width * 0.8} />
+        <WorkoutCard {...data} theme={theme} width={width * 0.86} />
       </View>
     </LinearGradient>
   );

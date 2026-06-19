@@ -5,7 +5,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { StoryFrame } from '@/components/StoryFrame';
@@ -33,11 +33,13 @@ export function ShareCardModal({ data, onClose }: { data: WorkoutCardData; onClo
     try {
       const [{ captureRef }, Sharing] = await Promise.all([import('react-native-view-shot'), import('expo-sharing')]);
       const uri = await captureRef(frameRef, { format: 'png', quality: 1, result: 'tmpfile' });
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share your workout' });
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert('Sharing unavailable', 'This device has no app to share an image to.');
+        return;
       }
-    } catch {
-      // Sharing unavailable (e.g. Expo Go) or cancelled — nothing to do.
+      await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share your workout' });
+    } catch (e) {
+      Alert.alert('Could not share', e instanceof Error ? e.message : String(e));
     } finally {
       setSharing(false);
     }

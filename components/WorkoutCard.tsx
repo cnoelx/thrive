@@ -75,7 +75,7 @@ export function WorkoutCard({ focus, dateLabel, streak, durationMin, calories, i
   const s = width / BASE; // scale factor
   const tail = [durationMin ? `${durationMin} min` : null, calories ? `~${calories} kcal` : null].filter(Boolean);
   return (
-    <LinearGradient colors={t.grad} start={GRAD_START} end={GRAD_END} style={[styles.card, { width, borderRadius: 24 * s, padding: 26 * s, borderWidth: 1, borderColor: t.border }]}>
+    <LinearGradient colors={t.grad} start={GRAD_START} end={GRAD_END} style={[styles.card, { width, borderRadius: 26 * s, paddingHorizontal: 26 * s, paddingVertical: 34 * s, borderWidth: 1, borderColor: t.border }]}>
       <LinearGradient colors={t.scrim} start={SCRIM_START} end={SCRIM_END} style={styles.scrim} pointerEvents="none" />
 
       <View style={styles.headerRow}>
@@ -86,9 +86,9 @@ export function WorkoutCard({ focus, dateLabel, streak, durationMin, calories, i
         <Text style={{ fontSize: 11 * s, fontFamily: fonts.regular, letterSpacing: 0.5, color: t.ter }}>{dateLabel}</Text>
       </View>
 
-      <View style={{ marginTop: 32 * s }}>
+      <View style={{ marginTop: 40 * s }}>
         <Text style={{ fontSize: 42 * s, lineHeight: 44 * s, fontFamily: fonts.display, letterSpacing: -0.5, color: t.pri }}>{focus}</Text>
-        <View style={[styles.metaRow, { gap: 7 * s, marginTop: 11 * s }]}>
+        <View style={[styles.metaRow, { gap: 7 * s, marginTop: 13 * s }]}>
           {streak >= 2 ? (
             <>
               <Ionicons name="flame" size={16 * s} color={t.accent} />
@@ -105,9 +105,9 @@ export function WorkoutCard({ focus, dateLabel, streak, durationMin, calories, i
         </View>
       </View>
 
-      <View style={{ marginTop: 34 * s }}>
+      <View style={{ marginTop: 42 * s }}>
         {items.map((it, i) => (
-          <View key={i} style={[styles.row, { gap: 12 * s, paddingVertical: 12 * s }, i > 0 && { borderTopWidth: 1, borderTopColor: t.divider }]}>
+          <View key={i} style={[styles.row, { gap: 12 * s, paddingVertical: 16 * s }, i > 0 && { borderTopWidth: 1, borderTopColor: t.divider }]}>
             <Text style={{ flex: 1, fontSize: 16 * s, fontFamily: fonts.bold, color: t.pri }} numberOfLines={1}>
               {it.name}
             </Text>
@@ -118,7 +118,7 @@ export function WorkoutCard({ focus, dateLabel, streak, durationMin, calories, i
         ))}
       </View>
 
-      <Text style={{ marginTop: 28 * s, textAlign: 'center', fontSize: 11 * s, fontFamily: fonts.regular, letterSpacing: 0.5, color: t.ter }}>strong for modern life</Text>
+      <Text style={{ marginTop: 36 * s, textAlign: 'center', fontSize: 11 * s, fontFamily: fonts.regular, letterSpacing: 0.5, color: t.ter }}>strong for modern life</Text>
     </LinearGradient>
   );
 }
