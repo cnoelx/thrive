@@ -45,7 +45,7 @@ export default function History() {
         streak: streakEndingAt(loggedDays, cell.dayNumber),
         durationMin: log.durationMin,
         calories: log.calories,
-        items: log.items.map((it) => ({ name: it.name, target: it.target })),
+        items: log.items.map((it) => ({ name: it.name, sets: it.sets, target: it.target })),
       });
     } else {
       setOpenCell(cell);

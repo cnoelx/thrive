@@ -197,7 +197,7 @@ export default function Workout() {
       streak: currentStreak(streak, lastLoggedDay, day),
       durationMin,
       calories: kcal ?? undefined,
-      items: workout.items.map((it) => ({ name: it.name, target: it.target })),
+      items: workout.items.map((it) => ({ name: it.name, sets: it.sets, target: it.target })),
     };
     const offerReminder = !reminderEnabled && (reminderOfferDay === null || day - reminderOfferDay >= REMINDER_REOFFER_DAYS);
     const acceptReminder = async () => {

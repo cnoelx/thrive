@@ -1,19 +1,17 @@
 // Shareable workout card — the branded "I trained today" image, designed to capture and post.
-// Design: warm ember gradient (#FDBA74→#F97316→#C2410C at ~152°), faint flame watermark, focus name
-// as hero, a streak·time·kcal meta line (flame only marks the streak), the moves listed with reps,
-// tagline footer.
+// Two themes: 'orange' (deepened ember gradient) and 'dark' (ink card with ember accents). The header
+// carries the real chevron logo + "Thrive"; moves list as "2 × 30 reps" (sets × target), tagline footer.
 
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
 
 import { fonts } from '@/constants/theme';
 import { formatTarget } from '@/data/benchmarks';
 
-// Ember gradient (light apricot top → deep burnt orange bottom). start/end approximate a 152° CSS angle.
-const EMBER = ['#FDBA74', '#F97316', '#C2410C'] as const;
-const EMBER_START = { x: 0.27, y: 0.06 };
-const EMBER_END = { x: 0.73, y: 0.94 };
+const CHEVRON = require('../assets/images/chevron.png');
+
+export type CardTheme = 'orange' | 'dark';
 
 export interface WorkoutCardData {
   focus: string;
@@ -21,41 +19,82 @@ export interface WorkoutCardData {
   streak: number; // < 2 hides the streak chunk
   durationMin?: number;
   calories?: number;
-  items: { name: string; target: string }[];
+  items: { name: string; sets?: number | null; target: string }[];
 }
 
-const W = Math.min(Dimensions.get('window').width - 56, 360);
+// Deepened ember (starts at a true orange, not pale apricot) so white text stays legible. A faint top
+// scrim darkens the header zone. start/end approximate a ~150° CSS angle.
+const EMBER = ['#F88B33', '#E85C13', '#BC3B0B'] as const;
+const EMBER_LOC = [0, 0.46, 1] as const;
+const INK = ['#16221B', '#0B110D'] as const;
+const GRAD_START = { x: 0.12, y: 0.05 };
+const GRAD_END = { x: 0.88, y: 0.95 };
+
+const THEME = {
+  orange: {
+    grad: EMBER,
+    scrim: true,
+    border: undefined as string | undefined,
+    pri: '#fff',
+    sec: 'rgba(255,255,255,0.92)',
+    ter: 'rgba(255,255,255,0.74)',
+    divider: 'rgba(255,255,255,0.24)',
+    reps: 'rgba(255,255,255,0.92)',
+    accent: '#fff', // chevron + flame
+  },
+  dark: {
+    grad: INK,
+    scrim: false,
+    border: 'rgba(255,255,255,0.06)',
+    pri: '#F4EFE9',
+    sec: '#C9C2B8',
+    ter: '#8A8278',
+    divider: 'rgba(255,255,255,0.09)',
+    reps: '#FB923C',
+    accent: '#FB923C', // chevron + flame
+  },
+} as const;
+
+const DEFAULT_W = Math.min(Dimensions.get('window').width - 56, 360);
 
 // Trim parentheticals / arrow-suffixes so the reps column stays tidy (the full version lives in-app).
 function shortReps(target: string): string {
   return formatTarget(target.replace(/\s*\(.*?\)\s*/g, '').replace(/\s*→.*/, '').trim());
 }
 
-export function WorkoutCard({ focus, dateLabel, streak, durationMin, calories, items }: WorkoutCardData) {
+function reps(it: WorkoutCardData['items'][number]): string {
+  return `${it.sets ? `${it.sets} × ` : ''}${shortReps(it.target)}`;
+}
+
+export function WorkoutCard({ focus, dateLabel, streak, durationMin, calories, items, theme = 'orange', width = DEFAULT_W }: WorkoutCardData & { theme?: CardTheme; width?: number }) {
+  const t = THEME[theme];
   const tail = [durationMin ? `${durationMin} min` : null, calories ? `~${calories} kcal` : null].filter(Boolean);
   return (
-    <LinearGradient colors={EMBER} start={EMBER_START} end={EMBER_END} style={styles.card}>
-      <Ionicons name="flame" size={200} color="rgba(255,255,255,0.08)" style={styles.watermark} />
+    <LinearGradient colors={t.grad} locations={theme === 'orange' ? EMBER_LOC : undefined} start={GRAD_START} end={GRAD_END} style={[styles.card, { width }, t.border ? { borderWidth: 1, borderColor: t.border } : null]}>
+      {t.scrim ? <LinearGradient colors={['rgba(44,14,3,0.20)', 'rgba(44,14,3,0)']} style={styles.scrim} pointerEvents="none" /> : null}
 
       <View style={styles.headerRow}>
-        <Text style={styles.brand}>THRIVE</Text>
-        <Text style={styles.date}>{dateLabel}</Text>
+        <View style={styles.brandWrap}>
+          <Image source={CHEVRON} style={[styles.chevron, { tintColor: t.accent }]} />
+          <Text style={[styles.brand, { color: t.pri }]}>Thrive</Text>
+        </View>
+        <Text style={[styles.date, { color: t.ter }]}>{dateLabel}</Text>
       </View>
 
       <View style={styles.hero}>
-        <Text style={styles.focus}>{focus}</Text>
+        <Text style={[styles.focus, { color: t.pri }]}>{focus}</Text>
         <View style={styles.metaRow}>
           {streak >= 2 ? (
             <>
-              <Ionicons name="flame" size={16} color="#fff" />
-              <Text style={styles.metaText}>{streak}-day streak</Text>
-              {tail.length ? <Text style={styles.metaDot}>·</Text> : null}
+              <Ionicons name="flame" size={16} color={t.accent} />
+              <Text style={[styles.metaText, { color: t.sec }]}>{streak}-day streak</Text>
+              {tail.length ? <Text style={[styles.metaDot, { color: t.ter }]}>·</Text> : null}
             </>
           ) : null}
-          {tail.map((t, i) => (
+          {tail.map((tx, i) => (
             <View key={i} style={styles.metaInline}>
-              <Text style={styles.metaText}>{t}</Text>
-              {i < tail.length - 1 ? <Text style={styles.metaDot}>·</Text> : null}
+              <Text style={[styles.metaText, { color: t.sec }]}>{tx}</Text>
+              {i < tail.length - 1 ? <Text style={[styles.metaDot, { color: t.ter }]}>·</Text> : null}
             </View>
           ))}
         </View>
@@ -63,42 +102,43 @@ export function WorkoutCard({ focus, dateLabel, streak, durationMin, calories, i
 
       <View style={styles.list}>
         {items.map((it, i) => (
-          <View key={i} style={[styles.row, i < items.length - 1 && styles.rowDivider]}>
-            <Text style={styles.moveName} numberOfLines={1}>
+          <View key={i} style={[styles.row, i > 0 && { borderTopWidth: 1, borderTopColor: t.divider }]}>
+            <Text style={[styles.moveName, { color: t.pri }]} numberOfLines={1}>
               {it.name}
             </Text>
-            <Text style={styles.moveReps} numberOfLines={1}>
-              {shortReps(it.target)}
+            <Text style={[styles.moveReps, { color: t.reps }]} numberOfLines={1}>
+              {reps(it)}
             </Text>
           </View>
         ))}
       </View>
 
-      <Text style={styles.tagline}>strong for modern life</Text>
+      <Text style={[styles.tagline, { color: t.ter }]}>strong for modern life</Text>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { width: W, borderRadius: 24, padding: 26, overflow: 'hidden' },
-  watermark: { position: 'absolute', left: -50, top: -44 },
+  card: { borderRadius: 24, padding: 26, overflow: 'hidden' },
+  scrim: { position: 'absolute', left: 0, right: 0, top: 0, height: '30%' },
 
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  brand: { color: '#fff', fontSize: 14, fontFamily: fonts.heavy, letterSpacing: 2.5 },
-  date: { color: 'rgba(255,255,255,0.8)', fontSize: 11, fontFamily: fonts.regular, letterSpacing: 0.5 },
+  brandWrap: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  chevron: { width: 22, height: 14, resizeMode: 'contain' },
+  brand: { fontSize: 17, fontFamily: fonts.heavy, letterSpacing: 0.2 },
+  date: { fontSize: 11, fontFamily: fonts.regular, letterSpacing: 0.5 },
 
   hero: { marginTop: 32 },
-  focus: { color: '#fff', fontSize: 42, fontFamily: fonts.display, letterSpacing: -0.5 },
+  focus: { fontSize: 42, fontFamily: fonts.display, letterSpacing: -0.5 },
   metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 7, marginTop: 11 },
   metaInline: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  metaText: { color: 'rgba(255,255,255,0.95)', fontSize: 14, fontFamily: fonts.bold },
-  metaDot: { color: 'rgba(255,255,255,0.55)', fontSize: 14 },
+  metaText: { fontSize: 14, fontFamily: fonts.bold },
+  metaDot: { fontSize: 14 },
 
   list: { marginTop: 34 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 12 },
-  rowDivider: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.18)' },
-  moveName: { flex: 1, color: '#fff', fontSize: 16, fontFamily: fonts.bold },
-  moveReps: { color: 'rgba(255,255,255,0.85)', fontSize: 14, fontFamily: fonts.regular },
+  moveName: { flex: 1, fontSize: 16, fontFamily: fonts.bold },
+  moveReps: { fontSize: 14, fontFamily: fonts.regular },
 
-  tagline: { marginTop: 28, textAlign: 'center', color: 'rgba(255,255,255,0.65)', fontSize: 10, fontFamily: fonts.regular, letterSpacing: 0.5 },
+  tagline: { marginTop: 28, textAlign: 'center', fontSize: 10, fontFamily: fonts.regular, letterSpacing: 0.5 },
 });
