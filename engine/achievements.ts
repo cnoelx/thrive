@@ -44,7 +44,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'pistol-squat', title: 'Pistol squat', desc: 'A full single-leg squat.', icon: 'squat', group: 'legs', unlocked: at('squat-l10') },
   // Cardio
   { id: 'run-5k', title: 'First 5K', desc: 'Cover five kilometres.', icon: 'run', group: 'cardio', unlocked: at('walkrun-l7') },
-  { id: 'run-10k', title: '10K', desc: 'Cover ten kilometres.', icon: 'run', group: 'cardio', unlocked: at('walkrun-l10') },
+  { id: 'run-10k', title: '10K', desc: 'Cover ten kilometres.', icon: 'run', group: 'cardio', unlocked: at('walkrun-l9') },
   // Mobility
   { id: 'toe-touch', title: 'Touch your toes', desc: 'Reach your toes in a forward fold.', icon: 'fold', group: 'mobility', unlocked: at('forwardfold-l2') },
   { id: 'head-to-knees', title: 'Head to knees', desc: 'Fold flat — head to your knees.', icon: 'fold', group: 'mobility', unlocked: at('forwardfold-l5') },

@@ -68,7 +68,7 @@ export const WEEKLY_SCHEDULE: Record<DayKey, DaySchedule> = {
   },
   sat: {
     focus: 'Cardio',
-    items: [{ exKey: 'walkrun', sets: null, note: '20 min — walk or walk-jog intervals' }],
+    items: [{ exKey: 'walkrun', sets: null, note: '20 min — conversational pace (walk or walk-jog)' }],
   },
   sun: { focus: 'Rest', rest: true, items: [] },
 };

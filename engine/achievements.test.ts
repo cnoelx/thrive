@@ -39,7 +39,7 @@ describe('achievements', () => {
     expect(earned({ progress: claimLevel(emptyProgress(), 'move', 5) })).toContain('squats-50');
     expect(earned({ progress: claimLevel(emptyProgress(), 'move', 10) })).toContain('pistol-squat');
     expect(earned({ progress: claimLevel(emptyProgress(), 'cardio', 7) })).toContain('run-5k');
-    expect(earned({ progress: claimLevel(emptyProgress(), 'cardio', 10) })).toContain('run-10k');
+    expect(earned({ progress: claimLevel(emptyProgress(), 'cardio', 9) })).toContain('run-10k');
   });
 
   it('mobility feats unlock from the forward-fold check (toes at L2, head-to-knees at L5)', () => {

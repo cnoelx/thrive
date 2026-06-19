@@ -51,10 +51,12 @@ describe('program data', () => {
     expect(CATEGORY_IDS.length).toBe(5);
   });
 
-  it('categories cap at their own ceilings (Mobility at 5, the rest at 10)', () => {
+  it('categories cap at their own ceilings (Mobility at 5, Cardio at 9, the rest at 10)', () => {
     expect(categoryCeiling('mobility')).toBe(5);
     expect(benchmarksFor('mobility', 6).length).toBe(0);
-    for (const c of ['move', 'push', 'pull', 'cardio'] as const) expect(categoryCeiling(c)).toBe(10);
+    expect(categoryCeiling('cardio')).toBe(9); // easy-base ladder: no intensity rung
+    expect(benchmarksFor('cardio', 10).length).toBe(0);
+    for (const c of ['move', 'push', 'pull'] as const) expect(categoryCeiling(c)).toBe(10);
   });
 
   it('has globally unique benchmark ids', () => {
