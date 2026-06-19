@@ -59,6 +59,15 @@ function clock(sec: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
+// Pull a hold duration out of a time-based target ("50s", "free 90s", "full 30s/side"). Only fires when
+// the target's PRIMARY quantity (its first number) is seconds — so rep targets that merely mention a
+// tempo ("negatives ×3 … lower for 5s", "20/leg + 2s hold") and minute cardio ("20–30 min") are skipped.
+function holdSeconds(target: string): { secs: number; perSide: boolean } | null {
+  const m = target.match(/^[^\d]*(\d+)(s?)/);
+  if (!m || m[2] !== 's') return null;
+  return { secs: parseInt(m[1], 10), perSide: /\/side/.test(target) };
+}
+
 // How old (in days) the stored weight may get before the finish screen asks about it.
 const WEIGHT_NUDGE_DAYS = 30;
 
@@ -116,6 +125,8 @@ export default function Workout() {
   const [showShare, setShowShare] = useState(false);
   const [infoItem, setInfoItem] = useState<{ exKey: string; name: string } | null>(null);
   const [startedAt, setStartedAt] = useState(0); // set when the user taps Begin
+  const [holdLeft, setHoldLeft] = useState<number | null>(null); // hold-timer seconds left (null = not running)
+  const [holdSide, setHoldSide] = useState<1 | 2>(1); // which side of a per-side hold we're on
 
   // Speak a cue when voice coaching is on. Cues fire from the transition points (Begin, Done, rest,
   // finish) rather than from effects, so each line maps to one user action — no double-speak.
@@ -148,6 +159,21 @@ export default function Workout() {
     }
   };
 
+  // Finish the current set: rest if this step has rest, otherwise advance. Shared by the Done button
+  // and the hold timer's auto-advance.
+  const finishSet = () => {
+    const cur = steps[stepIndex];
+    const nxt = steps[stepIndex + 1];
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (cur?.restSec && cur.restSec > 0) {
+      setRestLeft(cur.restSec);
+      setResting(true);
+      coach(restCue(cur.restSec, nxt ? nxt.item.name : null));
+    } else {
+      goNext();
+    }
+  };
+
   // Tick the rest countdown down once per second while resting.
   useEffect(() => {
     if (!resting) return;
@@ -163,6 +189,41 @@ export default function Workout() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resting, restLeft]);
+
+  // Tick the hold timer down once per second while a hold is running.
+  useEffect(() => {
+    if (holdLeft === null) return;
+    const id = setInterval(() => setHoldLeft((s) => (s === null ? null : s <= 0 ? 0 : s - 1)), 1000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [holdLeft === null]);
+
+  // Soft ticks in the last 3s; at zero, switch sides (per-side holds) or auto-advance the set.
+  useEffect(() => {
+    if (holdLeft === null) return;
+    if (holdLeft > 0) {
+      if (holdLeft <= 3) Haptics.selectionAsync();
+      return;
+    }
+    const h = holdSeconds(steps[stepIndex]?.target ?? '');
+    if (h?.perSide && holdSide === 1) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      coach('Switch sides.');
+      setHoldSide(2);
+      setHoldLeft(h.secs);
+    } else {
+      setHoldLeft(null);
+      setHoldSide(1);
+      finishSet();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [holdLeft]);
+
+  // Starting a new set (or entering rest) clears any running hold timer.
+  useEffect(() => {
+    setHoldLeft(null);
+    setHoldSide(1);
+  }, [stepIndex, resting]);
 
   // Keep the screen awake through the live session so the coach can talk and the timer stays visible.
   useEffect(() => {
@@ -342,15 +403,16 @@ export default function Workout() {
   const completed = resting ? stepIndex + 1 : stepIndex;
   const pct = (completed / steps.length) * 100;
 
-  const onDoneSet = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (step.restSec && step.restSec > 0) {
-      setRestLeft(step.restSec);
-      setResting(true);
-      coach(restCue(step.restSec, next ? next.item.name : null));
-    } else {
-      goNext();
-    }
+  const hold = holdSeconds(step.target);
+  const startHold = () => {
+    if (!hold) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setHoldSide(1);
+    setHoldLeft(hold.secs);
+  };
+  const cancelHold = () => {
+    setHoldLeft(null);
+    setHoldSide(1);
   };
 
   // Undo an accidental Done: from rest, drop back to the set you just finished; otherwise step back.
@@ -426,9 +488,27 @@ export default function Workout() {
               <Text style={styles.chasingHint}>Level {step.item.level} goal — get as close as you can</Text>
             ) : null}
             {step.item.note ? <Text style={styles.note}>{step.item.note}</Text> : null}
-            <Pressable onPress={onDoneSet} style={styles.sunBtn}>
+            {hold ? (
+              holdLeft !== null ? (
+                <>
+                  <Text style={styles.countdown}>{clock(holdLeft)}</Text>
+                  {hold.perSide ? <Text style={styles.upNext}>Side {holdSide} of 2</Text> : null}
+                </>
+              ) : (
+                <Pressable onPress={startHold} style={styles.timerBtn}>
+                  <Ionicons name="timer-outline" size={18} color={sunrise.hot} />
+                  <Text style={styles.timerBtnText}>Start timer · {hold.secs}s{hold.perSide ? '/side' : ''}</Text>
+                </Pressable>
+              )
+            ) : null}
+            <Pressable onPress={finishSet} style={styles.sunBtn}>
               <Text style={styles.sunBtnText}>{isLast ? 'Finish workout' : 'Done'}</Text>
             </Pressable>
+            {holdLeft !== null ? (
+              <Pressable onPress={cancelHold} hitSlop={8}>
+                <Text style={styles.stopText}>Stop timer</Text>
+              </Pressable>
+            ) : null}
           </>
         )}
       </View>
@@ -529,4 +609,7 @@ const styles = StyleSheet.create({
   secondaryText: { color: sunrise.ink, fontSize: font.body, fontFamily: fonts.bold },
 
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
+  timerBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: sunrise.hot, borderRadius: radius.pill, paddingVertical: spacing.sm + 2, paddingHorizontal: spacing.lg, marginTop: spacing.lg, backgroundColor: '#FFFFFF' },
+  timerBtnText: { color: sunrise.hot, fontSize: font.body, fontFamily: fonts.bold },
+  stopText: { color: sunrise.muted, fontSize: font.small, fontFamily: fonts.bold, marginTop: spacing.md, textDecorationLine: 'underline' },
 });
