@@ -145,7 +145,7 @@ export default function History() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.logFocus}>{log?.focus ?? 'Workout done'}</Text>
                   <Text style={styles.logMeta}>
-                    {wd}, {MONTHS[shown.month].slice(0, 3)} {cell.date}
+                    {MONTHS[shown.month].slice(0, 3)} {cell.date}, {wd}
                     {log?.durationMin ? ` · ${log.durationMin} min` : ''}
                   </Text>
                 </View>
