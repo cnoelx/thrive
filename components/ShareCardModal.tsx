@@ -32,7 +32,7 @@ export function ShareCardModal({ data, onClose }: { data: WorkoutCardData; onClo
     setSharing(true);
     try {
       const [{ captureRef }, Sharing] = await Promise.all([import('react-native-view-shot'), import('expo-sharing')]);
-      const uri = await captureRef(frameRef, { format: 'png', quality: 1, result: 'tmpfile', width: 1080, height: 1920 });
+      const uri = await captureRef(frameRef, { format: 'png', quality: 1, result: 'tmpfile' });
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share your workout' });
       }
