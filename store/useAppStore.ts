@@ -10,8 +10,8 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { BENCHMARK_BY_ID } from '@/data/benchmarks';
 import { Equipment, GoalId } from '@/data/onboarding';
 import { WHATS_NEW } from '@/data/whatsNew';
-import { backfillStreakDays } from '@/engine/history';
-import { ProgressState, applyClaim, emptyProgress, unclaim } from '@/engine/progression';
+import { backfillStreakDays, dayNumberFromDate } from '@/engine/history';
+import { ProgressState, applyClaim, completedLevel, emptyProgress, unclaim } from '@/engine/progression';
 import { nextStreak } from '@/engine/streak';
 
 export interface Profile {
@@ -48,6 +48,9 @@ interface AppState {
   name: string;
   profile: Profile | null;
   progress: ProgressState;
+  /** Per-category day-number of the last level-up — used to pace the "ready to level up?" home prompt
+   *  (sessions trained at the current level since then). Absent = never levelled up that area. */
+  lastLevelDay: Record<string, number>;
   /** Day-number of the last completed workout — drives the "completed today" state. */
   lastLoggedDay: number | null;
   /** Consecutive-completed-workout streak as of lastLoggedDay (rest days don't break it). */
@@ -124,6 +127,7 @@ export const useAppStore = create<AppState>()(
       name: '',
       profile: null,
       progress: emptyProgress(),
+      lastLevelDay: {},
       lastLoggedDay: null,
       streak: 0,
       loggedDays: [],
@@ -149,6 +153,7 @@ export const useAppStore = create<AppState>()(
           onboarded: true,
           profile,
           progress: initialProgress ?? emptyProgress(),
+          lastLevelDay: {},
           lastLoggedDay: null,
           streak: 0,
           loggedDays: [],
@@ -186,7 +191,13 @@ export const useAppStore = create<AppState>()(
         set((s) => {
           const b = BENCHMARK_BY_ID[benchmarkId];
           if (!b) return s;
-          return { progress: applyClaim(s.progress, s.pullUnlocked, b) };
+          const before = completedLevel(s.progress, b.categoryId);
+          const progress = applyClaim(s.progress, s.pullUnlocked, b);
+          // If this claim completed a level, stamp "last levelled up" so the home prompt re-paces.
+          if (completedLevel(progress, b.categoryId) > before) {
+            return { progress, lastLevelDay: { ...s.lastLevelDay, [b.categoryId]: dayNumberFromDate(new Date()) } };
+          }
+          return { progress };
         }),
 
       unclaimBenchmark: (benchmarkId) => set((s) => ({ progress: unclaim(s.progress, benchmarkId) })),
@@ -223,6 +234,7 @@ export const useAppStore = create<AppState>()(
           name: '',
           profile: null,
           progress: emptyProgress(),
+          lastLevelDay: {},
           lastLoggedDay: null,
           streak: 0,
           loggedDays: [],
@@ -253,6 +265,7 @@ export const useAppStore = create<AppState>()(
         name: s.name,
         profile: s.profile,
         progress: s.progress,
+        lastLevelDay: s.lastLevelDay,
         lastLoggedDay: s.lastLoggedDay,
         streak: s.streak,
         loggedDays: s.loggedDays,

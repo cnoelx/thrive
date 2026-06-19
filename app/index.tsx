@@ -11,7 +11,7 @@ import { categoryColors, colors, font, fonts, radius, spacing } from '@/constant
 import { CATEGORIES, MAX_LEVEL, benchmarksFor, categoryCeiling } from '@/data/benchmarks';
 import { WHATS_NEW } from '@/data/whatsNew';
 import { achievementContext, unlockedIds } from '@/engine/achievements';
-import { todaysWorkout } from '@/engine/dailyCard';
+import { sessionsTrainingCategory, todaysWorkout } from '@/engine/dailyCard';
 import { dateOfDayNumber, weekDays } from '@/engine/history';
 import { baselineLevel, completedLevel, effectiveCategoryIds, levelCap, nextLevel } from '@/engine/progression';
 import { currentStreak, isRestDay, pendingStreakMilestone } from '@/engine/streak';
@@ -43,6 +43,10 @@ const STREAK_MESSAGES: ((n: number) => string)[] = [
   (n) => `${n}-day streak. Unstoppable!`,
 ];
 
+// Sessions training an area (since its last level-up) before we prompt "ready to level up?" — enough
+// reps that they've plausibly outgrown the level. Already claiming a next-level benchmark overrides it.
+const READY_SESSIONS = 3;
+
 export default function Home() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -52,6 +56,7 @@ export default function Home() {
   const lastLoggedDay = useAppStore((s) => s.lastLoggedDay);
   const streak = useAppStore((s) => s.streak);
   const loggedDays = useAppStore((s) => s.loggedDays);
+  const lastLevelDay = useAppStore((s) => s.lastLevelDay);
   const achievementsSeen = useAppStore((s) => s.achievementsSeen);
   const streakMilestoneSeen = useAppStore((s) => s.streakMilestoneSeen);
   const markStreakMilestoneSeen = useAppStore((s) => s.markStreakMilestoneSeen);
@@ -262,6 +267,12 @@ export default function Home() {
               const fillPct = nextBenches.length ? (claimedNext / nextBenches.length) * 100 : 0;
               // Can actually advance now (next level isn't runway-locked behind the other areas).
               const canLevelUp = !locked && !maxed && nextLevel(progress, cat.id) <= levelCap(progress, pullUnlocked);
+              // Only nudge when they're plausibly ready: already part-way into the next level, or they've
+              // trained this area enough sessions since their last level-up here.
+              const ready =
+                canLevelUp &&
+                claimedNext < nextBenches.length &&
+                (claimedNext > 0 || sessionsTrainingCategory(loggedDays, cat.id, pullUnlocked, lastLevelDay[cat.id] ?? -1) >= READY_SESSIONS);
               return (
                 <Pressable
                   key={cat.id}
@@ -284,7 +295,7 @@ export default function Home() {
                         <View style={styles.rowBarTrack}>
                           <View style={[styles.rowBarFill, { width: `${fillPct}%`, backgroundColor: categoryColors[cat.id].main }]} />
                         </View>
-                        {canLevelUp ? <Text style={styles.areaLevelUp}>Ready to level up? →</Text> : null}
+                        {ready ? <Text style={styles.areaLevelUp}>Ready to level up? →</Text> : null}
                       </>
                     )}
                   </View>

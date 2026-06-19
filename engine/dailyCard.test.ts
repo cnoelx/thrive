@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 
 import { CATEGORY_IDS, EXERCISE_BY_KEY, benchmarksFor } from '@/data/benchmarks';
-import { SUPERMAN_KEY, todaysWorkout } from '@/engine/dailyCard';
+import { SUPERMAN_KEY, categoriesTrainedOn, sessionsTrainingCategory, todaysWorkout } from '@/engine/dailyCard';
 import { ProgressState, claim, effectiveCategoryIds, emptyProgress } from '@/engine/progression';
 
 function claimLevel(state: ProgressState, c: (typeof CATEGORY_IDS)[number], level: number): ProgressState {
@@ -55,6 +55,25 @@ describe('weekly schedule', () => {
   it('Tuesday includes the mobility checks', () => {
     const w = todaysWorkout(emptyProgress(), true, dateForDay(2));
     expect(w.items.some((i) => i.categoryId === 'mobility')).toBe(true);
+  });
+});
+
+// Day numbers: weekday = (d + 4) % 7 (0 = Sun). So d=4 Mon, 5 Tue, 7 Thu, 10 Sun.
+describe('category training pace (ready-to-level-up signal)', () => {
+  it('maps a day to the categories it trains; Pull drops when locked; rest day is empty', () => {
+    expect(categoriesTrainedOn(4, true).has('push')).toBe(true); // Monday has push-ups
+    expect(categoriesTrainedOn(4, true).has('pull')).toBe(true); // and the inverted row
+    expect(categoriesTrainedOn(4, false).has('pull')).toBe(false); // pull dropped when no bar/rings
+    expect(categoriesTrainedOn(5, true).has('cardio')).toBe(true); // Tuesday cardio + mobility
+    expect(categoriesTrainedOn(5, true).has('mobility')).toBe(true);
+    expect(categoriesTrainedOn(10, true).size).toBe(0); // Sunday rest
+  });
+
+  it('counts only logged sessions that trained the category, after sinceDay', () => {
+    const logged = [4, 5, 7]; // Mon, Tue, Thu
+    expect(sessionsTrainingCategory(logged, 'push', true, -1)).toBe(2); // push on Mon + Thu
+    expect(sessionsTrainingCategory(logged, 'push', true, 4)).toBe(1); // after Mon → only Thu
+    expect(sessionsTrainingCategory(logged, 'cardio', true, -1)).toBe(1); // cardio only Tue
   });
 });
 

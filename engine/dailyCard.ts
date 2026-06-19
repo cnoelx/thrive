@@ -56,6 +56,24 @@ export function todaysWorkout(state: ProgressState, pullUnlocked: boolean, date:
   return workoutForDay(state, pullUnlocked, DAY_KEYS[date.getDay()] ?? 'mon');
 }
 
+// Which categories a scheduled day trains (its fixed recipe). Pull is excluded when locked — its items
+// drop out and become Superman, which has no category. Used to pace the "ready to level up?" prompt.
+export function categoriesTrainedOn(dayNumber: number, pullUnlocked: boolean): Set<CategoryId> {
+  const dayKey = DAY_KEYS[(((dayNumber + 4) % 7) + 7) % 7] ?? 'mon';
+  const set = new Set<CategoryId>();
+  for (const it of WEEKLY_SCHEDULE[dayKey].items) {
+    const ex = EXERCISE_BY_KEY[it.exKey];
+    if (!ex || (ex.categoryId === 'pull' && !pullUnlocked)) continue;
+    set.add(ex.categoryId);
+  }
+  return set;
+}
+
+// How many logged workouts trained category `c` after `sinceDay` — "sessions at the current level".
+export function sessionsTrainingCategory(loggedDays: number[], c: CategoryId, pullUnlocked: boolean, sinceDay: number): number {
+  return loggedDays.reduce((n, d) => (d > sinceDay && categoriesTrainedOn(d, pullUnlocked).has(c) ? n + 1 : n), 0);
+}
+
 // Build the workout for a specific scheduled day — used both for today and for on-demand sessions the
 // user picks from the home "Workouts" list. Reps/time still come from the user's current level.
 export function workoutForDay(state: ProgressState, pullUnlocked: boolean, dayKey: DayKey): TodaysWorkout {
