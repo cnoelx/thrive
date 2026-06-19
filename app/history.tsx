@@ -12,6 +12,7 @@ import { isRestDay } from '@/engine/streak';
 import { useAppStore } from '@/store/useAppStore';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const FEEL_LABELS = { hard: 'Felt hard 🥵', right: 'Felt right 🙂', easy: 'Felt easy 😎' } as const;
 
 export default function History() {
@@ -34,6 +35,11 @@ export default function History() {
     setShown((s) => (s.month === 11 ? { year: s.year + 1, month: 0 } : { year: s.year, month: s.month + 1 }));
 
   const weeks = monthGrid(shown.year, shown.month);
+  // Completed workouts in the shown month, most recent first — the list below the calendar.
+  const monthDone = weeks
+    .flat()
+    .filter((c): c is MonthCell => !!c && loggedDays.includes(c.dayNumber))
+    .sort((a, b) => b.date - a.date);
 
   // Tapping a completed day: show the full card if its move list was saved, else the stats sheet.
   const openDay = (cell: MonthCell) => {
@@ -55,10 +61,11 @@ export default function History() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
+        <Pressable onPress={() => router.back()} hitSlop={10} style={styles.headerSide}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title}>History</Text>
+        <View style={styles.headerSide} />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}>
@@ -98,7 +105,7 @@ export default function History() {
                 const rest = isRestDay(cell.dayNumber);
                 return (
                   <Pressable key={cell.dayNumber} style={styles.dayCell} disabled={!done} onPress={() => openDay(cell)}>
-                    <View style={[styles.dayDot, !done && isToday && styles.dayDotToday]}>
+                    <View style={[styles.dayDot, isToday && styles.dayDotToday]}>
                       {done ? (
                         <Ionicons name="flame" size={18} color={colors.session} />
                       ) : rest && !future ? (
@@ -120,6 +127,32 @@ export default function History() {
             <Ionicons name="bed-outline" size={14} color={colors.muted} style={{ marginLeft: spacing.md }} />
             <Text style={styles.legendText}>Rest day</Text>
           </View>
+        </View>
+
+        {/* Done workouts in the shown month */}
+        <View style={styles.listCard}>
+          <Text style={styles.listTitle}>
+            {monthDone.length ? `${monthDone.length} workout${monthDone.length === 1 ? '' : 's'} · ${MONTHS[shown.month]}` : `No workouts yet · ${MONTHS[shown.month]}`}
+          </Text>
+          {monthDone.map((cell, i) => {
+            const log = workoutLog[cell.dayNumber];
+            const wd = WEEKDAYS[new Date(shown.year, shown.month, cell.date).getDay()];
+            return (
+              <Pressable key={cell.dayNumber} onPress={() => openDay(cell)} style={[styles.logRow, i > 0 && styles.logRowDivider]}>
+                <View style={styles.logFlame}>
+                  <Ionicons name="flame" size={16} color={colors.session} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.logFocus}>{log?.focus ?? 'Workout done'}</Text>
+                  <Text style={styles.logMeta}>
+                    {wd}, {MONTHS[shown.month].slice(0, 3)} {cell.date}
+                    {log?.durationMin ? ` · ${log.durationMin} min` : ''}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+              </Pressable>
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -187,9 +220,10 @@ export default function History() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+  headerSide: { width: 72 },
   back: { color: colors.link, fontSize: font.body, fontFamily: fonts.bold },
-  title: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy },
+  title: { flex: 1, textAlign: 'center', color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy },
 
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border },
 
@@ -211,6 +245,14 @@ const styles = StyleSheet.create({
 
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.lg },
   legendText: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
+
+  listCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, marginTop: spacing.lg },
+  listTitle: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1, textTransform: 'uppercase', marginBottom: spacing.xs },
+  logRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
+  logRowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
+  logFlame: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
+  logFocus: { color: colors.ink, fontSize: font.body, fontFamily: fonts.bold },
+  logMeta: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: 1 },
 
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.xs, width: '100%', maxWidth: 420 },
