@@ -32,7 +32,23 @@ export function ShareCardModal({ data, onClose }: { data: WorkoutCardData; onClo
     setSharing(true);
     try {
       const [{ captureRef }, Sharing] = await Promise.all([import('react-native-view-shot'), import('expo-sharing')]);
-      const uri = await captureRef(frameRef, { format: 'png', quality: 1, result: 'tmpfile' });
+      // The frame lives inside a Modal; right after a theme toggle (or returning from a prior share) its
+      // gradient surface can be mid-redraw, which makes view-shot fail "Failed to capture view snapshot".
+      // Let it settle a frame, then retry a few times — the failure is transient.
+      const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+      let uri: string | undefined;
+      let lastErr: unknown;
+      for (let i = 0; i < 4; i++) {
+        try {
+          uri = await captureRef(frameRef, { format: 'png', quality: 1, result: 'tmpfile' });
+          break;
+        } catch (e) {
+          lastErr = e;
+          await wait(180);
+        }
+      }
+      if (!uri) throw lastErr;
       if (!(await Sharing.isAvailableAsync())) {
         Alert.alert('Sharing unavailable', 'This device has no app to share an image to.');
         return;
