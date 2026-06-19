@@ -8,8 +8,10 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { BENCHMARK_BY_ID } from '@/data/benchmarks';
+import { IndiaLocation } from '@/data/locations';
 import { Equipment, GoalId } from '@/data/onboarding';
 import { WHATS_NEW } from '@/data/whatsNew';
+import { CircadianDay } from '@/engine/circadian';
 import { backfillStreakDays, dayNumberFromDate } from '@/engine/history';
 import { ProgressState, applyClaim, completedLevel, emptyProgress, unclaim } from '@/engine/progression';
 import { nextStreak } from '@/engine/streak';
@@ -91,6 +93,10 @@ interface AppState {
   voiceCoach: boolean;
   /** Achievement ids the user has already seen earned — drives the "new" dot on the hero trophy. */
   achievementsSeen: string[];
+  /** Rhythm vertical (standalone — never touches progress/streak/workout). Daily sleep + daylight
+   *  log, keyed by wake-day number, and the chosen location for on-device sunrise/sunset. */
+  circadian: Record<number, CircadianDay>;
+  rhythmLocation: IndiaLocation | null;
 
   completeOnboarding: (profile: Profile, initialProgress?: ProgressState) => void;
   unlockPull: () => void;
@@ -115,6 +121,9 @@ interface AppState {
   /** Record the full set of earned achievement ids as "seen" (clears the hero dot). */
   markAchievementsSeen: (ids: string[]) => void;
   setName: (name: string) => void;
+  setRhythmLocation: (loc: IndiaLocation) => void;
+  /** Merge today's sleep/daylight log for a wake-day (partial — only the fields just changed). */
+  logCircadian: (dayNumber: number, day: Partial<CircadianDay>) => void;
   /** Dev/testing helper to wipe back to a clean first-launch state. */
   resetAll: () => void;
 }
@@ -147,6 +156,8 @@ export const useAppStore = create<AppState>()(
       pullUnlocked: false,
       voiceCoach: true,
       achievementsSeen: [],
+      circadian: {},
+      rhythmLocation: null,
 
       completeOnboarding: (profile, initialProgress) =>
         set({
@@ -226,6 +237,11 @@ export const useAppStore = create<AppState>()(
 
       setName: (name) => set({ name }),
 
+      setRhythmLocation: (loc) => set({ rhythmLocation: loc }),
+
+      logCircadian: (dayNumber, day) =>
+        set((s) => ({ circadian: { ...s.circadian, [dayNumber]: { ...s.circadian[dayNumber], ...day } } })),
+
       unlockPull: () => set({ pullUnlocked: true }),
 
       resetAll: () =>
@@ -254,6 +270,8 @@ export const useAppStore = create<AppState>()(
           pullUnlocked: false,
           voiceCoach: true,
           achievementsSeen: [],
+          circadian: {},
+          rhythmLocation: null,
         }),
     }),
     {
@@ -285,6 +303,8 @@ export const useAppStore = create<AppState>()(
         pullUnlocked: s.pullUnlocked,
         voiceCoach: s.voiceCoach,
         achievementsSeen: s.achievementsSeen,
+        circadian: s.circadian,
+        rhythmLocation: s.rhythmLocation,
       }),
     },
   ),
