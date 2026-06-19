@@ -24,8 +24,8 @@ export const colors = {
   onInkMuted: '#8A9590', // muted text on the dark hero
   accent: '#FB923C', // ember highlight on dark — the brand accent
   streakInk: '#FBBF24', // amber streak text on dark
-  streakBg: '#FEF3C7', // warm amber — THIS WEEK card background
-  streakBorder: '#FCD34D', // amber border around the streak card
+  streakBg: '#FFF1E8', // soft ember wash — THIS WEEK card background (on-brand warmth, not caution-yellow)
+  streakBorder: '#FED7AA', // soft ember border around the streak card
   session: '#EA580C', // hot orange — a pending or live workout session (cools to "done" green)
 } as const;
 

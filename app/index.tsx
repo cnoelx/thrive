@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   weekHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   weekHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   perfectTag: { color: colors.session, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 0.5 },
-  weekEyebrow: { color: colors.warnText, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1 },
+  weekEyebrow: { color: colors.link, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1 },
   streakSentence: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy, marginBottom: spacing.md },
   weekStrip: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   weekDay: { flex: 1, alignItems: 'center', gap: 4 },
