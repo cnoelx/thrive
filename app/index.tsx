@@ -7,17 +7,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Celebration } from '@/components/Celebration';
 import { Flame } from '@/components/Flame';
+import { RhythmCard } from '@/components/RhythmCard';
 import { categoryColors, colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, MAX_LEVEL, benchmarksFor, categoryCeiling } from '@/data/benchmarks';
 import { WHATS_NEW } from '@/data/whatsNew';
 import { achievementContext, unlockedIds } from '@/engine/achievements';
-import { formatClock } from '@/engine/circadian';
 import { sessionsTrainingCategory, todaysWorkout } from '@/engine/dailyCard';
 import { dateOfDayNumber, weekDays } from '@/engine/history';
 import { baselineLevel, completedLevel, effectiveCategoryIds, levelCap, nextLevel } from '@/engine/progression';
 import { currentStreak, isRestDay, pendingStreakMilestone } from '@/engine/streak';
 import { refreshReminders, requestNotificationPermission } from '@/lib/notifications';
-import { sunTimes } from '@/lib/sun';
 import { useAppStore } from '@/store/useAppStore';
 
 function todayNumber(): number {
@@ -80,7 +79,6 @@ export default function Home() {
   const name = useAppStore((s) => s.name);
   const pullUnlocked = useAppStore((s) => s.pullUnlocked);
   const unlockPull = useAppStore((s) => s.unlockPull);
-  const rhythmLocation = useAppStore((s) => s.rhythmLocation);
   const [pullStep, setPullStep] = useState<'closed' | 'explain' | 'confirm'>('closed');
   const [levelsOpen, setLevelsOpen] = useState(false);
   const [reminderPicker, setReminderPicker] = useState(false);
@@ -88,7 +86,6 @@ export default function Home() {
 
   const day = todayNumber();
   const doneToday = lastLoggedDay === day;
-  const rhythmSun = rhythmLocation ? sunTimes(rhythmLocation.lat, rhythmLocation.lng, new Date()) : null;
   const streakNow = currentStreak(streak, lastLoggedDay, day);
   const streakMilestone = pendingStreakMilestone(streakNow, streakMilestoneSeen);
 
@@ -290,6 +287,11 @@ export default function Home() {
             </View>
           )}
 
+          {/* Rhythm — sleep & daylight at a glance + quick log (standalone, never affects the program) */}
+          <View style={styles.sectionGap}>
+            <RhythmCard />
+          </View>
+
           {/* Training areas — one grouped card, per-row progress */}
           <View style={[styles.groupCard, styles.sectionGap]}>
             {orderedCats.map((cat, i) => {
@@ -347,20 +349,6 @@ export default function Home() {
             <View style={{ flex: 1 }}>
               <Text style={styles.libraryTitle}>Workouts</Text>
               <Text style={styles.librarySub}>Start any session on demand</Text>
-            </View>
-            <Text style={styles.chevron}>›</Text>
-          </Pressable>
-
-          {/* Rhythm — standalone sleep & daylight log; never affects the program */}
-          <Pressable onPress={() => router.push('/rhythm')} style={[styles.libraryBtn, styles.sectionGap]}>
-            <View style={styles.libraryIcon}>
-              <Ionicons name="partly-sunny-outline" size={20} color={colors.session} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.libraryTitle}>Rhythm</Text>
-              <Text style={styles.librarySub}>
-                {rhythmSun ? `Sunrise ${formatClock(rhythmSun.sunrise)} · Sunset ${formatClock(rhythmSun.sunset)}` : 'Track your sleep & daylight'}
-              </Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </Pressable>
