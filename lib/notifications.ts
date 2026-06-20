@@ -13,8 +13,8 @@ import { isRestDay } from '@/engine/streak';
 // way to get heads-up (banner + sound) is a channel that was created at HIGH from the start.
 const CHANNEL_ID = 'workout-reminders';
 const HORIZON_DAYS = 7;
-const MORNING_HOUR = 8;
-const EVENING_HOUR = 19;
+const MORNING_HOUR = 6;
+const EVENING_HOUR = 16;
 
 function todayNumber(): number {
   const now = new Date();

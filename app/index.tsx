@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { Redirect, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Celebration } from '@/components/Celebration';
@@ -25,10 +25,6 @@ function todayNumber(): number {
   return Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
 }
 
-function timeLabel(h: number, m: number): string {
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${h12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
-}
 function dateFromHM(h: number, m: number): Date {
   const d = new Date();
   d.setHours(h, m, 0, 0);
@@ -48,6 +44,10 @@ const STREAK_MESSAGES: ((n: number) => string)[] = [
 // Sessions training an area (since its last level-up) before we prompt "ready to level up?" — enough
 // reps that they've plausibly outgrown the level. Already claiming a next-level benchmark overrides it.
 const READY_SESSIONS = 3;
+
+// Days before the dismissed "set a reminder time" banner returns (no cap — it keeps coming back
+// weekly until they actually set a time, since a personalised reminder is the strongest habit lever).
+const REMINDER_NUDGE_DAYS = 7;
 
 export default function Home() {
   const insets = useSafeAreaInsets();
@@ -75,12 +75,16 @@ export default function Home() {
   const reminderMinute = useAppStore((s) => s.reminderMinute);
   const setReminder = useAppStore((s) => s.setReminder);
   const setReminderEnabled = useAppStore((s) => s.setReminderEnabled);
+  const reminderNudgeDay = useAppStore((s) => s.reminderNudgeDay);
+  const dismissReminderNudge = useAppStore((s) => s.dismissReminderNudge);
   const name = useAppStore((s) => s.name);
   const pullUnlocked = useAppStore((s) => s.pullUnlocked);
   const unlockPull = useAppStore((s) => s.unlockPull);
   const rhythmLocation = useAppStore((s) => s.rhythmLocation);
   const [pullStep, setPullStep] = useState<'closed' | 'explain' | 'confirm'>('closed');
   const [levelsOpen, setLevelsOpen] = useState(false);
+  const [reminderPicker, setReminderPicker] = useState(false);
+  const [reminderTemp, setReminderTemp] = useState<Date | null>(null);
 
   const day = todayNumber();
   const doneToday = lastLoggedDay === day;
@@ -153,24 +157,36 @@ export default function Home() {
   const orderedCats = [...CATEGORIES].sort(
     (a, b) => Number(a.id === 'pull' && !pullUnlocked) - Number(b.id === 'pull' && !pullUnlocked),
   );
+  // The "set your own reminder time" banner: shown until they pick a time; dismissing it brings it
+  // back a week later (no cap).
+  const showReminderBanner = !reminderCustomTime && (reminderNudgeDay === null || day - reminderNudgeDay >= REMINDER_NUDGE_DAYS);
 
-  // The switch is the "set my own time" control (default off → internal morning/evening). Turning it
-  // on while reminders aren't yet permitted re-asks; turning it off just falls back to the default.
-  const toggleCustomTime = async (value: boolean) => {
-    if (value && !reminderEnabled) {
+  // The top banner's "set a reminder time" → pick a time, which switches the default morning/afternoon
+  // beats for one reminder at the chosen time. Setting a time hides the banner for good.
+  const saveBannerTime = async (d: Date) => {
+    if (!reminderEnabled) {
       const ok = await requestNotificationPermission();
       markReminderPrompted();
       if (!ok) return; // can't schedule without permission
-      setReminderEnabled(true);
     }
-    setReminderCustomTime(value);
+    setReminder(true, d.getHours(), d.getMinutes());
+    setReminderCustomTime(true);
   };
-
-  const onPickTime = (event: DateTimePickerEvent, selected?: Date) => {
-    if (event.type === 'set' && selected) setReminder(true, selected.getHours(), selected.getMinutes());
+  const openReminderPicker = () => {
+    if (Platform.OS === 'android') {
+      DateTimePickerAndroid.open({
+        value: dateFromHM(reminderHour, reminderMinute),
+        mode: 'time',
+        is24Hour: false,
+        onChange: (e, d) => {
+          if (e.type === 'set' && d) saveBannerTime(d);
+        },
+      });
+    } else {
+      setReminderTemp(dateFromHM(reminderHour, reminderMinute));
+      setReminderPicker(true);
+    }
   };
-  const openAndroidTimePicker = () =>
-    DateTimePickerAndroid.open({ value: dateFromHM(reminderHour, reminderMinute), onChange: onPickTime, mode: 'time', is24Hour: false });
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -198,6 +214,20 @@ export default function Home() {
         </View>
 
         <View style={styles.content}>
+          {/* Set-your-reminder-time nudge — tap to pick a time, × to dismiss (returns in a week) */}
+          {showReminderBanner ? (
+            <Pressable onPress={openReminderPicker} style={styles.remindBanner}>
+              <Ionicons name="notifications-outline" size={20} color={colors.link} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.remindBannerTitle}>Set a reminder time</Text>
+                <Text style={styles.remindBannerSub}>Pick a time so you never miss a day</Text>
+              </View>
+              <Pressable onPress={() => dismissReminderNudge(day)} hitSlop={12}>
+                <Ionicons name="close" size={20} color={colors.muted} />
+              </Pressable>
+            </Pressable>
+          ) : null}
+
           {/* Streak + week strip — tap for the full calendar */}
           <Pressable onPress={() => router.push('/history')} style={styles.streakCard}>
             <View style={styles.weekHeader}>
@@ -309,40 +339,6 @@ export default function Home() {
             })}
           </View>
 
-          {/* Workout reminders — on by default; the switch sets your own time */}
-          <View style={[styles.reminderCard, styles.sectionGap]}>
-            <View style={styles.reminderHead}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.reminderTitle}>Reminder time</Text>
-                <Text style={styles.reminderSub}>
-                  {reminderCustomTime
-                    ? 'Reminding you at your chosen time'
-                    : 'We’ll nudge you on workout days — switch on to set your own time'}
-                </Text>
-              </View>
-              <Switch
-                value={reminderCustomTime}
-                onValueChange={toggleCustomTime}
-                trackColor={{ true: colors.link, false: colors.track }}
-                thumbColor="#ffffff"
-              />
-            </View>
-
-            {reminderCustomTime ? (
-              Platform.OS === 'ios' ? (
-                <View style={styles.timeButton}>
-                  <Text style={styles.timeButtonText}>Remind me at</Text>
-                  <DateTimePicker value={dateFromHM(reminderHour, reminderMinute)} mode="time" display="compact" onChange={onPickTime} />
-                </View>
-              ) : (
-                <Pressable style={styles.timeButton} onPress={openAndroidTimePicker}>
-                  <Text style={styles.timeButtonText}>{timeLabel(reminderHour, reminderMinute)}</Text>
-                  <Text style={styles.timeButtonHint}>Change ›</Text>
-                </Pressable>
-              )
-            ) : null}
-          </View>
-
           {/* Workouts library — set apart at the bottom; not part of the daily program */}
           <Pressable onPress={() => router.push('/workouts')} style={[styles.libraryBtn, styles.sectionGap]}>
             <View style={styles.libraryIcon}>
@@ -370,6 +366,31 @@ export default function Home() {
           </Pressable>
         </View>
       </ScrollView>
+
+      {/* iOS time picker for the reminder banner (Android uses the native dialog) */}
+      {reminderPicker ? (
+        <Modal transparent animationType="fade" visible onRequestClose={() => setReminderPicker(false)}>
+          <Pressable style={styles.remindModalOverlay} onPress={() => setReminderPicker(false)}>
+            <Pressable style={styles.remindModalSheet} onPress={() => {}}>
+              <DateTimePicker
+                mode="time"
+                display="spinner"
+                value={reminderTemp ?? dateFromHM(reminderHour, reminderMinute)}
+                onChange={(_, d) => d && setReminderTemp(d)}
+              />
+              <Pressable
+                style={styles.remindModalBtn}
+                onPress={() => {
+                  if (reminderTemp) saveBannerTime(reminderTemp);
+                  setReminderPicker(false);
+                }}
+              >
+                <Text style={styles.remindModalBtnText}>Done</Text>
+              </Pressable>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      ) : null}
 
       {showCelebration ? (
         <Celebration title={`You hit Level ${overall}!`} body={celebrateBody} onDone={() => markOverallLevelSeen(overall)} />
@@ -563,24 +584,14 @@ const styles = StyleSheet.create({
   rowBarFill: { height: 6, backgroundColor: colors.primary, borderRadius: radius.pill },
   chevron: { color: colors.muted, fontSize: 22, fontFamily: fonts.regular },
 
-  // Reminder
-  reminderCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.md },
-  reminderHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  reminderTitle: { color: colors.text, fontSize: font.body, fontFamily: fonts.heavy },
-  reminderSub: { color: colors.muted, fontSize: font.small, marginTop: 1, fontFamily: fonts.regular },
-  timeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  timeButtonText: { color: colors.text, fontSize: font.body, fontFamily: fonts.heavy },
-  timeButtonHint: { color: colors.link, fontSize: font.small, fontFamily: fonts.bold },
+  // Reminder banner — ember wash nudge at the top of home
+  remindBanner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.streakBg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.streakBorder, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, marginBottom: spacing.lg },
+  remindBannerTitle: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy },
+  remindBannerSub: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: 1 },
+  remindModalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
+  remindModalSheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, width: '100%', maxWidth: 420 },
+  remindModalBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.sm },
+  remindModalBtnText: { color: colors.primaryText, fontSize: font.body, fontFamily: fonts.heavy },
 
   // Modals / sheets
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },

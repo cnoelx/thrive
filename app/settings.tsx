@@ -1,12 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
+import { requestNotificationPermission } from '@/lib/notifications';
 import { useAppStore } from '@/store/useAppStore';
+
+function timeLabel(h: number, m: number): string {
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+}
+function dateFromHM(h: number, m: number): Date {
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d;
+}
 
 function todayNumber(): number {
   const now = new Date();
@@ -21,6 +33,14 @@ export default function Settings() {
   const weightKg = useAppStore((s) => s.weightKg);
   const setWeight = useAppStore((s) => s.setWeight);
   const resetAll = useAppStore((s) => s.resetAll);
+  const reminderEnabled = useAppStore((s) => s.reminderEnabled);
+  const reminderCustomTime = useAppStore((s) => s.reminderCustomTime);
+  const reminderHour = useAppStore((s) => s.reminderHour);
+  const reminderMinute = useAppStore((s) => s.reminderMinute);
+  const setReminder = useAppStore((s) => s.setReminder);
+  const setReminderEnabled = useAppStore((s) => s.setReminderEnabled);
+  const setReminderCustomTime = useAppStore((s) => s.setReminderCustomTime);
+  const markReminderPrompted = useAppStore((s) => s.markReminderPrompted);
   const [draft, setDraft] = useState(name);
   const [editing, setEditing] = useState(false);
   const [weightDraft, setWeightDraft] = useState(weightKg ? String(weightKg) : '');
@@ -34,6 +54,21 @@ export default function Settings() {
     const n = Math.round(parseFloat(weightDraft.replace(',', '.')));
     setWeight(Number.isFinite(n) && n > 0 ? n : null, todayNumber());
   };
+
+  const toggleCustomTime = async (value: boolean) => {
+    if (value && !reminderEnabled) {
+      const ok = await requestNotificationPermission();
+      markReminderPrompted();
+      if (!ok) return;
+      setReminderEnabled(true);
+    }
+    setReminderCustomTime(value);
+  };
+  const onPickTime = (event: DateTimePickerEvent, selected?: Date) => {
+    if (event.type === 'set' && selected) setReminder(true, selected.getHours(), selected.getMinutes());
+  };
+  const openAndroidTimePicker = () =>
+    DateTimePickerAndroid.open({ value: dateFromHM(reminderHour, reminderMinute), onChange: onPickTime, mode: 'time', is24Hour: false });
 
   const confirmReset = () => {
     Alert.alert(
@@ -116,6 +151,32 @@ export default function Settings() {
           <Text style={styles.weightHint}>Optional — only used to estimate calories. Stays on your phone.</Text>
         </View>
 
+        {/* Reminders — on by default (morning + afternoon); the switch sets your own time */}
+        <View style={styles.card}>
+          <View style={styles.reminderHead}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>REMINDERS</Text>
+              <Text style={styles.reminderSub}>
+                {reminderCustomTime ? 'Reminding you at your chosen time' : 'We’ll nudge you on workout days — switch on to set your own time'}
+              </Text>
+            </View>
+            <Switch value={reminderCustomTime} onValueChange={toggleCustomTime} trackColor={{ true: colors.link, false: colors.track }} thumbColor="#ffffff" />
+          </View>
+          {reminderCustomTime ? (
+            Platform.OS === 'ios' ? (
+              <View style={styles.timeButton}>
+                <Text style={styles.timeButtonText}>Remind me at</Text>
+                <DateTimePicker value={dateFromHM(reminderHour, reminderMinute)} mode="time" display="compact" onChange={onPickTime} />
+              </View>
+            ) : (
+              <Pressable style={styles.timeButton} onPress={openAndroidTimePicker}>
+                <Text style={styles.timeButtonText}>{timeLabel(reminderHour, reminderMinute)}</Text>
+                <Text style={styles.timeButtonHint}>Change ›</Text>
+              </Pressable>
+            )
+          ) : null}
+        </View>
+
         {/* About */}
         <View style={styles.card}>
           <Text style={styles.aboutText}>Version {Constants.expoConfig?.version ?? '1.0.0'}</Text>
@@ -146,6 +207,12 @@ const styles = StyleSheet.create({
   weightInput: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy, borderBottomWidth: 2, borderBottomColor: colors.link, paddingVertical: spacing.xs, minWidth: 64, textAlign: 'center' },
   weightUnit: { color: colors.muted, fontSize: font.body, fontFamily: fonts.bold },
   weightHint: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
+
+  reminderHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  reminderSub: { color: colors.muted, fontSize: font.small, marginTop: 2, fontFamily: fonts.regular },
+  timeButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.bg, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: spacing.md, marginTop: spacing.xs },
+  timeButtonText: { color: colors.text, fontSize: font.body, fontFamily: fonts.heavy },
+  timeButtonHint: { color: colors.link, fontSize: font.small, fontFamily: fonts.bold },
 
   aboutText: { color: colors.text, fontSize: font.body, fontFamily: fonts.bold },
 

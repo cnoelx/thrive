@@ -85,6 +85,9 @@ interface AppState {
   reminderCustomTime: boolean;
   reminderHour: number;
   reminderMinute: number;
+  /** Day-number the home "set a reminder time" banner was last dismissed — it re-shows a week later
+   *  (until they actually set a custom time). null = never dismissed. */
+  reminderNudgeDay: number | null;
   /** Set during onboarding (or later via the locked-Pull tile) when the user confirms they have a
    *  bar/rings. Once true, Pull joins category math and the schedule includes real pull moves. */
   pullUnlocked: boolean;
@@ -116,6 +119,8 @@ interface AppState {
   markReminderPrompted: () => void;
   setReminderCustomTime: (on: boolean) => void;
   setReminder: (enabled: boolean, hour: number, minute: number) => void;
+  /** Record that the reminder-time banner was dismissed today (re-shows a week later). */
+  dismissReminderNudge: (dayNumber: number) => void;
   setReminderEnabled: (on: boolean) => void;
   setVoiceCoach: (on: boolean) => void;
   /** Record the full set of earned achievement ids as "seen" (clears the hero dot). */
@@ -153,6 +158,7 @@ export const useAppStore = create<AppState>()(
       reminderCustomTime: false,
       reminderHour: 18,
       reminderMinute: 0,
+      reminderNudgeDay: null,
       pullUnlocked: false,
       voiceCoach: true,
       achievementsSeen: [],
@@ -229,6 +235,8 @@ export const useAppStore = create<AppState>()(
 
       setReminder: (enabled, hour, minute) => set({ reminderEnabled: enabled, reminderHour: hour, reminderMinute: minute }),
 
+      dismissReminderNudge: (dayNumber) => set({ reminderNudgeDay: dayNumber }),
+
       setReminderEnabled: (on) => set({ reminderEnabled: on }),
 
       setVoiceCoach: (on) => set({ voiceCoach: on }),
@@ -267,6 +275,7 @@ export const useAppStore = create<AppState>()(
           reminderCustomTime: false,
           reminderHour: 18,
           reminderMinute: 0,
+          reminderNudgeDay: null,
           pullUnlocked: false,
           voiceCoach: true,
           achievementsSeen: [],
@@ -300,6 +309,7 @@ export const useAppStore = create<AppState>()(
         reminderCustomTime: s.reminderCustomTime,
         reminderHour: s.reminderHour,
         reminderMinute: s.reminderMinute,
+        reminderNudgeDay: s.reminderNudgeDay,
         pullUnlocked: s.pullUnlocked,
         voiceCoach: s.voiceCoach,
         achievementsSeen: s.achievementsSeen,
