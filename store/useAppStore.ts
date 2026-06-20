@@ -88,6 +88,9 @@ interface AppState {
   /** Day-number the home "set a reminder time" banner was last dismissed — it re-shows a week later
    *  (until they actually set a custom time). null = never dismissed. */
   reminderNudgeDay: number | null;
+  /** Rhythm push nudges (morning sleep prompt + sunrise/sunset light reminders). On by default;
+   *  separate from workout reminders so they can be muted independently. */
+  rhythmRemindersEnabled: boolean;
   /** Set during onboarding (or later via the locked-Pull tile) when the user confirms they have a
    *  bar/rings. Once true, Pull joins category math and the schedule includes real pull moves. */
   pullUnlocked: boolean;
@@ -122,6 +125,7 @@ interface AppState {
   /** Record that the reminder-time banner was dismissed today (re-shows a week later). */
   dismissReminderNudge: (dayNumber: number) => void;
   setReminderEnabled: (on: boolean) => void;
+  setRhythmRemindersEnabled: (on: boolean) => void;
   setVoiceCoach: (on: boolean) => void;
   /** Record the full set of earned achievement ids as "seen" (clears the hero dot). */
   markAchievementsSeen: (ids: string[]) => void;
@@ -159,6 +163,7 @@ export const useAppStore = create<AppState>()(
       reminderHour: 18,
       reminderMinute: 0,
       reminderNudgeDay: null,
+      rhythmRemindersEnabled: true,
       pullUnlocked: false,
       voiceCoach: true,
       achievementsSeen: [],
@@ -239,6 +244,8 @@ export const useAppStore = create<AppState>()(
 
       setReminderEnabled: (on) => set({ reminderEnabled: on }),
 
+      setRhythmRemindersEnabled: (on) => set({ rhythmRemindersEnabled: on }),
+
       setVoiceCoach: (on) => set({ voiceCoach: on }),
 
       markAchievementsSeen: (ids) => set({ achievementsSeen: ids }),
@@ -276,6 +283,7 @@ export const useAppStore = create<AppState>()(
           reminderHour: 18,
           reminderMinute: 0,
           reminderNudgeDay: null,
+          rhythmRemindersEnabled: true,
           pullUnlocked: false,
           voiceCoach: true,
           achievementsSeen: [],
@@ -310,6 +318,7 @@ export const useAppStore = create<AppState>()(
         reminderHour: s.reminderHour,
         reminderMinute: s.reminderMinute,
         reminderNudgeDay: s.reminderNudgeDay,
+        rhythmRemindersEnabled: s.rhythmRemindersEnabled,
         pullUnlocked: s.pullUnlocked,
         voiceCoach: s.voiceCoach,
         achievementsSeen: s.achievementsSeen,

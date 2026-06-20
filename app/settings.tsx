@@ -41,6 +41,8 @@ export default function Settings() {
   const setReminderEnabled = useAppStore((s) => s.setReminderEnabled);
   const setReminderCustomTime = useAppStore((s) => s.setReminderCustomTime);
   const markReminderPrompted = useAppStore((s) => s.markReminderPrompted);
+  const rhythmRemindersEnabled = useAppStore((s) => s.rhythmRemindersEnabled);
+  const setRhythmRemindersEnabled = useAppStore((s) => s.setRhythmRemindersEnabled);
   const [draft, setDraft] = useState(name);
   const [editing, setEditing] = useState(false);
   const [weightDraft, setWeightDraft] = useState(weightKg ? String(weightKg) : '');
@@ -69,6 +71,15 @@ export default function Settings() {
   };
   const openAndroidTimePicker = () =>
     DateTimePickerAndroid.open({ value: dateFromHM(reminderHour, reminderMinute), onChange: onPickTime, mode: 'time', is24Hour: false });
+
+  const toggleRhythmReminders = async (value: boolean) => {
+    if (value) {
+      const ok = await requestNotificationPermission();
+      markReminderPrompted();
+      if (!ok) return;
+    }
+    setRhythmRemindersEnabled(value);
+  };
 
   const confirmReset = () => {
     Alert.alert(
@@ -175,6 +186,17 @@ export default function Settings() {
               </Pressable>
             )
           ) : null}
+        </View>
+
+        {/* Rhythm reminders — sleep prompt + sunrise/sunset light nudges (separate from workouts) */}
+        <View style={styles.card}>
+          <View style={styles.reminderHead}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>RHYTHM REMINDERS</Text>
+              <Text style={styles.reminderSub}>A morning “how did you sleep?”, plus light nudges around sunrise &amp; sunset.</Text>
+            </View>
+            <Switch value={rhythmRemindersEnabled} onValueChange={toggleRhythmReminders} trackColor={{ true: colors.link, false: colors.track }} thumbColor="#ffffff" />
+          </View>
         </View>
 
         {/* About */}

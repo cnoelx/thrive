@@ -16,7 +16,7 @@ import { sessionsTrainingCategory, todaysWorkout } from '@/engine/dailyCard';
 import { dateOfDayNumber, weekDays } from '@/engine/history';
 import { baselineLevel, completedLevel, effectiveCategoryIds, levelCap, nextLevel } from '@/engine/progression';
 import { currentStreak, isRestDay, pendingStreakMilestone } from '@/engine/streak';
-import { refreshReminders, requestNotificationPermission } from '@/lib/notifications';
+import { refreshReminders, refreshRhythmReminders, requestNotificationPermission } from '@/lib/notifications';
 import { useAppStore } from '@/store/useAppStore';
 
 function todayNumber(): number {
@@ -79,6 +79,9 @@ export default function Home() {
   const name = useAppStore((s) => s.name);
   const pullUnlocked = useAppStore((s) => s.pullUnlocked);
   const unlockPull = useAppStore((s) => s.unlockPull);
+  const rhythmRemindersEnabled = useAppStore((s) => s.rhythmRemindersEnabled);
+  const rhythmLocation = useAppStore((s) => s.rhythmLocation);
+  const circadian = useAppStore((s) => s.circadian);
   const [pullStep, setPullStep] = useState<'closed' | 'explain' | 'confirm'>('closed');
   const [levelsOpen, setLevelsOpen] = useState(false);
   const [reminderPicker, setReminderPicker] = useState(false);
@@ -117,6 +120,13 @@ export default function Home() {
       customTime: reminderCustomTime ? { hour: reminderHour, minute: reminderMinute } : null,
     });
   }, [onboarded, reminderEnabled, reminderCustomTime, reminderHour, reminderMinute, lastLoggedDay, lapsed]);
+
+  // Rhythm nudges (sleep + sunrise/sunset light) — re-armed on open and whenever a log changes, so
+  // logged items go silent. Independent of the workout reminders above.
+  useEffect(() => {
+    if (!onboarded) return;
+    refreshRhythmReminders({ enabled: rhythmRemindersEnabled, location: rhythmLocation, circadian });
+  }, [onboarded, rhythmRemindersEnabled, rhythmLocation, circadian]);
 
   if (!onboarded || !profile) return <Redirect href="/onboarding" />;
 

@@ -7,14 +7,30 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+import { type IndiaLocation } from '@/data/locations';
+import { type CircadianDay } from '@/engine/circadian';
+import { rhythmSlots } from '@/engine/rhythmReminders';
 import { isRestDay } from '@/engine/streak';
+import { sunTimes } from '@/lib/sun';
 
 // New channel id on purpose: Android locks a channel's importance after first creation, so the only
 // way to get heads-up (banner + sound) is a channel that was created at HIGH from the start.
 const CHANNEL_ID = 'workout-reminders';
+const RHYTHM_CHANNEL_ID = 'rhythm-reminders';
 const HORIZON_DAYS = 7;
 const MORNING_HOUR = 6;
 const EVENING_HOUR = 16;
+
+/** Cancel only the scheduled notifications of the given kinds (so the workout and rhythm streams
+ *  don't wipe each other when either re-arms). `undefined` matches legacy untagged (= workout). */
+async function cancelKinds(kinds: (string | undefined)[]): Promise<void> {
+  const all = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(
+    all
+      .filter((n) => kinds.includes((n.content.data as { kind?: string } | undefined)?.kind))
+      .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
+  );
+}
 
 function todayNumber(): number {
   const now = new Date();
@@ -66,7 +82,7 @@ export async function refreshReminders(opts: {
   enabled: boolean;
   customTime: { hour: number; minute: number } | null;
 }): Promise<void> {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  await cancelKinds(['workout', undefined]);
   if (!opts.enabled) return;
   const perm = await Notifications.getPermissionsAsync();
   if (!perm.granted) return;
@@ -89,8 +105,46 @@ export async function refreshReminders(opts: {
     for (const slot of slots) {
       if (slot.at.getTime() <= Date.now()) continue; // skip a slot already past today
       await Notifications.scheduleNotificationAsync({
-        content: { title: slot.copy.title, body: slot.copy.body },
+        content: { title: slot.copy.title, body: slot.copy.body, data: { kind: 'workout' } },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: slot.at, channelId: CHANNEL_ID },
+      });
+    }
+  }
+}
+
+async function ensureRhythmChannel(): Promise<void> {
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync(RHYTHM_CHANNEL_ID, {
+      name: 'Rhythm reminders',
+      importance: Notifications.AndroidImportance.DEFAULT, // gentler than workout — no heads-up
+    });
+  }
+}
+
+/** Re-arm the next week of Rhythm nudges (sleep + sunrise/sunset light) from current state. Safe to
+ *  call on every app open and after each log — re-lays from the circadian record, so logged items
+ *  fall silent. The light nudges need a location; without one, only the sleep prompt is laid down. */
+export async function refreshRhythmReminders(opts: {
+  enabled: boolean;
+  location: IndiaLocation | null;
+  circadian: Record<number, CircadianDay>;
+}): Promise<void> {
+  await cancelKinds(['rhythm']);
+  if (!opts.enabled) return;
+  const perm = await Notifications.getPermissionsAsync();
+  if (!perm.granted) return;
+  await ensureRhythmChannel();
+
+  const today = todayNumber();
+  for (let i = 0; i < HORIZON_DAYS; i++) {
+    const d = today + i;
+    const sun = opts.location ? sunTimes(opts.location.lat, opts.location.lng, dateAt(d, 12)) : null;
+    for (const slot of rhythmSlots(sun, opts.circadian[d])) {
+      const at = dateAt(d, Math.floor(slot.minute / 60), slot.minute % 60);
+      if (at.getTime() <= Date.now()) continue; // skip a slot already past today
+      await Notifications.scheduleNotificationAsync({
+        content: { title: slot.title, body: slot.body, data: { kind: 'rhythm' } },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at, channelId: RHYTHM_CHANNEL_ID },
       });
     }
   }
