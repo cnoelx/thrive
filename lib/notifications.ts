@@ -97,7 +97,12 @@ export async function refreshReminders(opts: {
     const escalate = firstWorkoutDay && opts.lapsed;
     firstWorkoutDay = false;
     const slots = opts.customTime
-      ? [{ at: dateAt(d, opts.customTime.hour, opts.customTime.minute), copy: escalate ? COPY.morning.lapsed : COPY.morning.normal }]
+      ? [
+          { at: dateAt(d, opts.customTime.hour, opts.customTime.minute), copy: escalate ? COPY.morning.lapsed : COPY.morning.normal },
+          // Keep the afternoon "still not done?" last call when the chosen time is earlier in the day,
+          // so a missed morning reminder still gets one nudge before the day's out.
+          ...(opts.customTime.hour < EVENING_HOUR ? [{ at: dateAt(d, EVENING_HOUR), copy: escalate ? COPY.evening.lapsed : COPY.evening.normal }] : []),
+        ]
       : [
           { at: dateAt(d, MORNING_HOUR), copy: escalate ? COPY.morning.lapsed : COPY.morning.normal },
           { at: dateAt(d, EVENING_HOUR), copy: escalate ? COPY.evening.lapsed : COPY.evening.normal },
