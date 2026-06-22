@@ -1,5 +1,10 @@
-// Home "Rhythm" card: the living sky (SkyArc) on top + a day-following quick log below. Walled off
-// from the program — it only writes to the circadian slice, never to progress/streak.
+// Home "Rhythm" card: the living sky (SkyArc) fills the whole card; when something needs logging, the
+// question floats on a translucent panel layered over it (so the sky glows behind — you can feel it's
+// there). Once everything's logged, the panel clears and the full sky shows. Walled off from the
+// program — it only writes to the circadian slice.
+//
+// NOTE: B-version — the panel is a semi-opaque fill, not a real frosted blur. Swap to expo-blur in a
+// native build for the true frosted-glass look.
 
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
@@ -9,13 +14,13 @@ import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native
 
 import { SkyArc } from '@/components/SkyArc';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
-import { type CircadianDay, formatClock, formatDuration, sleepDuration } from '@/engine/circadian';
+import { type CircadianDay, formatClock } from '@/engine/circadian';
 import { dayNumberFromDate } from '@/engine/history';
 import { sunTimes } from '@/lib/sun';
 import { useAppStore } from '@/store/useAppStore';
 
-const DEFAULT_BED = 22 * 60; // 10:00 pm
-const DEFAULT_WAKE = 6 * 60; // 6:00 am
+const DEFAULT_BED = 22 * 60;
+const DEFAULT_WAKE = 6 * 60;
 const QUALITIES = [
   { id: 'poor', label: 'Poor' },
   { id: 'ok', label: 'OK' },
@@ -68,6 +73,8 @@ export function RhythmCard() {
   const sleepDone = todayLog.quality !== undefined;
   const noon = sun ? (sun.sunrise + sun.sunset) / 2 : 12 * 60;
   const isMorning = nowMin < noon;
+  // Night only counts when there's a sky to be dark — the no-location plain card stays light.
+  const isNight = !!sun && (nowMin < sun.sunrise || nowMin > sun.sunset);
   const state: 'sleep' | 'mlight' | 'elight' | 'done' = !sleepDone
     ? 'sleep'
     : sun && isMorning && !todayLog.morningLight
@@ -95,137 +102,128 @@ export function RhythmCard() {
     }
   };
 
-  return (
-    <View style={styles.card}>
-      {sun ? (
-        <Pressable onPress={openFull}>
-          <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} lat={location!.lat} lng={location!.lng} now={now} height={88} eyebrow="RHYTHM" showNow />
+  // Panel + text palette: light glass on a day/dusk sky, dark glass at night (and for no-location).
+  const dark = isNight;
+  const txt = dark ? '#EAF0F6' : colors.ink;
+  const sub = dark ? '#9FB0C4' : colors.muted;
+  const chipBg = dark ? 'rgba(255,255,255,0.12)' : colors.bg;
+  const chipBorder = dark ? 'rgba(255,255,255,0.18)' : colors.border;
+  const chipTxt = dark ? '#D7E0EA' : colors.text;
+
+  const question =
+    state === 'sleep' ? (
+      <>
+        <Text style={[styles.q, { color: txt }]}>How did you sleep?</Text>
+        <View style={styles.chips}>
+          {QUALITIES.map((qq) => (
+            <Pressable key={qq.id} onPress={() => logCircadian(today, { quality: qq.id, bed, wake })} style={[styles.chip, { backgroundColor: chipBg, borderColor: chipBorder }]}>
+              <Text style={[styles.chipTxt, { color: chipTxt }]}>{qq.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Text style={[styles.times, { color: sub }]}>
+          Bed{' '}
+          <Text style={[styles.timeVal, { color: colors.link }]} onPress={() => openPicker('bed')}>
+            {formatClock(bed)}
+          </Text>
+          {'  ·  Wake '}
+          <Text style={[styles.timeVal, { color: colors.link }]} onPress={() => openPicker('wake')}>
+            {formatClock(wake)}
+          </Text>
+        </Text>
+      </>
+    ) : state === 'mlight' ? (
+      <View style={styles.qrow}>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.q, { color: txt }]}>Get some morning light</Text>
+          <Text style={[styles.sub, { color: sub }]}>Sunrise was {formatClock(sun!.sunrise)} — a few minutes resets your clock.</Text>
+        </View>
+        <Pressable onPress={() => logCircadian(today, { morningLight: true })} style={styles.gotit}>
+          <Ionicons name="checkmark" size={15} color="#fff" />
+          <Text style={styles.gotitTxt}>Got it</Text>
         </Pressable>
-      ) : (
+      </View>
+    ) : state === 'elight' ? (
+      <View style={styles.qrow}>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.q, { color: txt }]}>Catch the evening light</Text>
+          <Text style={[styles.sub, { color: sub }]}>Sunset {formatClock(sun!.sunset)} — the last of the daylight.</Text>
+        </View>
+        <Pressable onPress={() => logCircadian(today, { eveningLight: true })} style={styles.gotit}>
+          <Ionicons name="checkmark" size={15} color="#fff" />
+          <Text style={styles.gotitTxt}>Got it</Text>
+        </Pressable>
+      </View>
+    ) : null;
+
+  // No location → no sky; a plain card with the "set location" hook + the sleep question.
+  if (!sun) {
+    return (
+      <View style={[styles.card, styles.plain]}>
         <Pressable onPress={openFull} style={styles.noloc}>
           <Ionicons name="location-outline" size={17} color={colors.link} />
           <Text style={styles.nolocText}>Add your location for sunrise &amp; sunset</Text>
           <Text style={styles.nolocLink}>Set ›</Text>
         </Pressable>
-      )}
-
-      <View style={styles.footer}>
-        {state === 'sleep' ? (
-          <>
-            <Text style={styles.title}>How did you sleep?</Text>
-            <View style={styles.chips}>
-              {QUALITIES.map((q) => (
-                <Pressable key={q.id} onPress={() => logCircadian(today, { quality: q.id, bed, wake })} style={styles.chip}>
-                  <Text style={styles.chipText}>{q.label}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <Text style={styles.timesLine}>
-              Bed{' '}
-              <Text style={styles.timeVal} onPress={() => openPicker('bed')}>
-                {formatClock(bed)}
-              </Text>
-              {'  ·  Wake '}
-              <Text style={styles.timeVal} onPress={() => openPicker('wake')}>
-                {formatClock(wake)}
-              </Text>
-            </Text>
-          </>
-        ) : state === 'mlight' ? (
-          <View style={styles.arow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.title}>Get some morning light</Text>
-              <Text style={styles.sub}>Sunrise was {formatClock(sun!.sunrise)} — a few minutes resets your clock.</Text>
-            </View>
-            <Pressable onPress={() => logCircadian(today, { morningLight: true })} style={styles.gotit}>
-              <Ionicons name="checkmark" size={15} color="#9A3412" />
-              <Text style={styles.gotitText}>Got it</Text>
-            </Pressable>
-          </View>
-        ) : state === 'elight' ? (
-          <View style={styles.arow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.title}>Catch the evening light</Text>
-              <Text style={styles.sub}>Sunset {formatClock(sun!.sunset)} — the last of the daylight.</Text>
-            </View>
-            <Pressable onPress={() => logCircadian(today, { eveningLight: true })} style={styles.gotit}>
-              <Ionicons name="checkmark" size={15} color="#9A3412" />
-              <Text style={styles.gotitText}>Got it</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <Pressable onPress={openFull} style={styles.arow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.title}>
-                {todayLog.bed !== undefined && todayLog.wake !== undefined
-                  ? `Slept ${formatDuration(sleepDuration(todayLog.bed, todayLog.wake))}`
-                  : 'Logged for today'}
-              </Text>
-              {sun ? (
-                <View style={styles.doneDots}>
-                  {todayLog.morningLight ? (
-                    <View style={styles.doneTick}>
-                      <Ionicons name="checkmark-circle" size={14} color={colors.done} />
-                      <Text style={styles.doneLbl}>Morning light</Text>
-                    </View>
-                  ) : null}
-                  {todayLog.eveningLight ? (
-                    <View style={styles.doneTick}>
-                      <Ionicons name="checkmark-circle" size={14} color={colors.done} />
-                      <Text style={styles.doneLbl}>Evening light</Text>
-                    </View>
-                  ) : null}
-                </View>
-              ) : null}
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-          </Pressable>
-        )}
+        {question ? <View style={styles.plainQuestion}>{question}</View> : <Text style={styles.allSet}>You&apos;re logged for now ✓</Text>}
+        {pickerModal()}
       </View>
+    );
+  }
 
-      {iosPicker ? (
-        <Modal transparent animationType="fade" visible onRequestClose={() => setIosPicker(null)}>
-          <Pressable style={styles.overlay} onPress={() => setIosPicker(null)}>
-            <Pressable style={styles.sheet} onPress={() => {}}>
-              <DateTimePicker mode="time" display="spinner" value={iosTemp ?? minToDate(iosPicker === 'bed' ? bed : wake)} onChange={(_, d) => d && setIosTemp(d)} />
-              <Pressable
-                style={styles.sheetBtn}
-                onPress={() => {
-                  if (iosTemp) setTime(iosPicker, iosTemp.getHours() * 60 + iosTemp.getMinutes());
-                  setIosPicker(null);
-                }}
-              >
-                <Text style={styles.sheetBtnText}>Done</Text>
-              </Pressable>
+  return (
+    <Pressable style={styles.card} onPress={openFull}>
+      <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} lat={location!.lat} lng={location!.lng} now={now} height={120} eyebrow="RHYTHM" showNow />
+      {state !== 'done' ? (
+        <View style={[styles.panel, { backgroundColor: dark ? 'rgba(11,22,38,0.80)' : 'rgba(255,255,255,0.74)', borderTopColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }]}>{question}</View>
+      ) : null}
+      {pickerModal()}
+    </Pressable>
+  );
+
+  function pickerModal() {
+    if (!iosPicker) return null;
+    return (
+      <Modal transparent animationType="fade" visible onRequestClose={() => setIosPicker(null)}>
+        <Pressable style={styles.overlay} onPress={() => setIosPicker(null)}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            <DateTimePicker mode="time" display="spinner" value={iosTemp ?? minToDate(iosPicker === 'bed' ? bed : wake)} onChange={(_, d) => d && setIosTemp(d)} />
+            <Pressable
+              style={styles.sheetBtn}
+              onPress={() => {
+                if (iosTemp) setTime(iosPicker, iosTemp.getHours() * 60 + iosTemp.getMinutes());
+                setIosPicker(null);
+              }}
+            >
+              <Text style={styles.sheetBtnText}>Done</Text>
             </Pressable>
           </Pressable>
-        </Modal>
-      ) : null}
-    </View>
-  );
+        </Pressable>
+      </Modal>
+    );
+  }
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
-  noloc: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
+  card: { borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  plain: { backgroundColor: colors.surface, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg },
+  noloc: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingBottom: spacing.sm },
   nolocText: { flex: 1, color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
   nolocLink: { color: colors.link, fontSize: font.small, fontFamily: fonts.bold },
+  plainQuestion: { marginTop: spacing.xs },
+  allSet: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold, marginTop: spacing.sm },
 
-  footer: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg },
-  title: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy },
-  sub: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: 2 },
+  panel: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg, borderTopWidth: 1 },
+  q: { fontSize: font.body, fontFamily: fonts.heavy },
+  sub: { fontSize: font.small, fontFamily: fonts.regular, marginTop: 2 },
   chips: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
-  chip: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radius.pill, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border },
-  chipText: { color: colors.text, fontSize: font.small, fontFamily: fonts.bold },
-  timesLine: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: spacing.md },
-  timeVal: { color: colors.link, fontFamily: fonts.bold },
-
-  arow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  gotit: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.streakBg, borderWidth: 1, borderColor: colors.streakBorder, borderRadius: radius.pill, paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
-  gotitText: { color: '#9A3412', fontSize: font.small, fontFamily: fonts.heavy },
-  doneDots: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: 4 },
-  doneTick: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  doneLbl: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
+  chip: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radius.pill, borderWidth: 1 },
+  chipTxt: { fontSize: font.small, fontFamily: fonts.bold },
+  times: { fontSize: font.small, fontFamily: fonts.regular, marginTop: spacing.md },
+  timeVal: { fontFamily: fonts.bold },
+  qrow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  gotit: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.link, borderRadius: radius.pill, paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
+  gotitTxt: { color: '#fff', fontSize: font.small, fontFamily: fonts.heavy },
 
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, width: '100%', maxWidth: 420 },
