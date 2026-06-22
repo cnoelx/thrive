@@ -8,6 +8,7 @@ import { ActivityIndicator, LogBox, Text, View } from 'react-native';
 import { UpdateModal } from '@/components/UpdateModal';
 import { colors, font, fonts, spacing } from '@/constants/theme';
 import { useApkUpdate } from '@/lib/useApkUpdate';
+import { useNotificationRouting } from '@/lib/useNotificationRouting';
 import { useAppStore } from '@/store/useAppStore';
 
 // expo-notifications warns that *push* (remote) notifications don't work in Expo Go (removed in
@@ -26,6 +27,8 @@ export default function RootLayout() {
   const [updating, setUpdating] = useState(Updates.isEnabled && !__DEV__);
   // Separate from OTA: prompts for a newer sideloaded APK (native/version bumps). No-op in dev/Expo Go.
   const apk = useApkUpdate(!__DEV__);
+  // Tapping a Rhythm notification jumps straight to the Rhythm screen.
+  useNotificationRouting();
 
   useEffect(() => {
     if (!updating) return;
