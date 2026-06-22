@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { SkyArc } from '@/components/SkyArc';
 import { INDIA_LOCATIONS, IndiaLocation } from '@/data/locations';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { formatClock, formatDuration, sleepDuration } from '@/engine/circadian';
@@ -86,37 +87,37 @@ function RhythmHome({
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}>
-        {/* Today's daylight */}
-        <View style={styles.card}>
-          <View style={styles.locRow}>
-            <Text style={styles.eyebrow}>TODAY · {location.city}</Text>
-            <Pressable onPress={onChange} hitSlop={8}>
-              <Text style={styles.changeLink}>Change</Text>
-            </Pressable>
-          </View>
-          {sun ? (
-            <View style={styles.sunRow}>
-              <View style={styles.sunBlock}>
-                <Ionicons name="sunny" size={22} color={colors.session} />
-                <Text style={styles.sunTime}>{formatClock(sun.sunrise)}</Text>
-                <Text style={styles.sunLbl}>Sunrise</Text>
-              </View>
-              <View style={styles.sunDivider} />
-              <View style={styles.sunBlock}>
-                <Ionicons name="moon" size={20} color={colors.link} />
-                <Text style={styles.sunTime}>{formatClock(sun.sunset)}</Text>
-                <Text style={styles.sunLbl}>Sunset</Text>
-              </View>
+        {/* Living sky — sunrise/sunset arc by day, real-phase moon by night */}
+        {sun ? (
+          <SkyArc
+            sunrise={sun.sunrise}
+            sunset={sun.sunset}
+            now={now}
+            height={120}
+            eyebrow={`TODAY · ${location.city.toUpperCase()}`}
+            topRight={
+              <Pressable onPress={onChange} hitSlop={8}>
+                <Text style={styles.changeOnSky}>Change</Text>
+              </Pressable>
+            }
+            why="Morning light anchors your body clock — better sleep tonight."
+            style={styles.skyHeader}
+          />
+        ) : (
+          <View style={styles.card}>
+            <View style={styles.locRow}>
+              <Text style={styles.eyebrow}>TODAY · {location.city}</Text>
+              <Pressable onPress={onChange} hitSlop={8}>
+                <Text style={styles.changeLink}>Change</Text>
+              </Pressable>
             </View>
-          ) : (
             <Text style={styles.muted}>Daylight times unavailable for this location.</Text>
-          )}
-          <Text style={styles.why}>Morning light anchors your body clock — better sleep tonight.</Text>
-        </View>
+          </View>
+        )}
 
         {/* Daylight check-offs */}
         <View style={styles.card}>
-          <Text style={styles.cardHead}>Got outside?</Text>
+          <Text style={styles.cardHead}>Daylight</Text>
           <View style={styles.toggleRow}>
             <LightToggle
               icon="sunny-outline"
@@ -168,9 +169,13 @@ function RhythmHome({
             {last7.map((d) => {
               const log = circadian[d];
               const slept = log?.bed !== undefined && log?.wake !== undefined;
+              const dur = slept ? sleepDuration(log!.bed!, log!.wake!) : 0;
+              const h = slept ? Math.max(8, Math.min(42, (dur / 60) * 4.4)) : 4;
               return (
                 <View key={d} style={styles.weekCol}>
-                  <Text style={styles.weekDur}>{slept ? formatDuration(sleepDuration(log!.bed!, log!.wake!)) : '·'}</Text>
+                  <View style={styles.barArea}>
+                    <View style={[styles.bar, { height: h, backgroundColor: slept ? colors.streakBorder : colors.track }]} />
+                  </View>
                   <View style={styles.lightDots}>
                     <View style={[styles.dot, log?.morningLight && styles.dotMorning]} />
                     <View style={[styles.dot, log?.eveningLight && styles.dotEvening]} />
@@ -329,12 +334,8 @@ const styles = StyleSheet.create({
   locRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   changeLink: { color: colors.link, fontSize: font.small, fontFamily: fonts.bold },
 
-  sunRow: { flexDirection: 'row', alignItems: 'center' },
-  sunBlock: { flex: 1, alignItems: 'center', gap: 2 },
-  sunDivider: { width: 1, alignSelf: 'stretch', backgroundColor: colors.border, marginVertical: spacing.xs },
-  sunTime: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.display, marginTop: 2 },
-  sunLbl: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.regular },
-  why: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: spacing.md, lineHeight: 18 },
+  skyHeader: { borderRadius: radius.lg, marginBottom: spacing.lg },
+  changeOnSky: { color: colors.link, fontSize: font.small, fontFamily: fonts.bold },
 
   toggleRow: { flexDirection: 'row', gap: spacing.md },
   toggle: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.bg, borderRadius: radius.md, paddingVertical: spacing.md, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.border },
@@ -356,8 +357,9 @@ const styles = StyleSheet.create({
   qPillTextOn: { color: colors.primaryText },
 
   weekRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  weekCol: { flex: 1, alignItems: 'center', gap: 4 },
-  weekDur: { color: colors.text, fontSize: 11, fontFamily: fonts.bold },
+  weekCol: { flex: 1, alignItems: 'center', gap: 5 },
+  barArea: { height: 46, justifyContent: 'flex-end' },
+  bar: { width: 10, borderRadius: 4 },
   lightDots: { flexDirection: 'row', gap: 3 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.track },
   dotMorning: { backgroundColor: colors.session },

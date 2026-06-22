@@ -1,6 +1,5 @@
-// Home "Rhythm" card: a full-bleed sky with the sun riding its arc at the current time, and a
-// day-following quick-log below (sleep first, then morning/evening light, then a quiet summary).
-// Walled off from the program — it only writes to the circadian slice, never to progress/streak.
+// Home "Rhythm" card: the living sky (SkyArc) on top + a day-following quick log below. Walled off
+// from the program — it only writes to the circadian slice, never to progress/streak.
 
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
@@ -8,24 +7,12 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { SkyArc } from '@/components/SkyArc';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { type CircadianDay, formatClock, formatDuration, sleepDuration } from '@/engine/circadian';
 import { dayNumberFromDate } from '@/engine/history';
 import { sunTimes } from '@/lib/sun';
 import { useAppStore } from '@/store/useAppStore';
-
-// Sky palette — a distinct dark "sky" for this card (echoes the ink hero, but bluer).
-const SKY = '#0B1626';
-const SKY_DIV = '#1B2A3D';
-const ARC = '#33465E';
-const SUN = '#FBBF24';
-const EMBER = '#FB923C';
-const EMBER_DOT = '#F97316';
-const SKY_MUTED = '#6B7C92';
-const SKY_TEXT = '#EAF0F6';
-const WASH = '#FFF1E8';
-const WASH_TEXT = '#9A3412';
-const WASH_BORDER = '#FED7AA';
 
 const DEFAULT_BED = 22 * 60; // 10:00 pm
 const DEFAULT_WAKE = 6 * 60; // 6:00 am
@@ -40,36 +27,6 @@ const minToDate = (m: number) => {
   d.setHours(Math.floor(m / 60), m % 60, 0, 0);
   return d;
 };
-
-// Quadratic arc, positioned by percentage-x (no width measuring needed) + pixel-y.
-const ARC_H = 104;
-const P0X = 5;
-const P2X = 95;
-const PY = 88;
-const CX = 50;
-const CY = -36;
-function bez(t: number): { x: number; y: number } {
-  const u = 1 - t;
-  return { x: u * u * P0X + 2 * u * t * CX + t * t * P2X, y: u * u * PY + 2 * u * t * CY + t * t * PY };
-}
-
-function SunArc({ sunrise, sunset, now }: { sunrise: number; sunset: number; now: number }) {
-  const f = Math.max(0, Math.min(1, (now - sunrise) / Math.max(1, sunset - sunrise)));
-  const dots = Array.from({ length: 17 }, (_, i) => bez(i / 16));
-  const sun = bez(f);
-  return (
-    <View style={{ height: ARC_H, marginTop: 6 }}>
-      <View style={styles.horizon} />
-      {dots.map((p, i) => (
-        <View key={i} style={[styles.arcDot, { left: `${p.x}%`, top: p.y }]} />
-      ))}
-      <View style={[styles.endDot, { left: `${P0X}%`, top: PY }]} />
-      <View style={[styles.endDot, { left: `${P2X}%`, top: PY }]} />
-      <View style={[styles.sunGlow, { left: `${sun.x}%`, top: sun.y }]} />
-      <View style={[styles.sun, { left: `${sun.x}%`, top: sun.y }]} />
-    </View>
-  );
-}
 
 export function RhythmCard() {
   const router = useRouter();
@@ -87,7 +44,6 @@ export function RhythmCard() {
     [location?.lat, location?.lng, today],
   );
 
-  // Pre-fill from the most recent night that has times, else the 10pm–6am default.
   const lastTimes = useMemo(() => {
     let best = -1;
     let bed = DEFAULT_BED;
@@ -141,39 +97,19 @@ export function RhythmCard() {
 
   return (
     <View style={styles.card}>
-      {/* Sky / arc — tap to open the full Rhythm screen */}
-      <Pressable onPress={openFull}>
-        <View style={styles.top}>
-          <Text style={styles.eyebrow}>RHYTHM</Text>
-          {sun ? <Text style={styles.nowt}>{formatClock(nowMin)}</Text> : null}
-        </View>
-        {sun ? (
-          <>
-            <View style={styles.bleed}>
-              <SunArc sunrise={sun.sunrise} sunset={sun.sunset} now={nowMin} />
-            </View>
-            <View style={styles.arcLabels}>
-              <View>
-                <Text style={styles.sunTime}>{formatClock(sun.sunrise)}</Text>
-                <Text style={styles.sunCap}>SUNRISE</Text>
-              </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={styles.sunTime}>{formatClock(sun.sunset)}</Text>
-                <Text style={styles.sunCap}>SUNSET</Text>
-              </View>
-            </View>
-          </>
-        ) : (
-          <View style={styles.nolocRow}>
-            <Ionicons name="location-outline" size={17} color={EMBER} />
-            <Text style={styles.nolocText}>Add your location for sunrise &amp; sunset</Text>
-            <Text style={styles.nolocLink}>Set ›</Text>
-          </View>
-        )}
-      </Pressable>
+      {sun ? (
+        <Pressable onPress={openFull}>
+          <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} now={now} height={88} eyebrow="RHYTHM" showNow />
+        </Pressable>
+      ) : (
+        <Pressable onPress={openFull} style={styles.noloc}>
+          <Ionicons name="location-outline" size={17} color={colors.link} />
+          <Text style={styles.nolocText}>Add your location for sunrise &amp; sunset</Text>
+          <Text style={styles.nolocLink}>Set ›</Text>
+        </Pressable>
+      )}
 
-      {/* Day-following quick log */}
-      <View style={styles.actionBlock}>
+      <View style={styles.footer}>
         {state === 'sleep' ? (
           <>
             <Text style={styles.title}>How did you sleep?</Text>
@@ -202,7 +138,7 @@ export function RhythmCard() {
               <Text style={styles.sub}>Sunrise was {formatClock(sun!.sunrise)} — a few minutes resets your clock.</Text>
             </View>
             <Pressable onPress={() => logCircadian(today, { morningLight: true })} style={styles.gotit}>
-              <Ionicons name="checkmark" size={15} color={WASH_TEXT} />
+              <Ionicons name="checkmark" size={15} color="#9A3412" />
               <Text style={styles.gotitText}>Got it</Text>
             </Pressable>
           </View>
@@ -213,7 +149,7 @@ export function RhythmCard() {
               <Text style={styles.sub}>Sunset {formatClock(sun!.sunset)} — the last of the daylight.</Text>
             </View>
             <Pressable onPress={() => logCircadian(today, { eveningLight: true })} style={styles.gotit}>
-              <Ionicons name="checkmark" size={15} color={WASH_TEXT} />
+              <Ionicons name="checkmark" size={15} color="#9A3412" />
               <Text style={styles.gotitText}>Got it</Text>
             </Pressable>
           </View>
@@ -227,19 +163,26 @@ export function RhythmCard() {
               </Text>
               {sun ? (
                 <View style={styles.doneDots}>
-                  <Ionicons name={todayLog.morningLight ? 'checkmark-circle' : 'ellipse-outline'} size={14} color={todayLog.morningLight ? colors.done : SKY_MUTED} />
-                  <Text style={styles.doneLbl}>Morning</Text>
-                  <Ionicons name={todayLog.eveningLight ? 'checkmark-circle' : 'ellipse-outline'} size={14} color={todayLog.eveningLight ? colors.done : SKY_MUTED} style={{ marginLeft: spacing.md }} />
-                  <Text style={styles.doneLbl}>Evening</Text>
+                  {todayLog.morningLight ? (
+                    <View style={styles.doneTick}>
+                      <Ionicons name="checkmark-circle" size={14} color={colors.done} />
+                      <Text style={styles.doneLbl}>Morning light</Text>
+                    </View>
+                  ) : null}
+                  {todayLog.eveningLight ? (
+                    <View style={styles.doneTick}>
+                      <Ionicons name="checkmark-circle" size={14} color={colors.done} />
+                      <Text style={styles.doneLbl}>Evening light</Text>
+                    </View>
+                  ) : null}
                 </View>
               ) : null}
             </View>
-            <Ionicons name="chevron-forward" size={18} color={SKY_MUTED} />
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
         )}
       </View>
 
-      {/* iOS time picker (Android uses the native dialog) */}
       {iosPicker ? (
         <Modal transparent animationType="fade" visible onRequestClose={() => setIosPicker(null)}>
           <Pressable style={styles.overlay} onPress={() => setIosPicker(null)}>
@@ -263,40 +206,26 @@ export function RhythmCard() {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: SKY, borderRadius: radius.lg, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg, overflow: 'hidden' },
-  bleed: { marginHorizontal: -spacing.lg },
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  eyebrow: { color: SKY_MUTED, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.3 },
-  nowt: { color: SUN, fontSize: font.eyebrow, fontFamily: fonts.bold },
+  card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  noloc: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
+  nolocText: { flex: 1, color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
+  nolocLink: { color: colors.link, fontSize: font.small, fontFamily: fonts.bold },
 
-  horizon: { position: 'absolute', left: 0, right: 0, top: PY, height: 1, backgroundColor: SKY_DIV },
-  arcDot: { position: 'absolute', width: 3, height: 3, borderRadius: 2, marginLeft: -1.5, marginTop: -1.5, backgroundColor: ARC },
-  endDot: { position: 'absolute', width: 14, height: 14, borderRadius: 7, marginLeft: -7, marginTop: -7, backgroundColor: EMBER_DOT },
-  sun: { position: 'absolute', width: 24, height: 24, borderRadius: 12, marginLeft: -12, marginTop: -12, backgroundColor: SUN },
-  sunGlow: { position: 'absolute', width: 40, height: 40, borderRadius: 20, marginLeft: -20, marginTop: -20, backgroundColor: SUN, opacity: 0.16 },
-
-  arcLabels: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 2 },
-  sunTime: { color: EMBER, fontSize: font.small, fontFamily: fonts.bold },
-  sunCap: { color: SKY_MUTED, fontSize: 9.5, fontFamily: fonts.heavy, letterSpacing: 1 },
-
-  nolocRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm },
-  nolocText: { flex: 1, color: '#9FB0C4', fontSize: font.small, fontFamily: fonts.regular },
-  nolocLink: { color: SUN, fontSize: font.small, fontFamily: fonts.bold },
-
-  actionBlock: { marginTop: spacing.md, borderTopWidth: 1, borderTopColor: SKY_DIV, paddingTop: spacing.md },
-  title: { color: SKY_TEXT, fontSize: font.body, fontFamily: fonts.heavy },
-  sub: { color: '#8295AB', fontSize: font.small, fontFamily: fonts.regular, marginTop: 2 },
+  footer: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg },
+  title: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy },
+  sub: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: 2 },
   chips: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
-  chip: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radius.pill, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
-  chipText: { color: '#D7E0EA', fontSize: font.small, fontFamily: fonts.bold },
-  timesLine: { color: '#8295AB', fontSize: font.small, fontFamily: fonts.regular, marginTop: spacing.md },
-  timeVal: { color: SUN, fontFamily: fonts.bold },
+  chip: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radius.pill, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border },
+  chipText: { color: colors.text, fontSize: font.small, fontFamily: fonts.bold },
+  timesLine: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: spacing.md },
+  timeVal: { color: colors.link, fontFamily: fonts.bold },
 
   arow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  gotit: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: WASH, borderWidth: 1, borderColor: WASH_BORDER, borderRadius: radius.pill, paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
-  gotitText: { color: WASH_TEXT, fontSize: font.small, fontFamily: fonts.heavy },
-  doneDots: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 4 },
-  doneLbl: { color: '#8295AB', fontSize: font.small, fontFamily: fonts.regular },
+  gotit: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.streakBg, borderWidth: 1, borderColor: colors.streakBorder, borderRadius: radius.pill, paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
+  gotitText: { color: '#9A3412', fontSize: font.small, fontFamily: fonts.heavy },
+  doneDots: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: 4 },
+  doneTick: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  doneLbl: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
 
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, width: '100%', maxWidth: 420 },
