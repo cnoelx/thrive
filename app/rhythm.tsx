@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SkyArc } from '@/components/SkyArc';
 import { INDIA_LOCATIONS, IndiaLocation } from '@/data/locations';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
-import { formatClock, formatDuration, sleepDuration } from '@/engine/circadian';
+import { formatClock, formatDuration, sleepConsistency, sleepDuration, weekSummary } from '@/engine/circadian';
 import { dayNumberFromDate } from '@/engine/history';
 import { sunTimes } from '@/lib/sun';
 import { useAppStore } from '@/store/useAppStore';
@@ -75,6 +75,8 @@ function RhythmHome({
   const [picking, setPicking] = useState<null | 'bed' | 'wake'>(null);
 
   const last7 = Array.from({ length: 7 }, (_, i) => today - 6 + i);
+  const week = weekSummary(last7.map((d) => circadian[d]));
+  const consistency = sleepConsistency(last7.map((d) => circadian[d]?.bed).filter((b): b is number => b !== undefined));
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -188,6 +190,18 @@ function RhythmHome({
             })}
           </View>
           <Text style={styles.legend}>Bars = hours in bed · dots = morning / evening light</Text>
+          {week.avgSleepMin !== null || consistency ? (
+            <View style={styles.summaryBox}>
+              {week.avgSleepMin !== null ? (
+                <Text style={styles.summary}>
+                  {formatDuration(week.avgSleepMin)} average · morning light {week.morningLight}/7
+                </Text>
+              ) : null}
+              {consistency ? (
+                <Text style={[styles.summary, { color: consistency.steady ? colors.done : colors.link }]}>{consistency.text}</Text>
+              ) : null}
+            </View>
+          ) : null}
         </View>
       </ScrollView>
 
@@ -369,6 +383,8 @@ const styles = StyleSheet.create({
   weekDay: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy },
   weekDayToday: { color: colors.session },
   legend: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.regular, marginTop: spacing.md, textAlign: 'center' },
+  summaryBox: { marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, gap: 4 },
+  summary: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold, textAlign: 'center' },
 
   // Location picker
   pickerHint: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, lineHeight: 19, marginBottom: spacing.md },

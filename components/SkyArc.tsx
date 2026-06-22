@@ -35,6 +35,14 @@ const STARS = [
   { x: 80, y: 0.26 },
   { x: 88, y: 0.46 },
 ];
+// Informative wind-down tips, rotated by day so it varies night to night.
+const WIND_DOWN = [
+  'Wind down — dim the lights and put screens away an hour before bed.',
+  'Skip the blue light tonight — bright screens tell your brain it’s daytime.',
+  'Eat earlier if you can; late meals can disrupt sleep.',
+  'Go easy on caffeine this late — it lingers for hours.',
+  'A calm, screen-free hour helps you fall asleep faster.',
+];
 
 const lerp = (a: number[], b: number[], t: number) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`;
 
@@ -159,7 +167,7 @@ export function SkyArc({
         </View>
       </View>
       {why ? (
-        <Text style={[styles.why, { color: tint.muted }]}>{isNight ? 'Wind down — dim the lights and let your body ease toward sleep.' : why}</Text>
+        <Text style={[styles.why, { color: tint.muted }]}>{isNight ? WIND_DOWN[Math.floor(now.getTime() / 86400000) % WIND_DOWN.length] : why}</Text>
       ) : null}
     </LinearGradient>
   );
