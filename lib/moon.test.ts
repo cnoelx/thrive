@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { moonPhase, moonPosition } from '@/lib/moon';
+import { moonPhase, moonPosition, phaseName } from '@/lib/moon';
 
 const SYNODIC = 29.530588853;
 const REF_NEW = Date.UTC(2000, 0, 6, 18, 14);
@@ -30,6 +30,17 @@ describe('moonPhase', () => {
 
   it('illum is symmetric around full (waxing vs waning gibbous match)', () => {
     expect(moonPhase(at(SYNODIC * 0.4)).illum).toBeCloseTo(moonPhase(at(SYNODIC * 0.6)).illum, 5);
+  });
+});
+
+describe('phaseName', () => {
+  it('names the phases from illumination + waxing', () => {
+    expect(phaseName(0.01, true)).toBe('New moon');
+    expect(phaseName(0.99, true)).toBe('Full moon');
+    expect(phaseName(0.5, true)).toBe('First quarter');
+    expect(phaseName(0.5, false)).toBe('Last quarter');
+    expect(phaseName(0.3, true)).toBe('Waxing crescent');
+    expect(phaseName(0.7, false)).toBe('Waning gibbous');
   });
 });
 

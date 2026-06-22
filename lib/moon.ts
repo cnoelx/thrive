@@ -21,6 +21,14 @@ export function moonPhase(date: Date): MoonPhase {
   return { phase, illum, waxing: phase < 0.5 };
 }
 
+/** Human-readable phase name, e.g. "Waxing gibbous". */
+export function phaseName(illum: number, waxing: boolean): string {
+  if (illum < 0.04) return 'New moon';
+  if (illum > 0.96) return 'Full moon';
+  if (illum > 0.46 && illum < 0.54) return waxing ? 'First quarter' : 'Last quarter';
+  return `${waxing ? 'Waxing' : 'Waning'} ${illum < 0.5 ? 'crescent' : 'gibbous'}`;
+}
+
 // --- Moon position (low-precision; ported from the SunCalc/Astronomy-Answers algorithm, MIT) ------
 // Used only to decide whether the moon is actually above the horizon (and roughly where) at night.
 

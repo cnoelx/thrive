@@ -9,7 +9,7 @@ import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 import { font, fonts, spacing } from '@/constants/theme';
 import { formatClock } from '@/engine/circadian';
-import { moonPhase, moonPosition } from '@/lib/moon';
+import { moonPhase, moonPosition, phaseName } from '@/lib/moon';
 
 interface Tint {
   bg: [string, string];
@@ -133,8 +133,17 @@ export function SkyArc({
           <Text style={[styles.cap, { color: tint.muted }]}>SUNRISE</Text>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
-          <Text style={[styles.time, { color: tint.accent }]}>{formatClock(sunset)}</Text>
-          <Text style={[styles.cap, { color: tint.muted }]}>SUNSET</Text>
+          {isNight ? (
+            <>
+              <Text style={[styles.time, { color: tint.accent }]}>{phaseName(moon.illum, moon.waxing)}</Text>
+              <Text style={[styles.cap, { color: tint.muted }]}>{Math.round(moon.illum * 100)}% LIT</Text>
+            </>
+          ) : (
+            <>
+              <Text style={[styles.time, { color: tint.accent }]}>{formatClock(sunset)}</Text>
+              <Text style={[styles.cap, { color: tint.muted }]}>SUNSET</Text>
+            </>
+          )}
         </View>
       </View>
       {why ? <Text style={[styles.why, { color: tint.muted }]}>{why}</Text> : null}
