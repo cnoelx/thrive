@@ -90,6 +90,9 @@ export function SkyArc({
   const moonUp = !!moonPos && moonPos.altitude > 0;
   const moonTop = horizonY - Math.max(0, Math.min(1, (moonPos?.altitude ?? 0) / 60)) * (horizonY - apexY);
   const moonX = Math.max(8, Math.min(92, 50 + ((moonPos?.azimuth ?? 0) / 120) * 42));
+  // Time until the next sunrise (the useful "when does the night end" at night).
+  const untilSunrise = nowMin < sunrise ? sunrise - nowMin : 1440 - nowMin + sunrise;
+  const untilLabel = `${Math.floor(untilSunrise / 60)}h ${untilSunrise % 60}m`.replace(/^0h /, '');
 
   return (
     <LinearGradient colors={tint.bg} style={[styles.sky, style]}>
@@ -129,8 +132,17 @@ export function SkyArc({
 
       <View style={styles.labels}>
         <View>
-          <Text style={[styles.time, { color: tint.accent }]}>{formatClock(sunrise)}</Text>
-          <Text style={[styles.cap, { color: tint.muted }]}>SUNRISE</Text>
+          {isNight ? (
+            <>
+              <Text style={[styles.time, { color: tint.accent }]}>{untilLabel}</Text>
+              <Text style={[styles.cap, { color: tint.muted }]}>TILL SUNRISE</Text>
+            </>
+          ) : (
+            <>
+              <Text style={[styles.time, { color: tint.accent }]}>{formatClock(sunrise)}</Text>
+              <Text style={[styles.cap, { color: tint.muted }]}>SUNRISE</Text>
+            </>
+          )}
         </View>
         <View style={{ alignItems: 'flex-end' }}>
           {isNight ? (
@@ -146,7 +158,9 @@ export function SkyArc({
           )}
         </View>
       </View>
-      {why ? <Text style={[styles.why, { color: tint.muted }]}>{why}</Text> : null}
+      {why ? (
+        <Text style={[styles.why, { color: tint.muted }]}>{isNight ? 'Wind down — dim the lights and let your body ease toward sleep.' : why}</Text>
+      ) : null}
     </LinearGradient>
   );
 }
