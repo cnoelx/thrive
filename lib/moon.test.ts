@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { moonPhase } from '@/lib/moon';
+import { moonPhase, moonPosition } from '@/lib/moon';
 
 const SYNODIC = 29.530588853;
 const REF_NEW = Date.UTC(2000, 0, 6, 18, 14);
@@ -30,5 +30,22 @@ describe('moonPhase', () => {
 
   it('illum is symmetric around full (waxing vs waning gibbous match)', () => {
     expect(moonPhase(at(SYNODIC * 0.4)).illum).toBeCloseTo(moonPhase(at(SYNODIC * 0.6)).illum, 5);
+  });
+});
+
+describe('moonPosition', () => {
+  const NAGERCOIL = { lat: 8.18, lng: 77.41 };
+
+  it('returns a finite altitude within [-90, 90]', () => {
+    const p = moonPosition(new Date(2025, 5, 21, 22, 0), NAGERCOIL.lat, NAGERCOIL.lng);
+    expect(Number.isFinite(p.altitude)).toBe(true);
+    expect(p.altitude).toBeGreaterThanOrEqual(-90);
+    expect(p.altitude).toBeLessThanOrEqual(90);
+  });
+
+  it('the moon rises and sets over a day (altitude crosses the horizon)', () => {
+    const alts = Array.from({ length: 24 }, (_, h) => moonPosition(new Date(2025, 5, 21, h), NAGERCOIL.lat, NAGERCOIL.lng).altitude);
+    expect(Math.max(...alts)).toBeGreaterThan(0); // up at some point
+    expect(Math.min(...alts)).toBeLessThan(0); // down at some point — so "is it up?" is meaningful
   });
 });

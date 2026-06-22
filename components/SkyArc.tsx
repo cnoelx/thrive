@@ -9,7 +9,7 @@ import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 import { font, fonts, spacing } from '@/constants/theme';
 import { formatClock } from '@/engine/circadian';
-import { moonPhase } from '@/lib/moon';
+import { moonPhase, moonPosition } from '@/lib/moon';
 
 interface Tint {
   bg: [string, string];
@@ -41,6 +41,8 @@ const lerp = (a: number[], b: number[], t: number) => `rgb(${a.map((v, i) => Mat
 export function SkyArc({
   sunrise,
   sunset,
+  lat,
+  lng,
   now,
   height = 96,
   eyebrow,
@@ -51,6 +53,8 @@ export function SkyArc({
 }: {
   sunrise: number;
   sunset: number;
+  lat: number;
+  lng: number;
   now: Date;
   height?: number;
   eyebrow: string;
@@ -80,6 +84,12 @@ export function SkyArc({
   const moon = moonPhase(now);
   const md = Math.round(height * 0.34);
   const shadowDx = (moon.waxing ? -1 : 1) * md * moon.illum;
+  // Tier 1: at night, only draw the moon when it's genuinely above the horizon, placed by its real
+  // altitude (height) and azimuth (left = east, right = west). Below the horizon → just stars.
+  const moonPos = isNight ? moonPosition(now, lat, lng) : null;
+  const moonUp = !!moonPos && moonPos.altitude > 0;
+  const moonTop = horizonY - Math.max(0, Math.min(1, (moonPos?.altitude ?? 0) / 60)) * (horizonY - apexY);
+  const moonX = Math.max(8, Math.min(92, 50 + ((moonPos?.azimuth ?? 0) / 120) * 42));
 
   return (
     <LinearGradient colors={tint.bg} style={[styles.sky, style]}>
@@ -96,9 +106,11 @@ export function SkyArc({
             {STARS.map((s, i) => (
               <View key={i} style={[styles.star, { left: `${s.x}%`, top: s.y * height }]} />
             ))}
-            <View style={[styles.moon, { width: md, height: md, borderRadius: md / 2, left: '70%', top: height * 0.2 }]}>
-              <View style={{ position: 'absolute', width: md, height: md, borderRadius: md / 2, backgroundColor: tint.bg[0], left: shadowDx }} />
-            </View>
+            {moonUp ? (
+              <View style={[styles.moon, { width: md, height: md, borderRadius: md / 2, left: `${moonX}%`, top: moonTop, marginLeft: -md / 2, marginTop: -md / 2 }]}>
+                <View style={{ position: 'absolute', width: md, height: md, borderRadius: md / 2, backgroundColor: tint.bg[0], left: shadowDx }} />
+              </View>
+            ) : null}
           </>
         ) : (
           <>

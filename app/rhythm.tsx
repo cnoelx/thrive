@@ -92,6 +92,8 @@ function RhythmHome({
           <SkyArc
             sunrise={sun.sunrise}
             sunset={sun.sunset}
+            lat={location.lat}
+            lng={location.lng}
             now={now}
             height={120}
             eyebrow={`TODAY · ${location.city.toUpperCase()}`}

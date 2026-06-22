@@ -99,7 +99,7 @@ export function RhythmCard() {
     <View style={styles.card}>
       {sun ? (
         <Pressable onPress={openFull}>
-          <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} now={now} height={88} eyebrow="RHYTHM" showNow />
+          <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} lat={location!.lat} lng={location!.lng} now={now} height={88} eyebrow="RHYTHM" showNow />
         </Pressable>
       ) : (
         <Pressable onPress={openFull} style={styles.noloc}>
