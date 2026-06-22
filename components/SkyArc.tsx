@@ -91,7 +91,12 @@ export function SkyArc({
 
   const moon = moonPhase(now);
   const md = Math.round(height * 0.34);
-  const shadowDx = (moon.waxing ? -1 : 1) * md * moon.illum;
+  // Moon terminator: the lit/dark boundary is a half plus an ellipse (a circle squished by scaleX).
+  // k = cos(phase angle): >0 crescent (a dark ellipse eats the lit half), <0 gibbous (a light ellipse
+  // fills the dark half), 0 = a clean half-moon. Lit side: right when waxing, left when waning.
+  const k = 1 - 2 * moon.illum;
+  const termScaleX = Math.abs(k);
+  const crescent = k > 0;
   // Tier 1: at night, only draw the moon when it's genuinely above the horizon, placed by its real
   // altitude (height) and azimuth (left = east, right = west). Below the horizon → just stars.
   const moonPos = isNight ? moonPosition(now, lat, lng) : null;
@@ -119,7 +124,10 @@ export function SkyArc({
             ))}
             {moonUp ? (
               <View style={[styles.moon, { width: md, height: md, borderRadius: md / 2, left: `${moonX}%`, top: moonTop, marginLeft: -md / 2, marginTop: -md / 2 }]}>
-                <View style={{ position: 'absolute', width: md, height: md, borderRadius: md / 2, backgroundColor: tint.bg[0], left: shadowDx }} />
+                {/* the always-dark un-lit half */}
+                <View style={{ position: 'absolute', top: 0, width: md / 2, height: md, backgroundColor: tint.bg[0], left: moon.waxing ? 0 : md / 2 }} />
+                {/* curved terminator: dark eats the lit side (crescent) or light fills the dark side (gibbous) */}
+                <View style={{ position: 'absolute', top: 0, left: 0, width: md, height: md, borderRadius: md / 2, backgroundColor: crescent ? tint.bg[0] : '#E6ECF3', transform: [{ scaleX: termScaleX }] }} />
               </View>
             ) : null}
           </>
