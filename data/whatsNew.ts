@@ -7,10 +7,8 @@
 // cleanup. If an item wouldn't make a user think "oh, nice", leave it out. A short, high-signal list
 // is better than a thorough one.
 export const WHATS_NEW: { version: number; items: string[] } = {
-  version: 10,
+  version: 11,
   items: [
-    'Voice coaching — start a workout and Thrive calls out each move and your rest, hands-free. Tap the speaker to mute.',
-    'Share your workout — one tap turns it into a card you can post to Instagram, WhatsApp, anywhere.',
-    'Thrive updates itself now — when a new version is out you’ll get a prompt to download and install it, no more chasing links.',
+    'New — Rhythm: a calm place to track your sleep and daylight, right on your home screen. See your sunrise, sunset and tonight’s moon, log how you slept in a tap, and get gentle nudges to catch some light.',
   ],
 };
