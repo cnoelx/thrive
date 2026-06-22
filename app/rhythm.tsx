@@ -20,7 +20,13 @@ const QUALITIES = [
 ] as const;
 
 const WEEKDAY = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const WEEKDAYS_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const weekdayLetter = (d: number) => WEEKDAY[new Date(d * 86400000 + 43200000).getDay()];
+const dayHeading = (d: number) => {
+  const dt = new Date(d * 86400000 + 43200000);
+  return `${WEEKDAYS_FULL[dt.getDay()]} · ${MONTHS_SHORT[dt.getMonth()]} ${dt.getDate()}`;
+};
 const minToDate = (min: number) => {
   const d = new Date();
   d.setHours(Math.floor(min / 60), min % 60, 0, 0);
@@ -73,10 +79,12 @@ function RhythmHome({
   const sun = useMemo(() => sunTimes(location.lat, location.lng, now), [location.lat, location.lng, today]);
 
   const [picking, setPicking] = useState<null | 'bed' | 'wake'>(null);
+  const [openDay, setOpenDay] = useState<number | null>(null);
 
   const last7 = Array.from({ length: 7 }, (_, i) => today - 6 + i);
   const week = weekSummary(last7.map((d) => circadian[d]));
   const consistency = sleepConsistency(last7.map((d) => circadian[d]?.bed).filter((b): b is number => b !== undefined));
+  const openLog = openDay !== null ? circadian[openDay] : undefined;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -176,7 +184,7 @@ function RhythmHome({
               const dur = slept ? sleepDuration(log!.bed!, log!.wake!) : 0;
               const h = slept ? Math.max(8, Math.min(42, (dur / 60) * 4.4)) : 4;
               return (
-                <View key={d} style={styles.weekCol}>
+                <Pressable key={d} style={styles.weekCol} onPress={() => setOpenDay(d)} hitSlop={6}>
                   <View style={styles.barArea}>
                     <View style={[styles.bar, { height: h, backgroundColor: slept ? colors.streakBorder : colors.track }]} />
                   </View>
@@ -185,7 +193,7 @@ function RhythmHome({
                     <View style={[styles.dot, log?.eveningLight && styles.dotEvening]} />
                   </View>
                   <Text style={[styles.weekDay, d === today && styles.weekDayToday]}>{weekdayLetter(d)}</Text>
-                </View>
+                </Pressable>
               );
             })}
           </View>
@@ -204,6 +212,33 @@ function RhythmHome({
           ) : null}
         </View>
       </ScrollView>
+
+      <Modal visible={openDay !== null} transparent animationType="fade" onRequestClose={() => setOpenDay(null)}>
+        <Pressable style={styles.overlay} onPress={() => setOpenDay(null)}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            <Text style={styles.sheetTitle}>{openDay !== null ? dayHeading(openDay) : ''}</Text>
+            {openLog && (openLog.bed !== undefined || openLog.quality !== undefined || openLog.morningLight || openLog.eveningLight) ? (
+              <View style={{ gap: spacing.xs, marginTop: spacing.sm }}>
+                {openLog.bed !== undefined && openLog.wake !== undefined ? (
+                  <Text style={styles.sheetRow}>
+                    Slept {formatDuration(sleepDuration(openLog.bed, openLog.wake))} · {formatClock(openLog.bed)} → {formatClock(openLog.wake)}
+                  </Text>
+                ) : null}
+                {openLog.quality ? <Text style={styles.sheetRow}>Felt {openLog.quality}</Text> : null}
+                <Text style={styles.sheetRow}>
+                  {openLog.morningLight ? '✓' : '—'} Morning light{'    '}
+                  {openLog.eveningLight ? '✓' : '—'} Evening light
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.sheetMuted}>Nothing logged this day.</Text>
+            )}
+            <Pressable style={styles.sheetClose} onPress={() => setOpenDay(null)}>
+              <Text style={styles.sheetCloseText}>Close</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {picking ? (
         <TimePickerOverlay
@@ -397,6 +432,9 @@ const styles = StyleSheet.create({
   // iOS time-picker sheet
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, width: '100%', maxWidth: 420 },
-  sheetClose: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.sm },
+  sheetTitle: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy },
+  sheetRow: { color: colors.text, fontSize: font.small, fontFamily: fonts.bold },
+  sheetMuted: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: spacing.sm },
+  sheetClose: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
   sheetCloseText: { color: colors.primaryText, fontSize: font.body, fontFamily: fonts.heavy },
 });
