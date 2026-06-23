@@ -8,6 +8,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -186,7 +187,9 @@ export function RhythmCard() {
   return (
     <Pressable style={[styles.card, { height: CARD_H }]} onPress={openFull}>
       <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} lat={location!.lat} lng={location!.lng} now={now} height={CARD_H} eyebrow="RHYTHM" hideChrome style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: dark ? 'rgba(11,22,38,0.56)' : 'rgba(255,255,255,0.50)' }]} />
+      {/* frosted glass: blurs the sky behind, with a faint tint for text legibility */}
+      <BlurView intensity={dark ? 34 : 26} tint={dark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: dark ? 'rgba(11,22,38,0.22)' : 'rgba(255,255,255,0.18)' }]} />
       <View style={styles.chrome}>
         <View style={styles.chromeTop}>
           <Text style={[styles.cEyebrow, { color: dark ? '#9FB0C4' : '#5E7790' }]}>RHYTHM</Text>
