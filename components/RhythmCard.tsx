@@ -187,8 +187,10 @@ export function RhythmCard() {
   return (
     <Pressable style={[styles.card, { height: CARD_H }]} onPress={openFull}>
       <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} lat={location!.lat} lng={location!.lng} now={now} height={CARD_H} eyebrow="RHYTHM" hideChrome style={StyleSheet.absoluteFill} />
-      {/* frosted glass: blurs the sky behind, with a faint tint for text legibility */}
-      <BlurView intensity={dark ? 34 : 26} tint={dark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+      {/* frosted glass: blurs the sky behind, with a faint tint for text legibility.
+          experimentalBlurMethod is required for a real blur on Android (else it's just a
+          semi-transparent view); ignored on iOS. */}
+      <BlurView intensity={dark ? 34 : 26} tint={dark ? 'dark' : 'light'} experimentalBlurMethod="dimezisBlurView" style={StyleSheet.absoluteFill} />
       <View style={[StyleSheet.absoluteFill, { backgroundColor: dark ? 'rgba(11,22,38,0.22)' : 'rgba(255,255,255,0.18)' }]} />
       <View style={styles.chrome}>
         <View style={styles.chromeTop}>
