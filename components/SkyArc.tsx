@@ -57,6 +57,7 @@ export function SkyArc({
   showNow,
   topRight,
   why,
+  hideChrome,
   style,
 }: {
   sunrise: number;
@@ -69,6 +70,7 @@ export function SkyArc({
   showNow?: boolean;
   topRight?: ReactNode;
   why?: string;
+  hideChrome?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const nowMin = now.getHours() * 60 + now.getMinutes();
@@ -107,6 +109,48 @@ export function SkyArc({
   const untilSunrise = nowMin < sunrise ? sunrise - nowMin : 1440 - nowMin + sunrise;
   const untilLabel = `${Math.floor(untilSunrise / 60)}h ${untilSunrise % 60}m`.replace(/^0h /, '');
 
+  const skyBody = (
+    <>
+      <View style={[styles.horizon, { top: horizonY, backgroundColor: tint.line }]} />
+      {isNight ? (
+        <>
+          {STARS.map((s, i) => (
+            <View key={i} style={[styles.star, { left: `${s.x}%`, top: s.y * height }]} />
+          ))}
+          {moonUp ? (
+            <View style={[styles.moon, { width: md, height: md, borderRadius: md / 2, left: `${moonX}%`, top: moonTop, marginLeft: -md / 2, marginTop: -md / 2 }]}>
+              {/* the always-dark un-lit half */}
+              <View style={{ position: 'absolute', top: 0, width: md / 2, height: md, backgroundColor: tint.bg[0], left: moon.waxing ? 0 : md / 2 }} />
+              {/* curved terminator: dark eats the lit side (crescent) or light fills the dark side (gibbous) */}
+              <View style={{ position: 'absolute', top: 0, left: 0, width: md, height: md, borderRadius: md / 2, backgroundColor: crescent ? tint.bg[0] : '#E6ECF3', transform: [{ scaleX: termScaleX }] }} />
+            </View>
+          ) : null}
+        </>
+      ) : (
+        <>
+          {Array.from({ length: 16 }, (_, i) => {
+            const t = i / 15;
+            const p = bez(t);
+            return <View key={i} style={[styles.arcDot, { left: `${p.x}%`, top: p.y, backgroundColor: t <= f ? ARC_LIT : tint.arcDim }]} />;
+          })}
+          <View style={[styles.endDot, { left: '4%', top: horizonY }]} />
+          <View style={[styles.endDot, { left: '96%', top: horizonY }]} />
+          <View style={[styles.sunGlow, { left: `${sun.x}%`, top: sun.y, backgroundColor: sunColor }]} />
+          <View style={[styles.sun, { left: `${sun.x}%`, top: sun.y, backgroundColor: sunColor }]} />
+        </>
+      )}
+    </>
+  );
+
+  // Sky visual only — fills its container, no eyebrow/labels (the card draws those on the glass).
+  if (hideChrome) {
+    return (
+      <LinearGradient colors={tint.bg} style={[StyleSheet.absoluteFillObject, style]}>
+        <View style={{ flex: 1 }}>{skyBody}</View>
+      </LinearGradient>
+    );
+  }
+
   return (
     <LinearGradient colors={tint.bg} style={[styles.sky, style]}>
       <View style={styles.top}>
@@ -115,36 +159,7 @@ export function SkyArc({
         {topRight}
       </View>
 
-      <View style={{ height, marginHorizontal: -spacing.lg, marginTop: 2 }}>
-        <View style={[styles.horizon, { top: horizonY, backgroundColor: tint.line }]} />
-        {isNight ? (
-          <>
-            {STARS.map((s, i) => (
-              <View key={i} style={[styles.star, { left: `${s.x}%`, top: s.y * height }]} />
-            ))}
-            {moonUp ? (
-              <View style={[styles.moon, { width: md, height: md, borderRadius: md / 2, left: `${moonX}%`, top: moonTop, marginLeft: -md / 2, marginTop: -md / 2 }]}>
-                {/* the always-dark un-lit half */}
-                <View style={{ position: 'absolute', top: 0, width: md / 2, height: md, backgroundColor: tint.bg[0], left: moon.waxing ? 0 : md / 2 }} />
-                {/* curved terminator: dark eats the lit side (crescent) or light fills the dark side (gibbous) */}
-                <View style={{ position: 'absolute', top: 0, left: 0, width: md, height: md, borderRadius: md / 2, backgroundColor: crescent ? tint.bg[0] : '#E6ECF3', transform: [{ scaleX: termScaleX }] }} />
-              </View>
-            ) : null}
-          </>
-        ) : (
-          <>
-            {Array.from({ length: 16 }, (_, i) => {
-              const t = i / 15;
-              const p = bez(t);
-              return <View key={i} style={[styles.arcDot, { left: `${p.x}%`, top: p.y, backgroundColor: t <= f ? ARC_LIT : tint.arcDim }]} />;
-            })}
-            <View style={[styles.endDot, { left: '4%', top: horizonY }]} />
-            <View style={[styles.endDot, { left: '96%', top: horizonY }]} />
-            <View style={[styles.sunGlow, { left: `${sun.x}%`, top: sun.y, backgroundColor: sunColor }]} />
-            <View style={[styles.sun, { left: `${sun.x}%`, top: sun.y, backgroundColor: sunColor }]} />
-          </>
-        )}
-      </View>
+      <View style={{ height, marginHorizontal: -spacing.lg, marginTop: 2 }}>{skyBody}</View>
 
       <View style={styles.labels}>
         <View>

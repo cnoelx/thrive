@@ -19,6 +19,7 @@ import { dayNumberFromDate } from '@/engine/history';
 import { sunTimes } from '@/lib/sun';
 import { useAppStore } from '@/store/useAppStore';
 
+const CARD_H = 168; // fixed height so the sky fills the card and the glass/chrome line up
 const DEFAULT_BED = 22 * 60;
 const DEFAULT_WAKE = 6 * 60;
 const QUALITIES = [
@@ -171,12 +172,29 @@ export function RhythmCard() {
     );
   }
 
+  // Nothing pending → clear sky (the reward), with its own chrome + sunrise/sunset labels.
+  if (state === 'done') {
+    return (
+      <Pressable style={styles.card} onPress={openFull}>
+        <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} lat={location!.lat} lng={location!.lng} now={now} height={104} eyebrow="RHYTHM" showNow />
+        {pickerModal()}
+      </Pressable>
+    );
+  }
+
+  // Pending → the question floats on a full-card glass; the sun/moon glow through behind it.
   return (
-    <Pressable style={styles.card} onPress={openFull}>
-      <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} lat={location!.lat} lng={location!.lng} now={now} height={120} eyebrow="RHYTHM" showNow />
-      {state !== 'done' ? (
-        <View style={[styles.panel, { backgroundColor: dark ? 'rgba(11,22,38,0.80)' : 'rgba(255,255,255,0.74)', borderTopColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }]}>{question}</View>
-      ) : null}
+    <Pressable style={[styles.card, { height: CARD_H }]} onPress={openFull}>
+      <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} lat={location!.lat} lng={location!.lng} now={now} height={CARD_H} eyebrow="RHYTHM" hideChrome style={StyleSheet.absoluteFill} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: dark ? 'rgba(11,22,38,0.56)' : 'rgba(255,255,255,0.50)' }]} />
+      <View style={styles.chrome}>
+        <View style={styles.chromeTop}>
+          <Text style={[styles.cEyebrow, { color: dark ? '#9FB0C4' : '#5E7790' }]}>RHYTHM</Text>
+          <Text style={[styles.cNow, { color: dark ? '#FBBF24' : '#B26B00' }]}>{formatClock(nowMin)}</Text>
+        </View>
+        <View style={{ flex: 1 }} />
+        {question}
+      </View>
       {pickerModal()}
     </Pressable>
   );
@@ -213,7 +231,10 @@ const styles = StyleSheet.create({
   plainQuestion: { marginTop: spacing.xs },
   allSet: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold, marginTop: spacing.sm },
 
-  panel: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg, borderTopWidth: 1 },
+  chrome: { ...StyleSheet.absoluteFillObject, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg },
+  chromeTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cEyebrow: { fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.3 },
+  cNow: { fontSize: font.eyebrow, fontFamily: fonts.bold },
   q: { fontSize: font.body, fontFamily: fonts.heavy },
   sub: { fontSize: font.small, fontFamily: fonts.regular, marginTop: 2 },
   chips: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
