@@ -130,6 +130,13 @@ function RhythmHome({
           </View>
         )}
 
+        {/* A quiet moon line under the sky — rise/set is the bit the sky's own label doesn't show */}
+        <Text style={styles.moonLine}>
+          {phaseName(moon.illum, moon.waxing)}
+          {moonRS.rise !== null ? `  ·  rises ${formatClock(moonRS.rise)}` : '  ·  no moonrise today'}
+          {moonRS.set !== null ? `  ·  sets ${formatClock(moonRS.set)}` : '  ·  no moonset today'}
+        </Text>
+
         {/* Sleep log */}
         <View style={styles.card}>
           <Text style={styles.cardHead}>Last night's sleep</Text>
@@ -188,20 +195,6 @@ function RhythmHome({
               ) : null}
             </View>
           ) : null}
-        </View>
-
-        {/* Tonight's moon — phase + rise/set. Decorative: the night sky shows the moon, this is the detail. */}
-        <View style={styles.card}>
-          <View style={styles.moonHead}>
-            <Text style={[styles.cardHead, { marginBottom: 0 }]}>Tonight&apos;s moon</Text>
-            <Text style={styles.moonPct}>{Math.round(moon.illum * 100)}% lit</Text>
-          </View>
-          <Text style={styles.moonName}>{phaseName(moon.illum, moon.waxing)}</Text>
-          <Text style={styles.moonRise}>
-            {moonRS.rise !== null ? `Rises ${formatClock(moonRS.rise)}` : 'No moonrise today'}
-            {'   ·   '}
-            {moonRS.set !== null ? `Sets ${formatClock(moonRS.set)}` : 'No moonset today'}
-          </Text>
         </View>
       </ScrollView>
 
@@ -389,10 +382,7 @@ const styles = StyleSheet.create({
   summaryBox: { marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, gap: 4 },
   summary: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold, textAlign: 'center' },
 
-  moonHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  moonPct: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold },
-  moonName: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy, marginTop: spacing.sm },
-  moonRise: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold, marginTop: spacing.xs },
+  moonLine: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold, textAlign: 'center', marginTop: -spacing.sm, marginBottom: spacing.lg },
 
   // Location picker
   pickerHint: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, lineHeight: 19, marginBottom: spacing.md },
