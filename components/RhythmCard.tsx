@@ -8,7 +8,6 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -20,7 +19,7 @@ import { dayNumberFromDate } from '@/engine/history';
 import { sunTimes } from '@/lib/sun';
 import { useAppStore } from '@/store/useAppStore';
 
-const CARD_H = 168; // fixed height so the sky fills the card and the glass/chrome line up
+const SKY_BAND = 68; // height of the crisp sky strip above the sleep prompt
 const SLEEP_CUTOFF = 11 * 60; // sleep prompt leads only through late morning, then steps aside
 const DEFAULT_BED = 22 * 60;
 const DEFAULT_WAKE = 6 * 60;
@@ -166,23 +165,17 @@ export function RhythmCard() {
     );
   }
 
-  // Pending → the question floats on a full-card glass; the sun/moon glow through behind it.
+  // Pending → a crisp sky strip on top (you can see the sun), the question on a clean panel below.
   return (
-    <Pressable style={[styles.card, { height: CARD_H }]} onPress={openFull}>
-      <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} lat={location!.lat} lng={location!.lng} now={now} height={CARD_H} eyebrow="RHYTHM" hideChrome style={StyleSheet.absoluteFill} />
-      {/* frosted glass: blurs the sky behind, with a faint tint for text legibility.
-          experimentalBlurMethod is required for a real blur on Android (else it's just a
-          semi-transparent view); ignored on iOS. */}
-      <BlurView intensity={dark ? 34 : 26} tint={dark ? 'dark' : 'light'} experimentalBlurMethod="dimezisBlurView" style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: dark ? 'rgba(11,22,38,0.22)' : 'rgba(255,255,255,0.18)' }]} />
-      <View style={styles.chrome}>
-        <View style={styles.chromeTop}>
-          <Text style={[styles.cEyebrow, { color: dark ? '#9FB0C4' : '#5E7790' }]}>RHYTHM</Text>
-          <Text style={[styles.cNow, { color: dark ? '#FBBF24' : '#B26B00' }]}>{formatClock(nowMin)}</Text>
+    <Pressable style={styles.card} onPress={openFull}>
+      <View style={{ height: SKY_BAND }}>
+        <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} lat={location!.lat} lng={location!.lng} now={now} height={SKY_BAND} eyebrow="RHYTHM" hideChrome style={StyleSheet.absoluteFill} />
+        <View style={styles.skyChrome}>
+          <Text style={[styles.cEyebrow, { color: '#5E7790' }]}>RHYTHM</Text>
+          <Text style={[styles.cNow, { color: '#B26B00' }]}>{formatClock(nowMin)}</Text>
         </View>
-        <View style={{ flex: 1 }} />
-        {question}
       </View>
+      <View style={styles.promptPanel}>{question}</View>
       {pickerModal()}
     </Pressable>
   );
@@ -219,8 +212,8 @@ const styles = StyleSheet.create({
   plainQuestion: { marginTop: spacing.xs },
   allSet: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold, marginTop: spacing.sm },
 
-  chrome: { ...StyleSheet.absoluteFillObject, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg },
-  chromeTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  skyChrome: { ...StyleSheet.absoluteFillObject, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  promptPanel: { backgroundColor: colors.surface, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg },
   cEyebrow: { fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.3 },
   cNow: { fontSize: font.eyebrow, fontFamily: fonts.bold },
   q: { fontSize: font.body, fontFamily: fonts.heavy },
