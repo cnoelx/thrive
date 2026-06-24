@@ -10,6 +10,7 @@ import { INDIA_LOCATIONS, IndiaLocation } from '@/data/locations';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { formatClock, formatDuration, sleepConsistency, sleepDuration, weekSummary } from '@/engine/circadian';
 import { dayNumberFromDate } from '@/engine/history';
+import { moonPhase, moonTimes, phaseName } from '@/lib/moon';
 import { sunTimes } from '@/lib/sun';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -77,6 +78,8 @@ function RhythmHome({
   const today = dayNumberFromDate(now);
   const todayLog = circadian[today] ?? {};
   const sun = useMemo(() => sunTimes(location.lat, location.lng, now), [location.lat, location.lng, today]);
+  const moon = moonPhase(now);
+  const moonRS = useMemo(() => moonTimes(now, location.lat, location.lng), [location.lat, location.lng, today]);
 
   const [picking, setPicking] = useState<null | 'bed' | 'wake'>(null);
   const [openDay, setOpenDay] = useState<number | null>(null);
@@ -185,6 +188,20 @@ function RhythmHome({
               ) : null}
             </View>
           ) : null}
+        </View>
+
+        {/* Tonight's moon — phase + rise/set. Decorative: the night sky shows the moon, this is the detail. */}
+        <View style={styles.card}>
+          <View style={styles.moonHead}>
+            <Text style={[styles.cardHead, { marginBottom: 0 }]}>Tonight&apos;s moon</Text>
+            <Text style={styles.moonPct}>{Math.round(moon.illum * 100)}% lit</Text>
+          </View>
+          <Text style={styles.moonName}>{phaseName(moon.illum, moon.waxing)}</Text>
+          <Text style={styles.moonRise}>
+            {moonRS.rise !== null ? `Rises ${formatClock(moonRS.rise)}` : 'No moonrise today'}
+            {'   ·   '}
+            {moonRS.set !== null ? `Sets ${formatClock(moonRS.set)}` : 'No moonset today'}
+          </Text>
         </View>
       </ScrollView>
 
@@ -371,6 +388,11 @@ const styles = StyleSheet.create({
   legend: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.regular, marginTop: spacing.md, textAlign: 'center' },
   summaryBox: { marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, gap: 4 },
   summary: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold, textAlign: 'center' },
+
+  moonHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  moonPct: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold },
+  moonName: { color: colors.ink, fontSize: font.body, fontFamily: fonts.heavy, marginTop: spacing.sm },
+  moonRise: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold, marginTop: spacing.xs },
 
   // Location picker
   pickerHint: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, lineHeight: 19, marginBottom: spacing.md },
