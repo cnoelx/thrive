@@ -129,9 +129,9 @@ async function ensureRhythmChannel(): Promise<void> {
   }
 }
 
-/** Re-arm the next week of Rhythm nudges (sleep + sunrise/sunset light) from current state. Safe to
- *  call on every app open and after each log — re-lays from the circadian record, so logged items
- *  fall silent. The light nudges need a location; without one, only the sleep prompt is laid down. */
+/** Re-arm the next week of Rhythm nudges (one gentle morning ping per day) from current state. Safe to
+ *  call on every app open and after each log — re-lays from the circadian record, so a logged night
+ *  falls silent. A location sharpens the timing to sunrise; without one it falls back to a fixed hour. */
 export async function refreshRhythmReminders(opts: {
   enabled: boolean;
   location: IndiaLocation | null;

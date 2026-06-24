@@ -6,8 +6,6 @@ export interface CircadianDay {
   bed?: number;
   wake?: number;
   quality?: 'good' | 'ok' | 'poor';
-  morningLight?: boolean;
-  eveningLight?: boolean;
 }
 
 /** Minutes slept from bed → wake, wrapping past midnight when bed is the previous evening. */
@@ -48,24 +46,18 @@ export function sleepConsistency(beds: number[]): { steady: boolean; text: strin
 export interface WeekSummary {
   nights: number;
   avgSleepMin: number | null;
-  morningLight: number;
-  eveningLight: number;
 }
 
-/** Descriptive roll-up of recent days (avg sleep over logged nights, light-day counts). No scores. */
+/** Descriptive roll-up of recent days (avg sleep over logged nights). No scores. */
 export function weekSummary(days: (CircadianDay | undefined)[]): WeekSummary {
   let total = 0;
   let nights = 0;
-  let m = 0;
-  let e = 0;
   for (const d of days) {
     if (!d) continue;
     if (d.bed !== undefined && d.wake !== undefined) {
       total += sleepDuration(d.bed, d.wake);
       nights++;
     }
-    if (d.morningLight) m++;
-    if (d.eveningLight) e++;
   }
-  return { nights, avgSleepMin: nights ? Math.round(total / nights) : null, morningLight: m, eveningLight: e };
+  return { nights, avgSleepMin: nights ? Math.round(total / nights) : null };
 }

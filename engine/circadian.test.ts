@@ -50,20 +50,18 @@ describe('sleepConsistency', () => {
 });
 
 describe('weekSummary', () => {
-  it('averages logged nights and counts light days, ignoring blank days', () => {
+  it('averages logged nights, ignoring blank days', () => {
     const days: (CircadianDay | undefined)[] = [
-      { bed: 22 * 60, wake: 6 * 60, morningLight: true },
+      { bed: 22 * 60, wake: 6 * 60 },
       undefined,
-      { bed: 23 * 60, wake: 6 * 60, morningLight: true, eveningLight: true },
+      { bed: 23 * 60, wake: 6 * 60 },
     ];
     const s = weekSummary(days);
     expect(s.nights).toBe(2); // 8h + 7h
     expect(s.avgSleepMin).toBe(7 * 60 + 30);
-    expect(s.morningLight).toBe(2);
-    expect(s.eveningLight).toBe(1);
   });
 
   it('avg is null with no logged nights', () => {
-    expect(weekSummary([undefined, { morningLight: true }]).avgSleepMin).toBeNull();
+    expect(weekSummary([undefined, { quality: 'good' }]).avgSleepMin).toBeNull();
   });
 });

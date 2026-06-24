@@ -1,32 +1,34 @@
 import { describe, expect, it } from '@jest/globals';
 
 import { type CircadianDay } from '@/engine/circadian';
-import { SLEEP_MINUTE, rhythmSlots } from '@/engine/rhythmReminders';
+import { MORNING_FALLBACK, SUNRISE_FLOOR, rhythmSlots } from '@/engine/rhythmReminders';
 
-const SUN = { sunrise: 5 * 60 + 50, sunset: 18 * 60 + 40 }; // 5:50am / 6:40pm
+const EARLY_SUN = { sunrise: 5 * 60 + 30, sunset: 18 * 60 + 40 }; // 5:30am sunrise (before the floor)
+const LATE_SUN = { sunrise: 6 * 60 + 45, sunset: 17 * 60 + 30 }; // 6:45am sunrise (after the floor)
 
 describe('rhythmSlots', () => {
-  it('no location → just the morning check-in', () => {
-    expect(rhythmSlots(null, undefined).map((x) => x.minute)).toEqual([SLEEP_MINUTE]);
-  });
-
-  it('with location and nothing logged → morning check-in + evening light (2 slots)', () => {
-    expect(rhythmSlots(SUN, undefined).length).toBe(2);
-  });
-
-  it('morning check-in drops once sleep is logged; evening light remains', () => {
-    const log: CircadianDay = { quality: 'good', morningLight: true };
-    const s = rhythmSlots(SUN, log);
+  it('no location → a single morning ping at the fixed fallback hour', () => {
+    const s = rhythmSlots(null, undefined);
     expect(s.length).toBe(1);
-    expect(s[0].title).toMatch(/evening/i);
+    expect(s[0].minute).toBe(MORNING_FALLBACK);
   });
 
-  it('everything logged → no nudges', () => {
-    const log: CircadianDay = { quality: 'ok', eveningLight: true };
-    expect(rhythmSlots(SUN, log)).toEqual([]);
+  it('floors an early sunrise so it never buzzes before 6am', () => {
+    expect(rhythmSlots(EARLY_SUN, undefined)[0].minute).toBe(SUNRISE_FLOOR);
   });
 
-  it('evening nudge is 30 min before sunset', () => {
-    expect(rhythmSlots(SUN, undefined)[1].minute).toBe(18 * 60 + 10); // 6:40pm − 30 = 6:10pm
+  it('tracks a later sunrise exactly', () => {
+    expect(rhythmSlots(LATE_SUN, undefined)[0].minute).toBe(6 * 60 + 45);
+  });
+
+  it('leads with the daylight action and tails the sleep ask', () => {
+    const s = rhythmSlots(LATE_SUN, undefined)[0];
+    expect(s.title).toMatch(/daylight|light/i);
+    expect(s.body).toMatch(/sleep/i);
+  });
+
+  it('drops once sleep is logged', () => {
+    const log: CircadianDay = { quality: 'good' };
+    expect(rhythmSlots(LATE_SUN, log)).toEqual([]);
   });
 });

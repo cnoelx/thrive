@@ -14,9 +14,9 @@ import { sunTimes } from '@/lib/sun';
 import { useAppStore } from '@/store/useAppStore';
 
 const QUALITIES = [
-  { id: 'good', label: 'Good' },
-  { id: 'ok', label: 'OK' },
   { id: 'poor', label: 'Poor' },
+  { id: 'ok', label: 'OK' },
+  { id: 'good', label: 'Good' },
 ] as const;
 
 const WEEKDAY = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -127,25 +127,6 @@ function RhythmHome({
           </View>
         )}
 
-        {/* Daylight check-offs */}
-        <View style={styles.card}>
-          <Text style={styles.cardHead}>Daylight</Text>
-          <View style={styles.toggleRow}>
-            <LightToggle
-              icon="sunny-outline"
-              label="Morning light"
-              on={!!todayLog.morningLight}
-              onPress={() => logCircadian(today, { morningLight: !todayLog.morningLight })}
-            />
-            <LightToggle
-              icon="partly-sunny-outline"
-              label="Evening light"
-              on={!!todayLog.eveningLight}
-              onPress={() => logCircadian(today, { eveningLight: !todayLog.eveningLight })}
-            />
-          </View>
-        </View>
-
         {/* Sleep log */}
         <View style={styles.card}>
           <Text style={styles.cardHead}>Last night's sleep</Text>
@@ -188,22 +169,16 @@ function RhythmHome({
                   <View style={styles.barArea}>
                     <View style={[styles.bar, { height: h, backgroundColor: slept ? colors.streakBorder : colors.track }]} />
                   </View>
-                  <View style={styles.lightDots}>
-                    <View style={[styles.dot, log?.morningLight && styles.dotMorning]} />
-                    <View style={[styles.dot, log?.eveningLight && styles.dotEvening]} />
-                  </View>
                   <Text style={[styles.weekDay, d === today && styles.weekDayToday]}>{weekdayLetter(d)}</Text>
                 </Pressable>
               );
             })}
           </View>
-          <Text style={styles.legend}>Bars = hours in bed · dots = morning / evening light</Text>
+          <Text style={styles.legend}>Bars = hours in bed</Text>
           {week.avgSleepMin !== null || consistency ? (
             <View style={styles.summaryBox}>
               {week.avgSleepMin !== null ? (
-                <Text style={styles.summary}>
-                  {formatDuration(week.avgSleepMin)} average · morning light {week.morningLight}/7
-                </Text>
+                <Text style={styles.summary}>{formatDuration(week.avgSleepMin)} average a night</Text>
               ) : null}
               {consistency ? (
                 <Text style={[styles.summary, { color: consistency.steady ? colors.done : colors.link }]}>{consistency.text}</Text>
@@ -217,7 +192,7 @@ function RhythmHome({
         <Pressable style={styles.overlay} onPress={() => setOpenDay(null)}>
           <Pressable style={styles.sheet} onPress={() => {}}>
             <Text style={styles.sheetTitle}>{openDay !== null ? dayHeading(openDay) : ''}</Text>
-            {openLog && (openLog.bed !== undefined || openLog.quality !== undefined || openLog.morningLight || openLog.eveningLight) ? (
+            {openLog && (openLog.bed !== undefined || openLog.quality !== undefined) ? (
               <View style={{ gap: spacing.xs, marginTop: spacing.sm }}>
                 {openLog.bed !== undefined && openLog.wake !== undefined ? (
                   <Text style={styles.sheetRow}>
@@ -225,10 +200,6 @@ function RhythmHome({
                   </Text>
                 ) : null}
                 {openLog.quality ? <Text style={styles.sheetRow}>Felt {openLog.quality}</Text> : null}
-                <Text style={styles.sheetRow}>
-                  {openLog.morningLight ? '✓' : '—'} Morning light{'    '}
-                  {openLog.eveningLight ? '✓' : '—'} Evening light
-                </Text>
               </View>
             ) : (
               <Text style={styles.sheetMuted}>Nothing logged this day.</Text>
@@ -256,16 +227,6 @@ function TimeField({ label, value, onPress }: { label: string; value?: number; o
     <Pressable onPress={onPress} style={styles.timeField}>
       <Text style={styles.timeLbl}>{label}</Text>
       <Text style={[styles.timeVal, value === undefined && styles.timeValEmpty]}>{value === undefined ? 'Set' : formatClock(value)}</Text>
-    </Pressable>
-  );
-}
-
-function LightToggle({ icon, label, on, onPress }: { icon: keyof typeof Ionicons.glyphMap; label: string; on: boolean; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={[styles.toggle, on && styles.toggleOn]}>
-      <Ionicons name={icon} size={22} color={on ? colors.session : colors.muted} />
-      <Text style={[styles.toggleText, on && styles.toggleTextOn]}>{label}</Text>
-      <Ionicons name={on ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={on ? colors.done : colors.border} />
     </Pressable>
   );
 }
@@ -388,12 +349,6 @@ const styles = StyleSheet.create({
   skyHeader: { borderRadius: radius.lg, marginBottom: spacing.lg },
   changeOnSky: { color: colors.link, fontSize: font.small, fontFamily: fonts.bold },
 
-  toggleRow: { flexDirection: 'row', gap: spacing.md },
-  toggle: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.bg, borderRadius: radius.md, paddingVertical: spacing.md, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.border },
-  toggleOn: { backgroundColor: colors.streakBg, borderColor: colors.streakBorder },
-  toggleText: { flex: 1, color: colors.muted, fontSize: font.small, fontFamily: fonts.bold },
-  toggleTextOn: { color: colors.ink },
-
   timeRow: { flexDirection: 'row', gap: spacing.md },
   timeField: { flex: 1, backgroundColor: colors.bg, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center', gap: 2, borderWidth: 1, borderColor: colors.border },
   timeLbl: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1, textTransform: 'uppercase' },
@@ -411,10 +366,6 @@ const styles = StyleSheet.create({
   weekCol: { flex: 1, alignItems: 'center', gap: 5 },
   barArea: { height: 46, justifyContent: 'flex-end' },
   bar: { width: 10, borderRadius: 4 },
-  lightDots: { flexDirection: 'row', gap: 3 },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.track },
-  dotMorning: { backgroundColor: colors.session },
-  dotEvening: { backgroundColor: colors.link },
   weekDay: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy },
   weekDayToday: { color: colors.session },
   legend: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.regular, marginTop: spacing.md, textAlign: 'center' },

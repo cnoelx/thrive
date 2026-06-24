@@ -189,8 +189,10 @@ export function SkyArc({
           )}
         </View>
       </View>
-      {why ? (
-        <Text style={[styles.why, { color: tint.muted }]}>{isNight ? WIND_DOWN[Math.floor(now.getTime() / 86400000) % WIND_DOWN.length] : why}</Text>
+      {isNight ? (
+        <Text style={[styles.why, { color: tint.muted }]}>{WIND_DOWN[Math.floor(now.getTime() / 86400000) % WIND_DOWN.length]}</Text>
+      ) : why ? (
+        <Text style={[styles.why, { color: tint.muted }]}>{why}</Text>
       ) : null}
     </LinearGradient>
   );

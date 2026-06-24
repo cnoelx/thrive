@@ -15,12 +15,13 @@ import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native
 
 import { SkyArc } from '@/components/SkyArc';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
-import { type CircadianDay, formatClock } from '@/engine/circadian';
+import { type CircadianDay, formatClock, formatDuration, sleepDuration } from '@/engine/circadian';
 import { dayNumberFromDate } from '@/engine/history';
 import { sunTimes } from '@/lib/sun';
 import { useAppStore } from '@/store/useAppStore';
 
 const CARD_H = 168; // fixed height so the sky fills the card and the glass/chrome line up
+const SLEEP_CUTOFF = 11 * 60; // sleep prompt leads only through late morning, then steps aside
 const DEFAULT_BED = 22 * 60;
 const DEFAULT_WAKE = 6 * 60;
 const QUALITIES = [
@@ -73,17 +74,20 @@ export function RhythmCard() {
   const [iosTemp, setIosTemp] = useState<Date | null>(null);
 
   const sleepDone = todayLog.quality !== undefined;
-  const noon = sun ? (sun.sunrise + sun.sunset) / 2 : 12 * 60;
-  const isMorning = nowMin < noon;
   // Night only counts when there's a sky to be dark — the no-location plain card stays light.
   const isNight = !!sun && (nowMin < sun.sunrise || nowMin > sun.sunset);
-  const state: 'sleep' | 'mlight' | 'elight' | 'done' = !sleepDone
-    ? 'sleep'
-    : sun && isMorning && !todayLog.morningLight
-      ? 'mlight'
-      : sun && !isMorning && !todayLog.eveningLight
-        ? 'elight'
-        : 'done';
+  // Sleep leads only from sunrise through late morning — no prompt before the sun's up, and it steps
+  // aside after the cutoff (last night's sleep is still loggable from the full screen).
+  const sleepPending = !sleepDone && nowMin < SLEEP_CUTOFF && (sun ? nowMin >= sun.sunrise : true);
+  // A button-less daylight cue on the clear sky: a morning-light line through the morning, a golden-
+  // hour line in the hour before sunset. (At night SkyArc shows a wind-down tip instead.)
+  const dayNudge = !sun
+    ? undefined
+    : nowMin < SLEEP_CUTOFF
+      ? 'A few minutes of morning light sets your clock.'
+      : nowMin >= sun.sunset - 60 && nowMin <= sun.sunset
+        ? 'Golden hour — catch the last of the daylight.'
+        : undefined;
 
   const openFull = () => router.push('/rhythm');
   const setTime = (which: 'bed' | 'wake', m: number) => (which === 'bed' ? setBed(m) : setWake(m));
@@ -112,51 +116,29 @@ export function RhythmCard() {
   const chipBorder = dark ? 'rgba(255,255,255,0.18)' : colors.border;
   const chipTxt = dark ? '#D7E0EA' : colors.text;
 
-  const question =
-    state === 'sleep' ? (
-      <>
-        <Text style={[styles.q, { color: txt }]}>How did you sleep?</Text>
-        <View style={styles.chips}>
-          {QUALITIES.map((qq) => (
-            <Pressable key={qq.id} onPress={() => logCircadian(today, { quality: qq.id, bed, wake })} style={[styles.chip, { backgroundColor: chipBg, borderColor: chipBorder }]}>
-              <Text style={[styles.chipTxt, { color: chipTxt }]}>{qq.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <Text style={[styles.times, { color: sub }]}>
-          Bed{' '}
-          <Text style={[styles.timeVal, { color: colors.link }]} onPress={() => openPicker('bed')}>
-            {formatClock(bed)}
-          </Text>
-          {'  ·  Wake '}
-          <Text style={[styles.timeVal, { color: colors.link }]} onPress={() => openPicker('wake')}>
-            {formatClock(wake)}
-          </Text>
+  const question = !sleepDone ? (
+    <>
+      <Text style={[styles.q, { color: txt }]}>How did you sleep?</Text>
+      <View style={styles.chips}>
+        {QUALITIES.map((qq) => (
+          <Pressable key={qq.id} onPress={() => logCircadian(today, { quality: qq.id, bed, wake })} style={[styles.chip, { backgroundColor: chipBg, borderColor: chipBorder }]}>
+            <Text style={[styles.chipTxt, { color: chipTxt }]}>{qq.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <Text style={[styles.times, { color: sub }]}>
+        Bed{' '}
+        <Text style={[styles.timeVal, { color: colors.link }]} onPress={() => openPicker('bed')}>
+          {formatClock(bed)}
         </Text>
-      </>
-    ) : state === 'mlight' ? (
-      <View style={styles.qrow}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.q, { color: txt }]}>Get some morning light</Text>
-          <Text style={[styles.sub, { color: sub }]}>Sunrise was {formatClock(sun!.sunrise)} — a few minutes resets your clock.</Text>
-        </View>
-        <Pressable onPress={() => logCircadian(today, { morningLight: true })} style={styles.gotit}>
-          <Ionicons name="checkmark" size={15} color="#fff" />
-          <Text style={styles.gotitTxt}>Got it</Text>
-        </Pressable>
-      </View>
-    ) : state === 'elight' ? (
-      <View style={styles.qrow}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.q, { color: txt }]}>Catch the evening light</Text>
-          <Text style={[styles.sub, { color: sub }]}>Sunset {formatClock(sun!.sunset)} — the last of the daylight.</Text>
-        </View>
-        <Pressable onPress={() => logCircadian(today, { eveningLight: true })} style={styles.gotit}>
-          <Ionicons name="checkmark" size={15} color="#fff" />
-          <Text style={styles.gotitTxt}>Got it</Text>
-        </Pressable>
-      </View>
-    ) : null;
+        {'  ·  Wake '}
+        <Text style={[styles.timeVal, { color: colors.link }]} onPress={() => openPicker('wake')}>
+          {formatClock(wake)}
+        </Text>
+        {`  ·  ${formatDuration(sleepDuration(bed, wake))}`}
+      </Text>
+    </>
+  ) : null;
 
   // No location → no sky; a plain card with the "set location" hook + the sleep question.
   if (!sun) {
@@ -173,11 +155,12 @@ export function RhythmCard() {
     );
   }
 
-  // Nothing pending → clear sky (the reward), with its own chrome + sunrise/sunset labels.
-  if (state === 'done') {
+  // Nothing to log → clear sky (the reward), with its own chrome, sunrise/sunset labels and a soft
+  // button-less daylight cue (or a wind-down tip at night).
+  if (!sleepPending) {
     return (
       <Pressable style={styles.card} onPress={openFull}>
-        <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} lat={location!.lat} lng={location!.lng} now={now} height={104} eyebrow="RHYTHM" showNow />
+        <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} lat={location!.lat} lng={location!.lng} now={now} height={104} eyebrow="RHYTHM" showNow why={dayNudge} />
         {pickerModal()}
       </Pressable>
     );
@@ -241,15 +224,11 @@ const styles = StyleSheet.create({
   cEyebrow: { fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.3 },
   cNow: { fontSize: font.eyebrow, fontFamily: fonts.bold },
   q: { fontSize: font.body, fontFamily: fonts.heavy },
-  sub: { fontSize: font.small, fontFamily: fonts.regular, marginTop: 2 },
   chips: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   chip: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radius.pill, borderWidth: 1 },
   chipTxt: { fontSize: font.small, fontFamily: fonts.bold },
   times: { fontSize: font.small, fontFamily: fonts.regular, marginTop: spacing.md },
   timeVal: { fontFamily: fonts.bold },
-  qrow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  gotit: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.link, borderRadius: radius.pill, paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
-  gotitTxt: { color: '#fff', fontSize: font.small, fontFamily: fonts.heavy },
 
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, width: '100%', maxWidth: 420 },
