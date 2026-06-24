@@ -20,6 +20,15 @@ const QUALITIES = [
   { id: 'good', label: 'Good' },
 ] as const;
 
+// Sleep-timeline geometry: a FIXED 8pm → 10am window, so the same bedtime always lands in the same
+// spot (steady bedtimes line up across the rows). axisFrac maps a clock minute → 0 (8pm) … 1 (10am).
+const AXIS_START = 20 * 60; // 8:00 pm
+const AXIS_LEN = 14 * 60; // 14h → 10:00 am at the right edge
+const MIDNIGHT_X = ((24 * 60 - AXIS_START) % 1440) / AXIS_LEN; // where midnight falls on the axis
+const axisFrac = (t: number) => ((((t - AXIS_START) % 1440) + 1440) % 1440) / AXIS_LEN;
+// Calm quality tints — not the saturated "done" green or the hot ember; gentle, never an alarm red.
+const QUALITY_COLOR = { good: '#74B98D', ok: '#AEB9C6', poor: '#E6B36B' } as const;
+
 const WEEKDAY = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const WEEKDAYS_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -168,23 +177,49 @@ function RhythmHome({
         {/* Last 7 days */}
         <View style={styles.card}>
           <Text style={styles.cardHead}>Last 7 days</Text>
-          <View style={styles.weekRow}>
-            {last7.map((d) => {
-              const log = circadian[d];
-              const slept = log?.bed !== undefined && log?.wake !== undefined;
-              const dur = slept ? sleepDuration(log!.bed!, log!.wake!) : 0;
-              const h = slept ? Math.max(8, Math.min(42, (dur / 60) * 4.4)) : 4;
-              return (
-                <Pressable key={d} style={styles.weekCol} onPress={() => setOpenDay(d)} hitSlop={6}>
-                  <View style={styles.barArea}>
-                    <View style={[styles.bar, { height: h, backgroundColor: slept ? colors.streakBorder : colors.track }]} />
-                  </View>
-                  <Text style={[styles.weekDay, d === today && styles.weekDayToday]}>{weekdayLetter(d)}</Text>
-                </Pressable>
-              );
-            })}
+          <View style={styles.qLegend}>
+            {([['Good', 'good'], ['OK', 'ok'], ['Poor', 'poor']] as const).map(([lbl, q]) => (
+              <View key={q} style={styles.qLegendItem}>
+                <View style={[styles.qSwatch, { backgroundColor: QUALITY_COLOR[q] }]} />
+                <Text style={styles.qLegendText}>{lbl}</Text>
+              </View>
+            ))}
           </View>
-          <Text style={styles.legend}>Bars = hours in bed</Text>
+          {last7.map((d) => {
+            const log = circadian[d];
+            const slept = log?.bed !== undefined && log?.wake !== undefined;
+            const isToday = d === today;
+            let left = 0;
+            let width = 0;
+            if (slept) {
+              const bf = axisFrac(log!.bed!);
+              const wf = axisFrac(log!.wake!);
+              left = bf > 1 ? 0 : bf;
+              width = Math.max(0.03, (wf > 1 ? 1 : wf) - left);
+            }
+            return (
+              <Pressable key={d} style={styles.tlRow} onPress={() => setOpenDay(d)} hitSlop={4}>
+                <Text style={[styles.tlDay, isToday && styles.weekDayToday]}>{weekdayLetter(d)}</Text>
+                <View style={styles.tlTrack}>
+                  <View style={[styles.tlMidnight, { left: `${MIDNIGHT_X * 100}%` }]} />
+                  {slept ? (
+                    <View
+                      style={[
+                        styles.tlBar,
+                        { left: `${left * 100}%`, width: `${width * 100}%`, backgroundColor: QUALITY_COLOR[log!.quality ?? 'ok'] },
+                        isToday && styles.tlBarToday,
+                      ]}
+                    />
+                  ) : null}
+                </View>
+              </Pressable>
+            );
+          })}
+          <View style={styles.tlAxis}>
+            <Text style={styles.tlAxisLbl}>8pm</Text>
+            <Text style={styles.tlAxisLbl}>10am</Text>
+          </View>
+          <Text style={styles.legend}>Each bar is bedtime to wake · the line marks midnight</Text>
           {week.avgSleepMin !== null || consistency ? (
             <View style={styles.summaryBox}>
               {week.avgSleepMin !== null ? (
@@ -372,11 +407,18 @@ const styles = StyleSheet.create({
   qPillText: { color: colors.text, fontSize: font.small, fontFamily: fonts.bold },
   qPillTextOn: { color: colors.primaryText },
 
-  weekRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  weekCol: { flex: 1, alignItems: 'center', gap: 5 },
-  barArea: { height: 46, justifyContent: 'flex-end' },
-  bar: { width: 10, borderRadius: 4 },
-  weekDay: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy },
+  qLegend: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md },
+  qLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  qSwatch: { width: 10, height: 10, borderRadius: 3 },
+  qLegendText: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.bold },
+  tlRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  tlDay: { width: 16, color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy, textAlign: 'center' },
+  tlTrack: { flex: 1, height: 13, backgroundColor: colors.track, borderRadius: 7, overflow: 'hidden' },
+  tlMidnight: { position: 'absolute', top: 0, bottom: 0, width: 1, backgroundColor: colors.border },
+  tlBar: { position: 'absolute', top: 0, height: 13, borderRadius: 7, minWidth: 8 },
+  tlBarToday: { borderWidth: 1.5, borderColor: colors.session },
+  tlAxis: { flexDirection: 'row', justifyContent: 'space-between', marginLeft: 24, marginTop: spacing.xs },
+  tlAxisLbl: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.regular },
   weekDayToday: { color: colors.session },
   legend: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.regular, marginTop: spacing.md, textAlign: 'center' },
   summaryBox: { marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, gap: 4 },
