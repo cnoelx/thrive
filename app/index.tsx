@@ -146,6 +146,38 @@ export default function Home() {
         : `Every area's at Level ${overall} — the next tier's within reach everywhere. Keep going!`;
   const todayWk = todaysWorkout(progress, pullUnlocked, new Date());
   const movePreview = todayWk.rest ? '' : `${todayWk.items.length} moves`;
+  // Rhythm leads the home cards by default; the workout takes the prime slot only while it's actually
+  // owed — a training day, not done, and (when a reminder time is set) at/after that time — so an
+  // evening-planned workout doesn't hog the morning.
+  const workoutExpected =
+    !todayWk.rest && !doneToday && (!reminderCustomTime || new Date().getHours() * 60 + new Date().getMinutes() >= reminderHour * 60 + reminderMinute);
+  const workoutCard = todayWk.rest ? (
+    <View style={[styles.restCard, styles.sectionGap]}>
+      <Text style={styles.restEyebrow}>TODAY</Text>
+      <Text style={styles.restTitle}>Rest day</Text>
+      <Text style={styles.restSub}>Take it easy today — you&apos;ve earned it.</Text>
+    </View>
+  ) : (
+    <View style={[styles.todayHero, !doneToday && styles.todayHeroHot, styles.sectionGap]}>
+      <Text style={styles.todayHeroEyebrow}>TODAY&apos;S WORKOUT</Text>
+      <Text style={styles.todayHeroTitle}>{todayWk.focus}</Text>
+      <Text style={styles.todayHeroSub}>{movePreview}</Text>
+      {doneToday ? (
+        <View style={styles.todayDonePill}>
+          <Text style={styles.todayDoneText}>✓ Done for today</Text>
+        </View>
+      ) : (
+        <Pressable style={styles.todayHeroBtn} onPress={() => router.push('/workout')}>
+          <Text style={styles.todayHeroBtnText}>Start workout →</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+  const rhythmCard = (
+    <View style={styles.sectionGap}>
+      <RhythmCard />
+    </View>
+  );
   // A streak of 3+ that just broke (missed a workout day) — acknowledge it kindly instead of
   // silently resetting to zero. `streak` still holds the lost length until the next workout.
   const lostStreak = streakNow === 0 && streak >= 3 && lastLoggedDay !== null;
@@ -273,34 +305,19 @@ export default function Home() {
             </View>
           </Pressable>
 
-          {/* Today */}
-          {todayWk.rest ? (
-            <View style={[styles.restCard, styles.sectionGap]}>
-              <Text style={styles.restEyebrow}>TODAY</Text>
-              <Text style={styles.restTitle}>Rest day</Text>
-              <Text style={styles.restSub}>Take it easy today — you&apos;ve earned it.</Text>
-            </View>
+          {/* Workout & Rhythm — Rhythm leads unless the workout's actually owed right now (see
+              workoutExpected); the workout never gets pushed down once it's time to do it. */}
+          {workoutExpected ? (
+            <>
+              {workoutCard}
+              {rhythmCard}
+            </>
           ) : (
-            <View style={[styles.todayHero, !doneToday && styles.todayHeroHot, styles.sectionGap]}>
-              <Text style={styles.todayHeroEyebrow}>TODAY&apos;S WORKOUT</Text>
-              <Text style={styles.todayHeroTitle}>{todayWk.focus}</Text>
-              <Text style={styles.todayHeroSub}>{movePreview}</Text>
-              {doneToday ? (
-                <View style={styles.todayDonePill}>
-                  <Text style={styles.todayDoneText}>✓ Done for today</Text>
-                </View>
-              ) : (
-                <Pressable style={styles.todayHeroBtn} onPress={() => router.push('/workout')}>
-                  <Text style={styles.todayHeroBtnText}>Start workout →</Text>
-                </Pressable>
-              )}
-            </View>
+            <>
+              {rhythmCard}
+              {workoutCard}
+            </>
           )}
-
-          {/* Rhythm — sleep & daylight at a glance + quick log (standalone, never affects the program) */}
-          <View style={styles.sectionGap}>
-            <RhythmCard />
-          </View>
 
           {/* Training areas — one grouped card, per-row progress */}
           <View style={[styles.groupCard, styles.sectionGap]}>
