@@ -10,7 +10,7 @@ import { HowToSheet } from '@/components/HowToSheet';
 import { ShareCardModal } from '@/components/ShareCardModal';
 import { WorkoutCard } from '@/components/WorkoutCard';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
-import { EXERCISE_BY_KEY, formatTarget } from '@/data/benchmarks';
+import { CategoryId, EXERCISE_BY_KEY, formatTarget } from '@/data/benchmarks';
 import { estimateCalories } from '@/engine/calories';
 import { todaysWorkout, workoutForDay, type WorkoutItem } from '@/engine/dailyCard';
 import { DAY_KEYS, type DayKey } from '@/data/schedule';
@@ -98,7 +98,7 @@ export default function Workout() {
   const insets = useSafeAreaInsets();
   const progress = useAppStore((s) => s.progress);
   const pullUnlocked = useAppStore((s) => s.pullUnlocked);
-  const logToday = useAppStore((s) => s.logToday);
+  const logWorkout = useAppStore((s) => s.logWorkout);
   const rateWorkout = useAppStore((s) => s.rateWorkout);
   const lastLoggedDay = useAppStore((s) => s.lastLoggedDay);
   const streak = useAppStore((s) => s.streak);
@@ -149,17 +149,20 @@ export default function Workout() {
     if (stepIndex + 1 >= steps.length) {
       const mins = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
       setDurationMin(mins);
-      if (!freestyle && lastLoggedDay !== day) {
-        logToday(day, {
-          focus: workout.focus,
-          moves: workout.items.length,
-          durationMin: mins,
-          totalSets: steps.length,
-          ...(weightKg ? { calories: estimateCalories(weightKg, mins) } : {}),
-          // Stored for the shareable workout card (name + the goal target per move).
-          items: workout.items.map((it) => ({ name: it.name, sets: it.sets, target: it.target })),
-        });
-      }
+      // Every finished session is logged now — scheduled or freestyle. The store appends it to the
+      // feed and only moves the streak on the first session of the day.
+      logWorkout({
+        day,
+        at: Date.now(),
+        categories: [...new Set(workout.items.map((it) => EXERCISE_BY_KEY[it.exKey]?.categoryId).filter((c): c is CategoryId => !!c))],
+        focus: workout.focus,
+        moves: workout.items.length,
+        durationMin: mins,
+        totalSets: steps.length,
+        ...(weightKg ? { calories: estimateCalories(weightKg, mins) } : {}),
+        // Stored for the shareable workout card (name + the goal target per move).
+        items: workout.items.map((it) => ({ name: it.name, sets: it.sets, target: it.target })),
+      });
       coach(FINISH_CUE);
       setFinished(true);
     } else {
@@ -269,13 +272,14 @@ export default function Workout() {
       calories: kcal ?? undefined,
       items: workout.items.map((it) => ({ name: it.name, sets: it.sets, target: it.target })),
     };
-    // Freestyle session: a clean "nice work" + share, no logging / feel / nudges (it doesn't count).
+    // Freestyle session: a clean "nice work" + share. It's logged now (counts toward streak/history/
+    // readiness) — just no feel rating or reminder nudge on this screen.
     if (freestyle) {
       return (
         <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={[styles.finishScroll, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}>
           <Text style={styles.bigEmoji}>💪</Text>
           <Text style={styles.completeTitle}>Nice work!</Text>
-          <Text style={styles.completeBody}>That&apos;s {workout.focus} done — a bonus session, just for the work.</Text>
+          <Text style={styles.completeBody}>That&apos;s {workout.focus} done — saved to your history.</Text>
           <View style={styles.cardWrap}>
             <WorkoutCard {...cardData} />
           </View>

@@ -69,9 +69,15 @@ export function categoriesTrainedOn(dayNumber: number, pullUnlocked: boolean): S
   return set;
 }
 
-// How many logged workouts trained category `c` after `sinceDay` — "sessions at the current level".
-export function sessionsTrainingCategory(loggedDays: number[], c: CategoryId, pullUnlocked: boolean, sinceDay: number): number {
-  return loggedDays.reduce((n, d) => (d > sinceDay && categoriesTrainedOn(d, pullUnlocked).has(c) ? n + 1 : n), 0);
+/** How many recorded sessions trained category `c` after `sinceDay` — paces the "ready to level up?"
+ *  prompt. Each session counts by the categories it actually trained (a freestyle pull session counts
+ *  for pull); sessions without their own category list fall back to that day's schedule. */
+export function sessionsTrainingCategory(sessions: { day: number; categories?: string[] }[], c: CategoryId, pullUnlocked: boolean, sinceDay: number): number {
+  return sessions.reduce((n, ses) => {
+    if (ses.day <= sinceDay) return n;
+    const trained = ses.categories ? ses.categories.includes(c) : categoriesTrainedOn(ses.day, pullUnlocked).has(c);
+    return trained ? n + 1 : n;
+  }, 0);
 }
 
 // Build the workout for a specific scheduled day — used both for today and for on-demand sessions the

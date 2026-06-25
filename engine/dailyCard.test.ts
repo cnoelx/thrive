@@ -69,11 +69,18 @@ describe('category training pace (ready-to-level-up signal)', () => {
     expect(categoriesTrainedOn(10, true).size).toBe(0); // Sunday rest
   });
 
-  it('counts only logged sessions that trained the category, after sinceDay', () => {
-    const logged = [4, 5, 7]; // Mon, Tue, Thu
+  it('counts only sessions that trained the category, after sinceDay (schedule fallback)', () => {
+    const logged = [4, 5, 7].map((day) => ({ day })); // Mon, Tue, Thu — no own categories → use schedule
     expect(sessionsTrainingCategory(logged, 'push', true, -1)).toBe(2); // push on Mon + Thu
     expect(sessionsTrainingCategory(logged, 'push', true, 4)).toBe(1); // after Mon → only Thu
     expect(sessionsTrainingCategory(logged, 'cardio', true, -1)).toBe(1); // cardio only Tue
+  });
+
+  it('counts a session by its own categories when present (a freestyle session counts for what it did)', () => {
+    // A Sunday (rest in the schedule) where the user did a freestyle pull session.
+    const sessions = [{ day: 10, categories: ['pull'] }];
+    expect(sessionsTrainingCategory(sessions, 'pull', true, -1)).toBe(1); // counts, despite Sunday being a schedule rest day
+    expect(sessionsTrainingCategory(sessions, 'push', true, -1)).toBe(0); // didn't train push
   });
 });
 

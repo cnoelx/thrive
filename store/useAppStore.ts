@@ -12,6 +12,7 @@ import { IndiaLocation } from '@/data/locations';
 import { Equipment, GoalId } from '@/data/onboarding';
 import { WHATS_NEW } from '@/data/whatsNew';
 import { CircadianDay } from '@/engine/circadian';
+import { categoriesTrainedOn } from '@/engine/dailyCard';
 import { backfillStreakDays, dayNumberFromDate } from '@/engine/history';
 import { ProgressState, applyClaim, completedLevel, emptyProgress, unclaim } from '@/engine/progression';
 import { nextStreak } from '@/engine/streak';
@@ -43,6 +44,18 @@ export interface WorkoutSummary {
   items?: { name: string; sets: number | null; target: string }[];
 }
 
+/** A single completed session — the unit of the workout feed. Several can share a day (e.g. a morning
+ *  run plus an evening session). */
+export interface WorkoutSession extends WorkoutSummary {
+  /** Day-number the session happened. */
+  day: number;
+  /** Timestamp (ms) it finished — orders the feed. */
+  at: number;
+  /** Distinct training-category ids it trained — feeds area readiness. Absent on legacy/auto entries
+   *  (those fall back to the day's schedule). */
+  categories?: string[];
+}
+
 interface AppState {
   /** false until persisted state has loaded — screens wait on this before routing. */
   hydrated: boolean;
@@ -60,9 +73,12 @@ interface AppState {
   /** Day-numbers of every completed workout, ascending — drives the week strip and the calendar.
    *  Recording started with the history feature; older history is backfilled from the streak. */
   loggedDays: number[];
-  /** Per-day summaries of completed workouts, keyed by day-number. Days logged before this was
-   *  recorded (incl. backfilled streak days) simply have no entry. */
+  /** Per-day summaries of completed workouts, keyed by day-number — the latest session of each day.
+   *  Days logged before this was recorded (incl. backfilled streak days) simply have no entry. */
   workoutLog: Record<number, WorkoutSummary>;
+  /** Every completed session, in log order — the source for the workout feed and area readiness.
+   *  Multiple per day allowed; the streak/loggedDays stay day-based (first session of a day counts). */
+  sessions: WorkoutSession[];
   /** Body weight in kg — optional, used only for the calorie estimate. */
   weightKg: number | null;
   /** Day-number the weight was last set/confirmed — drives the monthly "still right?" nudge. */
@@ -106,9 +122,10 @@ interface AppState {
 
   completeOnboarding: (profile: Profile, initialProgress?: ProgressState) => void;
   unlockPull: () => void;
-  /** Mark today's workout complete, recording what it contained. */
-  logToday: (dayNumber: number, summary: WorkoutSummary) => void;
-  /** Attach a feel rating to an already-logged day (tapped on the finish screen). */
+  /** Record a completed session. Appends to the feed; the streak/calendar advance only on the first
+   *  session of a day (so extra sessions don't double-count). Any session counts — scheduled or freestyle. */
+  logWorkout: (session: WorkoutSession) => void;
+  /** Attach a feel rating to the most recent session of a day (tapped on the finish screen). */
   rateWorkout: (dayNumber: number, feel: WorkoutFeel) => void;
   setWeight: (kg: number | null, dayNumber: number) => void;
   /** Claim a benchmark (validated by the engine). */
@@ -150,6 +167,7 @@ export const useAppStore = create<AppState>()(
       streak: 0,
       loggedDays: [],
       workoutLog: {},
+      sessions: [],
       weightKg: null,
       weightSetDay: null,
       streakMilestoneSeen: 0,
@@ -180,31 +198,44 @@ export const useAppStore = create<AppState>()(
           streak: 0,
           loggedDays: [],
           workoutLog: {},
+          sessions: [],
           streakMilestoneSeen: 0,
           overallLevelSeen: 0,
           whatsNewSeen: WHATS_NEW.version,
           nudgeDismissedDay: null,
         }),
 
-      logToday: (dayNumber, summary) =>
+      logWorkout: (session) =>
         set((s) => {
-          if (s.lastLoggedDay === dayNumber) return s;
-          const streak = nextStreak(s.streak, s.lastLoggedDay, dayNumber);
-          // A fresh run (streak back to 1) re-arms all milestone celebrations.
+          // Every session is appended; the streak/calendar only move on the first session of a day.
+          const isNewDay = !s.loggedDays.includes(session.day);
+          const streak = isNewDay ? nextStreak(s.streak, s.lastLoggedDay, session.day) : s.streak;
           return {
-            lastLoggedDay: dayNumber,
+            sessions: [...s.sessions, session],
+            workoutLog: { ...s.workoutLog, [session.day]: session },
+            loggedDays: isNewDay ? [...s.loggedDays, session.day] : s.loggedDays,
+            lastLoggedDay: isNewDay ? session.day : s.lastLoggedDay,
             streak,
-            loggedDays: s.loggedDays.includes(dayNumber) ? s.loggedDays : [...s.loggedDays, dayNumber],
-            workoutLog: { ...s.workoutLog, [dayNumber]: summary },
-            streakMilestoneSeen: streak === 1 ? 0 : s.streakMilestoneSeen,
+            // A fresh run (streak back to 1) re-arms all milestone celebrations.
+            streakMilestoneSeen: isNewDay && streak === 1 ? 0 : s.streakMilestoneSeen,
           };
         }),
 
       rateWorkout: (dayNumber, feel) =>
         set((s) => {
+          // Rate the most recent session of that day (the one just finished) + the day's summary.
+          const sessions = [...s.sessions];
+          let idx = -1;
+          for (let i = sessions.length - 1; i >= 0; i--) {
+            if (sessions[i].day === dayNumber) {
+              idx = i;
+              break;
+            }
+          }
+          if (idx === -1) return s;
+          sessions[idx] = { ...sessions[idx], feel };
           const cur = s.workoutLog[dayNumber];
-          if (!cur) return s;
-          return { workoutLog: { ...s.workoutLog, [dayNumber]: { ...cur, feel } } };
+          return { sessions, workoutLog: cur ? { ...s.workoutLog, [dayNumber]: { ...cur, feel } } : s.workoutLog };
         }),
 
       setWeight: (kg, dayNumber) => set({ weightKg: kg, weightSetDay: kg ? dayNumber : null }),
@@ -270,6 +301,7 @@ export const useAppStore = create<AppState>()(
           streak: 0,
           loggedDays: [],
           workoutLog: {},
+          sessions: [],
           weightKg: null,
           weightSetDay: null,
           streakMilestoneSeen: 0,
@@ -305,6 +337,7 @@ export const useAppStore = create<AppState>()(
         streak: s.streak,
         loggedDays: s.loggedDays,
         workoutLog: s.workoutLog,
+        sessions: s.sessions,
         weightKg: s.weightKg,
         weightSetDay: s.weightSetDay,
         streakMilestoneSeen: s.streakMilestoneSeen,
@@ -338,11 +371,30 @@ function backfillLoggedDays() {
   }
 }
 
+// One-time migration to the per-session feed: turn each previously-logged day into a single session,
+// dated to noon of that day. Days with a stored summary carry their detail; backfilled streak days
+// (no summary) become category-only entries so they still feed readiness but stay out of the feed.
+function migrateSessions() {
+  const s = useAppStore.getState();
+  if (s.sessions.length > 0 || s.loggedDays.length === 0) return;
+  const sessions: WorkoutSession[] = [...s.loggedDays]
+    .sort((a, b) => a - b)
+    .map((day) => {
+      const wl = s.workoutLog[day];
+      const at = day * 86400000 + 43200000; // noon of that day
+      const categories = [...categoriesTrainedOn(day, s.pullUnlocked)];
+      return wl ? { ...wl, day, at, categories } : { focus: '', day, at, categories };
+    });
+  useAppStore.setState({ sessions });
+}
+
 useAppStore.persist.onFinishHydration(() => {
   backfillLoggedDays();
+  migrateSessions();
   useAppStore.setState({ hydrated: true });
 });
 if (useAppStore.persist.hasHydrated()) {
   backfillLoggedDays();
+  migrateSessions();
   useAppStore.setState({ hydrated: true });
 }

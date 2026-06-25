@@ -57,6 +57,7 @@ export default function Home() {
   const lastLoggedDay = useAppStore((s) => s.lastLoggedDay);
   const streak = useAppStore((s) => s.streak);
   const loggedDays = useAppStore((s) => s.loggedDays);
+  const sessions = useAppStore((s) => s.sessions);
   const lastLevelDay = useAppStore((s) => s.lastLevelDay);
   const achievementsSeen = useAppStore((s) => s.achievementsSeen);
   const streakMilestoneSeen = useAppStore((s) => s.streakMilestoneSeen);
@@ -335,7 +336,7 @@ export default function Home() {
               const ready =
                 canLevelUp &&
                 claimedNext < nextBenches.length &&
-                (claimedNext > 0 || sessionsTrainingCategory(loggedDays, cat.id, pullUnlocked, lastLevelDay[cat.id] ?? -1) >= READY_SESSIONS);
+                (claimedNext > 0 || sessionsTrainingCategory(sessions, cat.id, pullUnlocked, lastLevelDay[cat.id] ?? -1) >= READY_SESSIONS);
               return (
                 <Pressable
                   key={cat.id}
