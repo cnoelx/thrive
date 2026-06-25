@@ -154,6 +154,7 @@ export default function Workout() {
       logWorkout({
         day,
         at: Date.now(),
+        scheduled: !freestyle,
         categories: [...new Set(workout.items.map((it) => EXERCISE_BY_KEY[it.exKey]?.categoryId).filter((c): c is CategoryId => !!c))],
         focus: workout.focus,
         moves: workout.items.length,

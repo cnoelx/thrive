@@ -54,6 +54,9 @@ export interface WorkoutSession extends WorkoutSummary {
   /** Distinct training-category ids it trained — feeds area readiness. Absent on legacy/auto entries
    *  (those fall back to the day's schedule). */
   categories?: string[];
+  /** True if this was the day's scheduled session (not a freestyle/library one) — drives the home
+   *  "Today's Workout" card's done state. */
+  scheduled?: boolean;
 }
 
 interface AppState {
@@ -383,7 +386,8 @@ function migrateSessions() {
       const wl = s.workoutLog[day];
       const at = day * 86400000 + 43200000; // noon of that day
       const categories = [...categoriesTrainedOn(day, s.pullUnlocked)];
-      return wl ? { ...wl, day, at, categories } : { focus: '', day, at, categories };
+      // Everything logged before this change was a scheduled session (freestyle didn't log).
+      return wl ? { ...wl, day, at, categories, scheduled: true } : { focus: '', day, at, categories, scheduled: true };
     });
   useAppStore.setState({ sessions });
 }

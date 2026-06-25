@@ -147,11 +147,14 @@ export default function Home() {
         : `Every area's at Level ${overall} — the next tier's within reach everywhere. Keep going!`;
   const todayWk = todaysWorkout(progress, pullUnlocked, new Date());
   const movePreview = todayWk.rest ? '' : `${todayWk.items.length} moves`;
+  // The home "Today's Workout" card tracks the SCHEDULED session specifically — a freestyle/run keeps
+  // the streak (week strip + history) but doesn't tick this card off.
+  const scheduledDoneToday = sessions.some((ss) => ss.day === day && ss.scheduled);
   // Rhythm leads the home cards by default; the workout takes the prime slot only while it's actually
-  // owed — a training day, not done, and (when a reminder time is set) at/after that time — so an
-  // evening-planned workout doesn't hog the morning.
+  // owed — a training day, the scheduled session not done, and (when a reminder time is set) at/after
+  // that time — so an evening-planned workout doesn't hog the morning.
   const workoutExpected =
-    !todayWk.rest && !doneToday && (!reminderCustomTime || new Date().getHours() * 60 + new Date().getMinutes() >= reminderHour * 60 + reminderMinute);
+    !todayWk.rest && !scheduledDoneToday && (!reminderCustomTime || new Date().getHours() * 60 + new Date().getMinutes() >= reminderHour * 60 + reminderMinute);
   const workoutCard = todayWk.rest ? (
     <View style={[styles.restCard, styles.sectionGap]}>
       <Text style={styles.restEyebrow}>TODAY</Text>
@@ -159,11 +162,11 @@ export default function Home() {
       <Text style={styles.restSub}>Take it easy today — you&apos;ve earned it.</Text>
     </View>
   ) : (
-    <View style={[styles.todayHero, !doneToday && styles.todayHeroHot, styles.sectionGap]}>
+    <View style={[styles.todayHero, !scheduledDoneToday && styles.todayHeroHot, styles.sectionGap]}>
       <Text style={styles.todayHeroEyebrow}>TODAY&apos;S WORKOUT</Text>
       <Text style={styles.todayHeroTitle}>{todayWk.focus}</Text>
       <Text style={styles.todayHeroSub}>{movePreview}</Text>
-      {doneToday ? (
+      {scheduledDoneToday ? (
         <View style={styles.todayDonePill}>
           <Text style={styles.todayDoneText}>✓ Done for today</Text>
         </View>
