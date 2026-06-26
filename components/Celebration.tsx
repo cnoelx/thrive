@@ -26,7 +26,7 @@ export function Celebration({ title, body, onDone }: { title: string; body: stri
     ]).start();
     const t = setTimeout(finish, 2600);
     return () => clearTimeout(t);
-  }, [finish, scale]);
+  }, [finish, scale, opacity]);
 
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={finish}>

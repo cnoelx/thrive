@@ -191,9 +191,11 @@ export default function Home() {
   const weekLine =
     streakNow >= 2
       ? STREAK_MESSAGES[streakNow % STREAK_MESSAGES.length](streakNow)
-      : doneToday
+      : scheduledDoneToday
         ? 'Workout done — rest easy, see you tomorrow.'
-        : todayWk.rest
+        : doneToday
+          ? 'Nice — you trained today. Today’s session is still here too.'
+          : todayWk.rest
           ? 'Rest day — recovery is training too. 🌿'
           : lostStreak
             ? `Your ${streak}-day run ended — start a new one today`
