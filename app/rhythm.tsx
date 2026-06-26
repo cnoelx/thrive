@@ -86,8 +86,11 @@ function RhythmHome({
   const now = new Date();
   const today = dayNumberFromDate(now);
   const todayLog = circadian[today] ?? {};
+  // `now` intentionally excluded — these only need to recompute when the day (or location) changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const sun = useMemo(() => sunTimes(location.lat, location.lng, now), [location.lat, location.lng, today]);
   const moon = moonPhase(now);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const moonRS = useMemo(() => moonTimes(now, location.lat, location.lng), [location.lat, location.lng, today]);
 
   const [picking, setPicking] = useState<null | 'bed' | 'wake'>(null);
@@ -148,7 +151,7 @@ function RhythmHome({
 
         {/* Sleep log */}
         <View style={styles.card}>
-          <Text style={styles.cardHead}>Last night's sleep</Text>
+          <Text style={styles.cardHead}>Last night&apos;s sleep</Text>
           <View style={styles.timeRow}>
             <TimeField label="Bed" value={todayLog.bed} onPress={() => setPicking('bed')} />
             <TimeField label="Wake" value={todayLog.wake} onPress={() => setPicking('wake')} />

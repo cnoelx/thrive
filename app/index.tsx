@@ -90,6 +90,9 @@ export default function Home() {
 
   const day = todayNumber();
   const doneToday = lastLoggedDay === day;
+  // The "Today's Workout" card + its reminder track the SCHEDULED session specifically — a freestyle/
+  // run keeps the streak (week strip + history) but doesn't satisfy today's program work (option B).
+  const scheduledDoneToday = sessions.some((ss) => ss.day === day && ss.scheduled);
   const streakNow = currentStreak(streak, lastLoggedDay, day);
   const streakMilestone = pendingStreakMilestone(streakNow, streakMilestoneSeen);
 
@@ -115,12 +118,14 @@ export default function Home() {
   useEffect(() => {
     if (!onboarded) return;
     refreshReminders({
-      lastLoggedDay,
+      // Skip today's workout reminder only when the SCHEDULED session is done — a freestyle/run
+      // doesn't excuse the program workout (option B), so the reminder should still fire.
+      lastLoggedDay: scheduledDoneToday ? day : null,
       lapsed,
       enabled: reminderEnabled,
       customTime: reminderCustomTime ? { hour: reminderHour, minute: reminderMinute } : null,
     });
-  }, [onboarded, reminderEnabled, reminderCustomTime, reminderHour, reminderMinute, lastLoggedDay, lapsed]);
+  }, [onboarded, reminderEnabled, reminderCustomTime, reminderHour, reminderMinute, scheduledDoneToday, day, lapsed]);
 
   // Rhythm nudges (sleep + sunrise/sunset light) — re-armed on open and whenever a log changes, so
   // logged items go silent. Independent of the workout reminders above.
@@ -147,9 +152,6 @@ export default function Home() {
         : `Every area's at Level ${overall} — the next tier's within reach everywhere. Keep going!`;
   const todayWk = todaysWorkout(progress, pullUnlocked, new Date());
   const movePreview = todayWk.rest ? '' : `${todayWk.items.length} moves`;
-  // The home "Today's Workout" card tracks the SCHEDULED session specifically — a freestyle/run keeps
-  // the streak (week strip + history) but doesn't tick this card off.
-  const scheduledDoneToday = sessions.some((ss) => ss.day === day && ss.scheduled);
   // Rhythm leads the home cards by default; the workout takes the prime slot only while it's actually
   // owed — a training day, the scheduled session not done, and (when a reminder time is set) at/after
   // that time — so an evening-planned workout doesn't hog the morning.
