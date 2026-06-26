@@ -9,21 +9,9 @@ import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 import { font, fonts, spacing } from '@/constants/theme';
 import { formatClock } from '@/engine/circadian';
-import { moonPhase, moonPosition, phaseName } from '@/lib/moon';
+import { moonPhase, moonPosition, moonTimes, phaseName } from '@/lib/moon';
+import { skyColors } from '@/lib/skyTint';
 
-interface Tint {
-  bg: [string, string];
-  text: string;
-  muted: string;
-  accent: string;
-  line: string;
-  arcDim: string;
-}
-const TINTS: Record<'day' | 'golden' | 'night', Tint> = {
-  day: { bg: ['#CFE4F5', '#E6F0F9'], text: '#1E3A52', muted: '#5E7790', accent: '#C2570B', line: '#A9C6DE', arcDim: '#A9C6DE' },
-  golden: { bg: ['#FBD7A2', '#F8E6CC'], text: '#7A4A1E', muted: '#9A6B43', accent: '#B4480B', line: '#E3B889', arcDim: '#E0B58A' },
-  night: { bg: ['#0A1322', '#0E1B30'], text: '#C7D3E0', muted: '#5E6E84', accent: '#8294AA', line: '#1E2C44', arcDim: '#1E2C44' },
-};
 const ARC_LIT = '#F97316'; // traveled portion of the arc
 const SUN_LOW = [249, 115, 22]; // orange near the horizon
 const SUN_HIGH = [251, 191, 36]; // yellow near noon
@@ -58,6 +46,7 @@ export function SkyArc({
   topRight,
   why,
   hideChrome,
+  moonFooter,
   style,
 }: {
   sunrise: number;
@@ -71,13 +60,12 @@ export function SkyArc({
   topRight?: ReactNode;
   why?: string;
   hideChrome?: boolean;
+  moonFooter?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const isNight = nowMin < sunrise || nowMin > sunset;
-  const nearHorizon = Math.min(Math.abs(nowMin - sunrise), Math.abs(sunset - nowMin)) < 55;
-  const state = isNight ? 'night' : nearHorizon ? 'golden' : 'day';
-  const tint = TINTS[state];
+  const sky = skyColors(nowMin, sunrise, sunset);
 
   // Arc geometry (percentage-x, pixel-y) — gives the sun headroom at the apex so it never clips.
   const horizonY = height * 0.86;
@@ -92,6 +80,7 @@ export function SkyArc({
   const sunColor = lerp(SUN_LOW, SUN_HIGH, 1 - 2 * Math.abs(f - 0.5)); // orange at horizon, yellow at noon
 
   const moon = moonPhase(now);
+  const mt = moonFooter ? moonTimes(now, lat, lng) : null;
   const md = Math.round(height * 0.34);
   // Moon terminator: the lit/dark boundary is a half plus an ellipse (a circle squished by scaleX).
   // k = cos(phase angle): >0 crescent (a dark ellipse eats the lit half), <0 gibbous (a light ellipse
@@ -111,7 +100,7 @@ export function SkyArc({
 
   const skyBody = (
     <>
-      <View style={[styles.horizon, { top: horizonY, backgroundColor: tint.line }]} />
+      <View style={[styles.horizon, { top: horizonY, backgroundColor: sky.line }]} />
       {isNight ? (
         <>
           {STARS.map((s, i) => (
@@ -120,9 +109,9 @@ export function SkyArc({
           {moonUp ? (
             <View style={[styles.moon, { width: md, height: md, borderRadius: md / 2, left: `${moonX}%`, top: moonTop, marginLeft: -md / 2, marginTop: -md / 2 }]}>
               {/* the always-dark un-lit half */}
-              <View style={{ position: 'absolute', top: 0, width: md / 2, height: md, backgroundColor: tint.bg[0], left: moon.waxing ? 0 : md / 2 }} />
+              <View style={{ position: 'absolute', top: 0, width: md / 2, height: md, backgroundColor: sky.top, left: moon.waxing ? 0 : md / 2 }} />
               {/* curved terminator: dark eats the lit side (crescent) or light fills the dark side (gibbous) */}
-              <View style={{ position: 'absolute', top: 0, left: 0, width: md, height: md, borderRadius: md / 2, backgroundColor: crescent ? tint.bg[0] : '#E6ECF3', transform: [{ scaleX: termScaleX }] }} />
+              <View style={{ position: 'absolute', top: 0, left: 0, width: md, height: md, borderRadius: md / 2, backgroundColor: crescent ? sky.top : '#E6ECF3', transform: [{ scaleX: termScaleX }] }} />
             </View>
           ) : null}
         </>
@@ -131,10 +120,8 @@ export function SkyArc({
           {Array.from({ length: 16 }, (_, i) => {
             const t = i / 15;
             const p = bez(t);
-            return <View key={i} style={[styles.arcDot, { left: `${p.x}%`, top: p.y, backgroundColor: t <= f ? ARC_LIT : tint.arcDim }]} />;
+            return <View key={i} style={[styles.arcDot, { left: `${p.x}%`, top: p.y, backgroundColor: t <= f ? ARC_LIT : sky.arcDim }]} />;
           })}
-          <View style={[styles.endDot, { left: '4%', top: horizonY }]} />
-          <View style={[styles.endDot, { left: '96%', top: horizonY }]} />
           <View style={[styles.sunGlow, { left: `${sun.x}%`, top: sun.y, backgroundColor: sunColor }]} />
           <View style={[styles.sun, { left: `${sun.x}%`, top: sun.y, backgroundColor: sunColor }]} />
         </>
@@ -145,17 +132,17 @@ export function SkyArc({
   // Sky visual only — fills its container, no eyebrow/labels (the card draws those on the glass).
   if (hideChrome) {
     return (
-      <LinearGradient colors={tint.bg} style={[StyleSheet.absoluteFillObject, style]}>
+      <LinearGradient colors={[sky.top, sky.glow, sky.base]} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFillObject, style]}>
         <View style={{ flex: 1 }}>{skyBody}</View>
       </LinearGradient>
     );
   }
 
   return (
-    <LinearGradient colors={tint.bg} style={[styles.sky, style]}>
+    <LinearGradient colors={[sky.top, sky.glow, sky.base]} locations={[0, 0.5, 1]} style={[styles.sky, style]}>
       <View style={styles.top}>
-        <Text style={[styles.eyebrow, { color: tint.muted }]}>{eyebrow}</Text>
-        {showNow ? <Text style={[styles.now, { color: tint.accent }]}>{formatClock(nowMin)}</Text> : null}
+        <Text style={[styles.eyebrow, { color: sky.topText }]}>{eyebrow}</Text>
+        {showNow ? <Text style={[styles.now, { color: sky.topAccent }]}>{formatClock(nowMin)}</Text> : null}
         {topRight}
       </View>
 
@@ -165,36 +152,62 @@ export function SkyArc({
         <View>
           {isNight ? (
             <>
-              <Text style={[styles.time, { color: tint.accent }]}>{untilLabel}</Text>
-              <Text style={[styles.cap, { color: tint.muted }]}>TILL SUNRISE</Text>
+              <Text style={[styles.time, { color: sky.accent }]}>{untilLabel}</Text>
+              <Text style={[styles.cap, { color: sky.muted }]}>TILL SUNRISE</Text>
             </>
           ) : (
             <>
-              <Text style={[styles.time, { color: tint.accent }]}>{formatClock(sunrise)}</Text>
-              <Text style={[styles.cap, { color: tint.muted }]}>SUNRISE</Text>
+              <Text style={[styles.time, { color: sky.accent }]}>{formatClock(sunrise)}</Text>
+              <Text style={[styles.cap, { color: sky.muted }]}>SUNRISE</Text>
             </>
           )}
         </View>
         <View style={{ alignItems: 'flex-end' }}>
           {isNight ? (
             <>
-              <Text style={[styles.time, { color: tint.accent }]}>{phaseName(moon.illum, moon.waxing)}</Text>
-              <Text style={[styles.cap, { color: tint.muted }]}>{Math.round(moon.illum * 100)}% LIT</Text>
+              <Text style={[styles.time, { color: sky.accent }]}>{phaseName(moon.illum, moon.waxing)}</Text>
+              <Text style={[styles.cap, { color: sky.muted }]}>{Math.round(moon.illum * 100)}% LIT</Text>
             </>
           ) : (
             <>
-              <Text style={[styles.time, { color: tint.accent }]}>{formatClock(sunset)}</Text>
-              <Text style={[styles.cap, { color: tint.muted }]}>SUNSET</Text>
+              <Text style={[styles.time, { color: sky.accent }]}>{formatClock(sunset)}</Text>
+              <Text style={[styles.cap, { color: sky.muted }]}>SUNSET</Text>
             </>
           )}
         </View>
       </View>
       {isNight ? (
-        <Text style={[styles.why, { color: tint.muted }]}>{WIND_DOWN[Math.floor(now.getTime() / 86400000) % WIND_DOWN.length]}</Text>
+        <Text style={[styles.why, { color: sky.muted }]}>{WIND_DOWN[Math.floor(now.getTime() / 86400000) % WIND_DOWN.length]}</Text>
       ) : why ? (
-        <Text style={[styles.why, { color: tint.muted }]}>{why}</Text>
+        <Text style={[styles.why, { color: sky.muted }]}>{why}</Text>
+      ) : null}
+
+      {moonFooter && mt ? (
+        <View style={[styles.moonRow, { borderTopColor: sky.line }]}>
+          <MoonGlyph size={16} illum={moon.illum} waxing={moon.waxing} />
+          <Text style={styles.moonText} numberOfLines={1}>
+            <Text style={[styles.moonName, { color: sky.text }]}>{phaseName(moon.illum, moon.waxing)}</Text>
+            <Text style={{ color: sky.muted }}>
+              {mt.rise !== null ? `  ·  rises ${formatClock(mt.rise)}` : '  ·  no moonrise'}
+              {mt.set !== null ? `  ·  sets ${formatClock(mt.set)}` : '  ·  no moonset'}
+            </Text>
+          </Text>
+        </View>
       ) : null}
     </LinearGradient>
+  );
+}
+
+// A tiny phase-accurate moon disc for the footer line — the same terminator trick as the night moon,
+// drawn small in calm greys so it reads on any sky tint.
+function MoonGlyph({ size, illum, waxing }: { size: number; illum: number; waxing: boolean }) {
+  const k = 1 - 2 * illum;
+  const crescent = k > 0;
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', backgroundColor: '#C7D4E2', borderWidth: StyleSheet.hairlineWidth, borderColor: '#AFC0D2' }}>
+      <View style={{ position: 'absolute', top: 0, height: size, width: size / 2, backgroundColor: '#9FB2C6', left: waxing ? 0 : size / 2 }} />
+      <View style={{ position: 'absolute', top: 0, left: 0, width: size, height: size, borderRadius: size / 2, backgroundColor: crescent ? '#9FB2C6' : '#C7D4E2', transform: [{ scaleX: Math.abs(k) }] }} />
+    </View>
   );
 }
 
@@ -205,7 +218,6 @@ const styles = StyleSheet.create({
   now: { fontSize: font.eyebrow, fontFamily: fonts.bold },
   horizon: { position: 'absolute', left: 0, right: 0, height: 1 },
   arcDot: { position: 'absolute', width: 3, height: 3, borderRadius: 2, marginLeft: -1.5, marginTop: -1.5 },
-  endDot: { position: 'absolute', width: 13, height: 13, borderRadius: 7, marginLeft: -6.5, marginTop: -6.5, backgroundColor: '#F97316' },
   sun: { position: 'absolute', width: 22, height: 22, borderRadius: 11, marginLeft: -11, marginTop: -11 },
   sunGlow: { position: 'absolute', width: 34, height: 34, borderRadius: 17, marginLeft: -17, marginTop: -17, opacity: 0.18 },
   star: { position: 'absolute', width: 2.5, height: 2.5, borderRadius: 2, marginLeft: -1.25, backgroundColor: '#FFFFFF', opacity: 0.75 },
@@ -214,4 +226,7 @@ const styles = StyleSheet.create({
   time: { fontSize: font.small, fontFamily: fonts.bold },
   cap: { fontSize: 9.5, fontFamily: fonts.heavy, letterSpacing: 1 },
   why: { fontSize: font.small, fontFamily: fonts.regular, marginTop: spacing.sm, lineHeight: 18 },
+  moonRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth },
+  moonText: { flex: 1, fontSize: font.small, fontFamily: fonts.regular },
+  moonName: { fontFamily: fonts.bold },
 });

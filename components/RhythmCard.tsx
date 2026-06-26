@@ -16,6 +16,7 @@ import { SkyArc } from '@/components/SkyArc';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { type CircadianDay, formatClock, formatDuration, sleepDuration } from '@/engine/circadian';
 import { dayNumberFromDate } from '@/engine/history';
+import { skyColors } from '@/lib/skyTint';
 import { sunTimes } from '@/lib/sun';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -118,6 +119,17 @@ export function RhythmCard() {
   const question = !sleepDone ? (
     <>
       <Text style={[styles.q, { color: txt }]}>How did you sleep?</Text>
+      <View style={styles.sleepFields}>
+        <Pressable onPress={() => openPicker('bed')} style={[styles.sleepField, { backgroundColor: chipBg, borderColor: chipBorder }]}>
+          <Text style={[styles.sleepLbl, { color: sub }]}>BED</Text>
+          <Text style={[styles.sleepVal, { color: txt }]}>{formatClock(bed)}</Text>
+        </Pressable>
+        <Pressable onPress={() => openPicker('wake')} style={[styles.sleepField, { backgroundColor: chipBg, borderColor: chipBorder }]}>
+          <Text style={[styles.sleepLbl, { color: sub }]}>WAKE</Text>
+          <Text style={[styles.sleepVal, { color: txt }]}>{formatClock(wake)}</Text>
+        </Pressable>
+      </View>
+      <Text style={[styles.durationLine, { color: sub }]}>{formatDuration(sleepDuration(bed, wake))} in bed</Text>
       <View style={styles.chips}>
         {QUALITIES.map((qq) => (
           <Pressable key={qq.id} onPress={() => logCircadian(today, { quality: qq.id, bed, wake })} style={[styles.chip, { backgroundColor: chipBg, borderColor: chipBorder }]}>
@@ -125,17 +137,6 @@ export function RhythmCard() {
           </Pressable>
         ))}
       </View>
-      <Text style={[styles.times, { color: sub }]}>
-        Bed{' '}
-        <Text style={[styles.timeVal, { color: colors.link }]} onPress={() => openPicker('bed')}>
-          {formatClock(bed)}
-        </Text>
-        {'  ·  Wake '}
-        <Text style={[styles.timeVal, { color: colors.link }]} onPress={() => openPicker('wake')}>
-          {formatClock(wake)}
-        </Text>
-        {`  ·  ${formatDuration(sleepDuration(bed, wake))}`}
-      </Text>
     </>
   ) : null;
 
@@ -166,13 +167,15 @@ export function RhythmCard() {
   }
 
   // Pending → a crisp sky strip on top (you can see the sun), the question on a clean panel below.
+  // The strip chrome borrows the live sky's top-tier colours so it reads on dawn/day/dusk alike.
+  const sky = skyColors(nowMin, sun.sunrise, sun.sunset);
   return (
     <Pressable style={styles.card} onPress={openFull}>
       <View style={{ height: SKY_BAND }}>
         <SkyArc sunrise={sun.sunrise} sunset={sun.sunset} lat={location!.lat} lng={location!.lng} now={now} height={SKY_BAND} eyebrow="RHYTHM" hideChrome style={StyleSheet.absoluteFill} />
         <View style={styles.skyChrome}>
-          <Text style={[styles.cEyebrow, { color: '#5E7790' }]}>RHYTHM</Text>
-          <Text style={[styles.cNow, { color: '#B26B00' }]}>{formatClock(nowMin)}</Text>
+          <Text style={[styles.cEyebrow, { color: sky.topText }]}>RHYTHM</Text>
+          <Text style={[styles.cNow, { color: sky.topAccent }]}>{formatClock(nowMin)}</Text>
         </View>
       </View>
       <View style={styles.promptPanel}>{question}</View>
@@ -217,11 +220,14 @@ const styles = StyleSheet.create({
   cEyebrow: { fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.3 },
   cNow: { fontSize: font.eyebrow, fontFamily: fonts.bold },
   q: { fontSize: font.body, fontFamily: fonts.heavy },
-  chips: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  chips: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
   chip: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radius.pill, borderWidth: 1 },
   chipTxt: { fontSize: font.small, fontFamily: fonts.bold },
-  times: { fontSize: font.small, fontFamily: fonts.regular, marginTop: spacing.md },
-  timeVal: { fontFamily: fonts.bold },
+  sleepFields: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  sleepField: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1, gap: 1 },
+  sleepLbl: { fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1 },
+  sleepVal: { fontSize: font.body, fontFamily: fonts.bold },
+  durationLine: { fontSize: font.small, fontFamily: fonts.bold, marginTop: spacing.sm, textAlign: 'center' },
 
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, width: '100%', maxWidth: 420 },

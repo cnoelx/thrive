@@ -10,7 +10,6 @@ import { INDIA_LOCATIONS, IndiaLocation } from '@/data/locations';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { formatClock, formatDuration, sleepConsistency, sleepDuration, weekSummary } from '@/engine/circadian';
 import { dayNumberFromDate } from '@/engine/history';
-import { moonPhase, moonTimes, phaseName } from '@/lib/moon';
 import { sunTimes } from '@/lib/sun';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -89,9 +88,6 @@ function RhythmHome({
   // `now` intentionally excluded — these only need to recompute when the day (or location) changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const sun = useMemo(() => sunTimes(location.lat, location.lng, now), [location.lat, location.lng, today]);
-  const moon = moonPhase(now);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const moonRS = useMemo(() => moonTimes(now, location.lat, location.lng), [location.lat, location.lng, today]);
 
   const [picking, setPicking] = useState<null | 'bed' | 'wake'>(null);
   const [openDay, setOpenDay] = useState<number | null>(null);
@@ -128,6 +124,7 @@ function RhythmHome({
               </Pressable>
             }
             why="Morning light anchors your body clock — better sleep tonight."
+            moonFooter
             style={styles.skyHeader}
           />
         ) : (
@@ -141,13 +138,6 @@ function RhythmHome({
             <Text style={styles.muted}>Daylight times unavailable for this location.</Text>
           </View>
         )}
-
-        {/* A quiet moon line under the sky — rise/set is the bit the sky's own label doesn't show */}
-        <Text style={styles.moonLine}>
-          {phaseName(moon.illum, moon.waxing)}
-          {moonRS.rise !== null ? `  ·  rises ${formatClock(moonRS.rise)}` : '  ·  no moonrise today'}
-          {moonRS.set !== null ? `  ·  sets ${formatClock(moonRS.set)}` : '  ·  no moonset today'}
-        </Text>
 
         {/* Sleep log */}
         <View style={styles.card}>
@@ -406,7 +396,7 @@ const styles = StyleSheet.create({
 
   qualityRow: { flexDirection: 'row', gap: spacing.sm },
   qPill: { flex: 1, backgroundColor: colors.bg, borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  qPillOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  qPillOn: { backgroundColor: colors.link, borderColor: colors.link },
   qPillText: { color: colors.text, fontSize: font.small, fontFamily: fonts.bold },
   qPillTextOn: { color: colors.primaryText },
 
@@ -426,8 +416,6 @@ const styles = StyleSheet.create({
   legend: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.regular, marginTop: spacing.md, textAlign: 'center' },
   summaryBox: { marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, gap: 4 },
   summary: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold, textAlign: 'center' },
-
-  moonLine: { color: colors.muted, fontSize: font.small, fontFamily: fonts.bold, textAlign: 'center', marginTop: -spacing.sm, marginBottom: spacing.lg },
 
   // Location picker
   pickerHint: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, lineHeight: 19, marginBottom: spacing.md },
