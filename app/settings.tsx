@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   title: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy },
 
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.sm },
-  label: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.5 },
+  label: { color: colors.link, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.5 },
 
   nameInput: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy, borderBottomWidth: 2, borderBottomColor: colors.link, paddingVertical: spacing.xs },
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },

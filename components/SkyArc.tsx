@@ -81,6 +81,11 @@ export function SkyArc({
 
   const moon = moonPhase(now);
   const mt = moonFooter ? moonTimes(now, lat, lng) : null;
+  // At night the sky's right-hand label already shows the phase name + % lit, so the moon footer
+  // there leads with rise/set (the bit nothing else shows) and skips repeating the name.
+  const moonRiseSet = mt
+    ? `${mt.rise !== null ? `rises ${formatClock(mt.rise)}` : 'no moonrise'}  ·  ${mt.set !== null ? `sets ${formatClock(mt.set)}` : 'no moonset'}`
+    : '';
   const md = Math.round(height * 0.34);
   // Moon terminator: the lit/dark boundary is a half plus an ellipse (a circle squished by scaleX).
   // k = cos(phase angle): >0 crescent (a dark ellipse eats the lit half), <0 gibbous (a light ellipse
@@ -186,11 +191,14 @@ export function SkyArc({
         <View style={[styles.moonRow, { borderTopColor: sky.line }]}>
           <MoonGlyph size={16} illum={moon.illum} waxing={moon.waxing} />
           <Text style={styles.moonText} numberOfLines={1}>
-            <Text style={[styles.moonName, { color: sky.text }]}>{phaseName(moon.illum, moon.waxing)}</Text>
-            <Text style={{ color: sky.muted }}>
-              {mt.rise !== null ? `  ·  rises ${formatClock(mt.rise)}` : '  ·  no moonrise'}
-              {mt.set !== null ? `  ·  sets ${formatClock(mt.set)}` : '  ·  no moonset'}
-            </Text>
+            {isNight ? (
+              <Text style={{ color: sky.muted }}>{moonRiseSet.charAt(0).toUpperCase() + moonRiseSet.slice(1)}</Text>
+            ) : (
+              <>
+                <Text style={[styles.moonName, { color: sky.text }]}>{phaseName(moon.illum, moon.waxing)}</Text>
+                <Text style={{ color: sky.muted }}>{`  ·  ${moonRiseSet}`}</Text>
+              </>
+            )}
           </Text>
         </View>
       ) : null}

@@ -11,6 +11,7 @@ import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { formatClock, formatDuration, sleepConsistency, sleepDuration, weekSummary } from '@/engine/circadian';
 import { dayNumberFromDate } from '@/engine/history';
 import { sunTimes } from '@/lib/sun';
+import { useNow } from '@/lib/useNow';
 import { useAppStore } from '@/store/useAppStore';
 
 const QUALITIES = [
@@ -82,7 +83,7 @@ function RhythmHome({
   const circadian = useAppStore((s) => s.circadian);
   const logCircadian = useAppStore((s) => s.logCircadian);
 
-  const now = new Date();
+  const now = useNow();
   const today = dayNumberFromDate(now);
   const todayLog = circadian[today] ?? {};
   // `now` intentionally excluded — these only need to recompute when the day (or location) changes.
@@ -123,7 +124,7 @@ function RhythmHome({
                 <Text style={styles.changeOnSky}>Change</Text>
               </Pressable>
             }
-            why="Morning light anchors your body clock — better sleep tonight."
+            why="Step into the daylight — better sleep tonight."
             moonFooter
             style={styles.skyHeader}
           />

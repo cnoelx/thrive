@@ -33,9 +33,9 @@ const whenLabel = (day: number, at: number, today: number): string => {
 function SessionIcon({ categories }: { categories?: string[] }) {
   const cats = categories ?? [];
   const strength = cats.some((c) => c === 'move' || c === 'push' || c === 'pull');
-  if (!strength && cats.includes('cardio')) return <MaterialCommunityIcons name="run" size={21} color={colors.ink} />;
-  if (!strength && cats.includes('mobility')) return <MaterialCommunityIcons name="yoga" size={21} color={colors.ink} />;
-  return <Ionicons name="barbell-outline" size={20} color={colors.ink} />;
+  if (!strength && cats.includes('cardio')) return <MaterialCommunityIcons name="run" size={21} color={colors.link} />;
+  if (!strength && cats.includes('mobility')) return <MaterialCommunityIcons name="yoga" size={21} color={colors.link} />;
+  return <Ionicons name="barbell-outline" size={20} color={colors.link} />;
 }
 
 export default function History() {
@@ -92,7 +92,7 @@ export default function History() {
         <View style={styles.card}>
           <View style={styles.cardHead}>
             <Text style={styles.cardHeadLabel}>Last 4 weeks</Text>
-            {streakNow > 0 ? (
+            {streakNow >= 2 ? (
               <View style={styles.streakChip}>
                 <Ionicons name="flame" size={14} color={colors.session} />
                 <Text style={styles.streakChipText}>{streakNow}-day streak</Text>
@@ -208,18 +208,18 @@ const styles = StyleSheet.create({
   heatToday: { borderWidth: 2, borderColor: colors.ink },
   heatNote: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.regular, marginTop: spacing.md },
 
-  listTitle: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1, textTransform: 'uppercase', marginBottom: spacing.xs },
+  listTitle: { color: colors.link, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1, textTransform: 'uppercase', marginBottom: spacing.xs },
   empty: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: spacing.sm },
   logRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
   logRowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
-  logIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
+  logIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.streakBg, alignItems: 'center', justifyContent: 'center' },
   logFocus: { color: colors.ink, fontSize: font.body, fontFamily: fonts.bold },
   logMeta: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: 1 },
   logWhen: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular },
 
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(12,20,16,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   sheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.xs, width: '100%', maxWidth: 420 },
-  sheetSub: { color: colors.muted, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.5 },
+  sheetSub: { color: colors.link, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.5 },
   sheetTitle: { color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy },
   sheetStats: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   sStat: { flex: 1, backgroundColor: colors.bg, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center', gap: 2 },

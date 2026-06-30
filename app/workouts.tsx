@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
   rowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
-  icon: { width: 38, height: 38, borderRadius: 10, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 38, height: 38, borderRadius: 10, backgroundColor: colors.streakBg, alignItems: 'center', justifyContent: 'center' },
   name: { color: colors.text, fontSize: font.body, fontFamily: fonts.bold },
   moves: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: 2 },
   chevron: { color: colors.muted, fontSize: 22, fontFamily: fonts.regular },

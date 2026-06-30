@@ -18,6 +18,7 @@ import { type CircadianDay, formatClock, formatDuration, sleepDuration } from '@
 import { dayNumberFromDate } from '@/engine/history';
 import { skyColors } from '@/lib/skyTint';
 import { sunTimes } from '@/lib/sun';
+import { useNow } from '@/lib/useNow';
 import { useAppStore } from '@/store/useAppStore';
 
 const SKY_BAND = 68; // height of the crisp sky strip above the sleep prompt
@@ -42,7 +43,7 @@ export function RhythmCard() {
   const circadian = useAppStore((s) => s.circadian);
   const logCircadian = useAppStore((s) => s.logCircadian);
 
-  const now = new Date();
+  const now = useNow();
   const today = dayNumberFromDate(now);
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const todayLog: CircadianDay = circadian[today] ?? {};

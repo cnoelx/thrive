@@ -15,7 +15,19 @@ describe('skyColors', () => {
   it('is the calm blue day palette at midday', () => {
     const c = skyColors(13 * 60, SR, SS);
     expect(c.top).toBe('#bfdbf2');
-    expect(c.topText).toBe('#234a66'); // dark text on a light sky
+    expect(c.topText).toBe('#22303f'); // dark ink, derived from the light sky top
+  });
+
+  it('keeps the top-row ink DARK while the sky top is still light (pre-sunset transition)', () => {
+    // 41 min before sunset — the case that read light-on-light before the derive-from-brightness fix.
+    const c = skyColors(SS - 41, SR, SS);
+    expect(c.topText).toBe('#22303f');
+    expect(c.topAccent).toBe('#c2570b');
+  });
+
+  it('flips the top-row ink to light once the sky top is genuinely dark (peak golden / night)', () => {
+    expect(skyColors(SS, SR, SS).topText).toBe('#ececf3'); // dusky indigo top at the sunset peak
+    expect(skyColors(2 * 60, SR, SS).topText).toBe('#ececf3'); // navy top in the dead of night
   });
 
   it('is the full dramatic golden right at the horizon', () => {
