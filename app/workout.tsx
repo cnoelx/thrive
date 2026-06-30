@@ -28,8 +28,7 @@ function todayNumber(): number {
   return Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
 }
 
-type SetKind = 'goal' | 'work' | 'plain';
-type CircuitStep = { item: WorkoutItem; restSec: number | null; target: string; kind: SetKind };
+type CircuitStep = { item: WorkoutItem; restSec: number | null; target: string };
 
 // Circuit: one set of each exercise per round, repeated for as many rounds as the highest set
 // count that day. Exercises with fewer sets drop out of the later rounds. No rest after the last set.
@@ -47,7 +46,6 @@ function buildCircuit(items: WorkoutItem[]): CircuitStep[] {
         item: it,
         restSec: it.restSec ?? null,
         target: mixed && r > 1 ? it.workTarget : it.target,
-        kind: mixed ? (r === 1 ? 'goal' : 'work') : 'plain',
       });
     }
   }
@@ -515,14 +513,6 @@ export default function Workout() {
             </View>
             {EXERCISE_BY_KEY[step.item.exKey]?.check ? <Text style={styles.checkEyebrow}>ONE-TIME CHECK</Text> : null}
             <Text style={styles.targetBig}>{formatTarget(step.target)}</Text>
-            {step.kind === 'goal' ? (
-              <Text style={styles.chasingHint}>Goal set — Level {step.item.level}: as close as you can</Text>
-            ) : step.kind === 'work' ? (
-              <Text style={styles.chasingHint}>Work set — solid reps at your level</Text>
-            ) : step.item.chasing ? (
-              <Text style={styles.chasingHint}>Level {step.item.level} goal — get as close as you can</Text>
-            ) : null}
-            {step.item.note ? <Text style={styles.note}>{step.item.note}</Text> : null}
             {hold ? (
               holdLeft !== null ? (
                 <>
@@ -629,8 +619,6 @@ const styles = StyleSheet.create({
   exerciseName: { color: sunrise.ink, fontSize: 30, fontFamily: fonts.display, textAlign: 'center', marginTop: 2, flexShrink: 1 },
   checkEyebrow: { color: sunrise.muted, fontSize: font.small, fontFamily: fonts.heavy, letterSpacing: 1.5, marginTop: spacing.sm },
   targetBig: { color: sunrise.hot, fontSize: 40, fontFamily: fonts.display, marginTop: spacing.xs },
-  chasingHint: { color: sunrise.muted, fontSize: font.small, textAlign: 'center', fontFamily: fonts.regular },
-  note: { color: sunrise.muted, fontSize: font.small, textAlign: 'center', fontFamily: fonts.regular },
   sunBtn: { backgroundColor: sunrise.hot, borderRadius: radius.pill, paddingVertical: spacing.md + 2, paddingHorizontal: spacing.xl, alignItems: 'center', marginTop: spacing.xxl, minWidth: 200 },
   sunBtnText: { color: '#FFFFFF', fontSize: font.body, fontFamily: fonts.heavy },
   primaryBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md + 2, paddingHorizontal: spacing.xl, alignItems: 'center', marginTop: spacing.xxl, minWidth: 200 },
