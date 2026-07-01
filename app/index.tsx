@@ -141,7 +141,6 @@ export default function Home() {
   const nextOverall = Math.min(overall + 1, MAX_LEVEL);
   const atNextCount = activeCats.filter((c) => completedLevel(progress, c) >= nextOverall).length;
   const atMax = overall >= MAX_LEVEL;
-  const overallPct = atMax ? 100 : (atNextCount / activeCats.length) * 100;
   const showCelebration = overall > overallLevelSeen;
   const showWhatsNew = WHATS_NEW.version > whatsNewSeen;
   const celebrateBody =
@@ -204,6 +203,34 @@ export default function Home() {
   const orderedCats = [...CATEGORIES].sort(
     (a, b) => Number(a.id === 'pull' && !pullUnlocked) - Number(b.id === 'pull' && !pullUnlocked),
   );
+  // Per-area progress, computed once — feeds the hero's segmented overall bar AND the breakdown sheet.
+  const areaData = orderedCats.map((cat) => {
+    const locked = cat.id === 'pull' && !pullUnlocked;
+    const lvl = completedLevel(progress, cat.id);
+    const maxed = !locked && lvl >= categoryCeiling(cat.id);
+    const nextBenches = locked || maxed ? [] : benchmarksFor(cat.id, nextLevel(progress, cat.id));
+    const claimedNext = nextBenches.filter((b) => progress.claimed[b.id]).length;
+    const fillPct = nextBenches.length ? (claimedNext / nextBenches.length) * 100 : 0;
+    const canLevelUp = !locked && !maxed && nextLevel(progress, cat.id) <= levelCap(progress, pullUnlocked);
+    // Only "ready" when plausibly so: part-way into the next level, or enough sessions since the last level-up here.
+    const ready =
+      canLevelUp &&
+      claimedNext < nextBenches.length &&
+      (claimedNext > 0 || sessionsTrainingCategory(sessions, cat.id, pullUnlocked, lastLevelDay[cat.id] ?? -1) >= READY_SESSIONS);
+    // "Done" for the overall level = already at (or past) the next overall tier — an amber segment.
+    const doneForOverall = !locked && (maxed || lvl >= nextOverall);
+    return { cat, locked, lvl, maxed, fillPct, ready, doneForOverall };
+  });
+  const readyCat = areaData.find((a) => a.ready)?.cat ?? null;
+  const holdouts = areaData.filter((a) => !a.locked && !a.doneForOverall);
+  // One hero line: the concrete win (an area ready to advance) wins; else name the overall holdout(s).
+  const overallNudge = atMax
+    ? 'Every area maxed out ✓'
+    : readyCat
+      ? `✨ ${readyCat.short} ready to level up`
+      : holdouts.length === 1
+        ? `${holdouts[0].cat.short}'s the holdout`
+        : `${holdouts.length} areas to catch up`;
   // The "set your own reminder time" banner: shown until they pick a time; dismissing it brings it
   // back a week later (no cap).
   const showReminderBanner = !reminderCustomTime && (reminderNudgeDay === null || day - reminderNudgeDay >= REMINDER_NUDGE_DAYS);
@@ -254,9 +281,29 @@ export default function Home() {
           <Pressable onPress={() => setLevelsOpen(true)} style={styles.heroOverall}>
             <Text style={styles.heroOverallEyebrow}>OVERALL</Text>
             <Text style={styles.heroLevel}>Level {overall}</Text>
-            <View style={styles.heroBarTrack}>
-              <View style={[styles.heroBarFill, { width: `${overallPct}%` }]} />
+            {/* One segment per area — amber = at the next tier, ember = still catching up (the holdout). */}
+            <View style={styles.heroSegRow}>
+              {areaData
+                .filter((a) => !a.locked)
+                .map((a) => (
+                  <View key={a.cat.id} style={styles.heroSeg}>
+                    <View style={styles.heroSegTrack}>
+                      <View
+                        style={[
+                          styles.heroSegFill,
+                          a.doneForOverall
+                            ? { width: '100%', backgroundColor: colors.streakInk }
+                            : { width: `${Math.max(a.fillPct, 12)}%`, backgroundColor: colors.accent },
+                        ]}
+                      />
+                    </View>
+                    <Text style={[styles.heroSegLabel, !a.doneForOverall && { color: colors.accent }]} numberOfLines={1}>
+                      {a.cat.short}
+                    </Text>
+                  </View>
+                ))}
             </View>
+            <Text style={styles.heroNudge}>{overallNudge} ›</Text>
           </Pressable>
         </View>
 
@@ -326,55 +373,6 @@ export default function Home() {
               {workoutCard}
             </>
           )}
-
-          {/* Training areas — one grouped card, per-row progress */}
-          <View style={[styles.groupCard, styles.sectionGap]}>
-            {orderedCats.map((cat, i) => {
-              const locked = cat.id === 'pull' && !pullUnlocked;
-              const lvl = completedLevel(progress, cat.id);
-              const maxed = !locked && lvl >= categoryCeiling(cat.id);
-              const nextBenches = locked || maxed ? [] : benchmarksFor(cat.id, nextLevel(progress, cat.id));
-              const claimedNext = nextBenches.filter((b) => progress.claimed[b.id]).length;
-              const fillPct = nextBenches.length ? (claimedNext / nextBenches.length) * 100 : 0;
-              // Can actually advance now (next level isn't runway-locked behind the other areas).
-              const canLevelUp = !locked && !maxed && nextLevel(progress, cat.id) <= levelCap(progress, pullUnlocked);
-              // Only nudge when they're plausibly ready: already part-way into the next level, or they've
-              // trained this area enough sessions since their last level-up here.
-              const ready =
-                canLevelUp &&
-                claimedNext < nextBenches.length &&
-                (claimedNext > 0 || sessionsTrainingCategory(sessions, cat.id, pullUnlocked, lastLevelDay[cat.id] ?? -1) >= READY_SESSIONS);
-              return (
-                <Pressable
-                  key={cat.id}
-                  onPress={() => (locked ? setPullStep('explain') : router.push(`/category/${cat.id}`))}
-                  style={[styles.areaRow, i > 0 && styles.areaRowDivider]}
-                >
-                  <View style={[styles.levelBox, !locked && { backgroundColor: lvl > 0 ? categoryColors[cat.id].main : categoryColors[cat.id].soft }]}>
-                    <Text style={[styles.levelText, !locked && (lvl > 0 ? styles.levelTextOn : { color: categoryColors[cat.id].main })]}>
-                      {locked ? '🔒' : `L${lvl}`}
-                    </Text>
-                  </View>
-                  <View style={{ flex: 1, gap: 7 }}>
-                    <Text style={styles.areaName}>{cat.short}</Text>
-                    {locked ? (
-                      <Text style={styles.areaLockHint}>Tap to unlock</Text>
-                    ) : maxed ? (
-                      <Text style={[styles.areaMaxedHint, { color: categoryColors[cat.id].main }]}>Maxed out ✓</Text>
-                    ) : (
-                      <>
-                        <View style={styles.rowBarTrack}>
-                          <View style={[styles.rowBarFill, { width: `${fillPct}%`, backgroundColor: categoryColors[cat.id].main }]} />
-                        </View>
-                        {ready ? <Text style={styles.areaLevelUp}>Ready to level up? →</Text> : null}
-                      </>
-                    )}
-                  </View>
-                  <Text style={styles.chevron}>›</Text>
-                </Pressable>
-              );
-            })}
-          </View>
 
           {/* Workouts library — set apart at the bottom; not part of the daily program */}
           <Pressable onPress={() => router.push('/workouts')} style={[styles.libraryBtn, styles.sectionGap]}>
@@ -487,21 +485,39 @@ export default function Home() {
               </View>
             ) : null}
             <View style={styles.levelsList}>
-              {orderedCats.map((cat) => {
-                const locked = cat.id === 'pull' && !pullUnlocked;
-                return (
-                  <View key={cat.id} style={styles.levelsRow}>
-                    <Text style={styles.levelsCat}>{cat.short}</Text>
-                    <Text style={[styles.levelsVal, { color: categoryColors[cat.id].main }, locked && styles.levelsValLocked]}>
-                      {locked
-                        ? '🔒 Locked'
-                        : completedLevel(progress, cat.id) >= categoryCeiling(cat.id)
-                          ? `Level ${completedLevel(progress, cat.id)} · Maxed`
-                          : `Level ${completedLevel(progress, cat.id)}`}
+              {areaData.map((a, i) => (
+                <Pressable
+                  key={a.cat.id}
+                  onPress={() => {
+                    setLevelsOpen(false);
+                    if (a.locked) setPullStep('explain');
+                    else router.push(`/category/${a.cat.id}`);
+                  }}
+                  style={[styles.areaRow, i > 0 && styles.areaRowDivider]}
+                >
+                  <View style={[styles.levelBox, !a.locked && { backgroundColor: a.lvl > 0 ? categoryColors[a.cat.id].main : categoryColors[a.cat.id].soft }]}>
+                    <Text style={[styles.levelText, !a.locked && (a.lvl > 0 ? styles.levelTextOn : { color: categoryColors[a.cat.id].main })]}>
+                      {a.locked ? '🔒' : `L${a.lvl}`}
                     </Text>
                   </View>
-                );
-              })}
+                  <View style={{ flex: 1, gap: 7 }}>
+                    <Text style={styles.areaName}>{a.cat.short}</Text>
+                    {a.locked ? (
+                      <Text style={styles.areaLockHint}>Tap to unlock</Text>
+                    ) : a.maxed ? (
+                      <Text style={[styles.areaMaxedHint, { color: categoryColors[a.cat.id].main }]}>Maxed out ✓</Text>
+                    ) : (
+                      <>
+                        <View style={styles.rowBarTrack}>
+                          <View style={[styles.rowBarFill, { width: `${a.fillPct}%`, backgroundColor: categoryColors[a.cat.id].main }]} />
+                        </View>
+                        {a.ready ? <Text style={styles.areaLevelUp}>Ready to level up? →</Text> : null}
+                      </>
+                    )}
+                  </View>
+                  <Text style={styles.chevron}>›</Text>
+                </Pressable>
+              ))}
             </View>
             <Pressable onPress={() => setLevelsOpen(false)} style={styles.pullPrimary}>
               <Text style={styles.pullPrimaryText}>Got it</Text>
@@ -563,8 +579,12 @@ const styles = StyleSheet.create({
   heroOverall: { marginTop: spacing.lg + spacing.xs },
   heroOverallEyebrow: { color: colors.onInkMuted, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1.5 },
   heroLevel: { color: colors.primaryText, fontSize: font.h2, fontFamily: fonts.display, marginTop: spacing.xs },
-  heroBarTrack: { height: 8, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: radius.pill, overflow: 'hidden', marginTop: spacing.md },
-  heroBarFill: { height: 8, backgroundColor: colors.accent, borderRadius: radius.pill },
+  heroSegRow: { flexDirection: 'row', gap: 5, marginTop: spacing.md },
+  heroSeg: { flex: 1, gap: 5 },
+  heroSegTrack: { height: 8, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: radius.pill, overflow: 'hidden' },
+  heroSegFill: { height: 8, borderRadius: radius.pill },
+  heroSegLabel: { color: colors.onInkMuted, fontSize: 10, fontFamily: fonts.bold, textAlign: 'center' },
+  heroNudge: { color: colors.accent, fontSize: font.small, fontFamily: fonts.bold, marginTop: spacing.md },
 
   content: { padding: spacing.lg },
   sectionGap: { marginTop: SECTION_GAP },
@@ -592,8 +612,7 @@ const styles = StyleSheet.create({
   libraryTitle: { color: colors.text, fontSize: font.body, fontFamily: fonts.heavy },
   librarySub: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, marginTop: 1 },
 
-  // Areas grouped card
-  groupCard: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md },
+  // Area rows — shared by the "where you're at" breakdown sheet
   areaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
   areaRowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
   levelBox: { width: 38, height: 38, borderRadius: 10, backgroundColor: colors.track, alignItems: 'center', justifyContent: 'center' },
@@ -632,11 +651,6 @@ const styles = StyleSheet.create({
   whatsNewRow: { flexDirection: 'row', gap: spacing.sm },
   whatsNewDot: { color: colors.link, fontSize: font.body, fontFamily: fonts.display, lineHeight: 22 },
   whatsNewText: { flex: 1, color: colors.text, fontSize: font.body, lineHeight: 22, fontFamily: fonts.regular },
-  levelsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
-  levelsCat: { color: colors.text, fontSize: font.body, fontFamily: fonts.bold },
-  levelsVal: { color: colors.primary, fontSize: font.body, fontFamily: fonts.heavy },
-  levelsValLocked: { color: colors.muted },
-
   pullSheet: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm, width: '100%', maxWidth: 420, alignItems: 'center' },
   pullEmoji: { fontSize: 44 },
   pullTitle: { color: colors.ink, fontSize: font.title, fontFamily: fonts.heavy, textAlign: 'center' },
