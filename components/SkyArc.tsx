@@ -80,12 +80,6 @@ export function SkyArc({
   const sunColor = lerp(SUN_LOW, SUN_HIGH, 1 - 2 * Math.abs(f - 0.5)); // orange at horizon, yellow at noon
 
   const moon = moonPhase(now);
-  const mt = moonFooter ? moonTimes(now, lat, lng) : null;
-  // At night the sky's right-hand label already shows the phase name + % lit, so the moon footer
-  // there leads with rise/set (the bit nothing else shows) and skips repeating the name.
-  const moonRiseSet = mt
-    ? `${mt.rise !== null ? `rises ${formatClock(mt.rise)}` : 'no moonrise'}  ·  ${mt.set !== null ? `sets ${formatClock(mt.set)}` : 'no moonset'}`
-    : '';
   const md = Math.round(height * 0.34);
   // Moon terminator: the lit/dark boundary is a half plus an ellipse (a circle squished by scaleX).
   // k = cos(phase angle): >0 crescent (a dark ellipse eats the lit half), <0 gibbous (a light ellipse
@@ -99,6 +93,20 @@ export function SkyArc({
   const moonUp = !!moonPos && moonPos.altitude > 0;
   const moonTop = horizonY - Math.max(0, Math.min(1, (moonPos?.altitude ?? 0) / 60)) * (horizonY - apexY);
   const moonX = Math.max(8, Math.min(92, 50 + ((moonPos?.azimuth ?? 0) / 120) * 42));
+  // Rise/set times feed the footer and — when the night moon hasn't risen — the label caption that
+  // explains the empty sky.
+  const mt = moonFooter || (isNight && !moonUp && !hideChrome) ? moonTimes(now, lat, lng) : null;
+  // At night the sky's right-hand label already shows the phase name + % lit, so the moon footer
+  // there leads with rise/set (the bit nothing else shows) and skips repeating the name.
+  const moonRiseSet = mt
+    ? `${mt.rise !== null ? `rises ${formatClock(mt.rise)}` : 'no moonrise'}  ·  ${mt.set !== null ? `sets ${formatClock(mt.set)}` : 'no moonset'}`
+    : '';
+  // Caption under the phase name: % lit while the moon's up; otherwise say why the sky is empty.
+  const moonCaption = moonUp
+    ? `${Math.round(moon.illum * 100)}% LIT`
+    : mt && mt.rise !== null && mt.rise > nowMin
+      ? `RISES ${formatClock(mt.rise).toUpperCase()}`
+      : 'BELOW HORIZON';
   // Time until the next sunrise (the useful "when does the night end" at night).
   const untilSunrise = nowMin < sunrise ? sunrise - nowMin : 1440 - nowMin + sunrise;
   const untilLabel = `${Math.floor(untilSunrise / 60)}h ${untilSunrise % 60}m`.replace(/^0h /, '');
@@ -171,7 +179,7 @@ export function SkyArc({
           {isNight ? (
             <>
               <Text style={[styles.time, { color: sky.accent }]}>{phaseName(moon.illum, moon.waxing)}</Text>
-              <Text style={[styles.cap, { color: sky.muted }]}>{Math.round(moon.illum * 100)}% LIT</Text>
+              <Text style={[styles.cap, { color: sky.muted }]}>{moonCaption}</Text>
             </>
           ) : (
             <>

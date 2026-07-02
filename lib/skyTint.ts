@@ -28,7 +28,12 @@ const NIGHT: Anchor = { top: '#08101E', glow: '#0E1B30', base: '#15273F', text: 
 const DAY: Anchor = { top: '#BFDBF2', glow: '#DCEAF7', base: '#E9F1FA', text: '#1E3A52', muted: '#5E7790', accent: '#C2570B', line: '#A9C6DE', arcDim: '#A9C6DE' };
 const GOLDEN: Anchor = { top: '#5C6BA8', glow: '#FBCF8E', base: '#F6E2C2', text: '#6E3F1A', muted: '#9A6B43', accent: '#B4480B', line: '#E3B889', arcDim: '#E7C9A0' };
 
-const KEYS = Object.keys(NIGHT) as (keyof Anchor)[];
+const SURFACE_KEYS: (keyof Anchor)[] = ['top', 'glow', 'base', 'line', 'arcDim'];
+const TEXT_KEYS = ['text', 'muted', 'accent'] as const;
+
+// Twilight-legible light ink for the lower labels while the base is mid-tone (heading dark but not
+// navy yet). NIGHT's dim anchors only read on a genuinely dark base, so we ease into them late.
+const LOWER_BRIGHT = { text: '#F2F4F7', muted: '#D9DEE6', accent: '#FBE6BC' } as const;
 
 // Top-row ink: the dark set reads on a light sky, the light set on a dark sky. Picked by `top`'s
 // brightness, with a quick ease across the mid-luminance crossover so it's full-contrast almost always.
@@ -58,7 +63,18 @@ export function skyColors(nowMin: number, sunrise: number, sunset: number): SkyC
   const warmS = smooth(1 - Math.abs(d) / GW); // 1 at the horizon → 0 beyond the golden window
 
   const out = {} as SkyColors;
-  for (const key of KEYS) out[key] = mix(mix(NIGHT[key], DAY[key], dayS), GOLDEN[key], warmS);
+  for (const key of SURFACE_KEYS) out[key] = mix(mix(NIGHT[key], DAY[key], dayS), GOLDEN[key], warmS);
+
+  // Lower-label ink, derived from the base's brightness (same bug class as the top row): dark ink on
+  // the light day/golden skies, bright ink through the mid-tone twilight crossfade, settling onto
+  // NIGHT's dim anchors only once the base is genuinely dark. Interpolating day↔night text directly
+  // put mid-grey text on a mid-grey base for ~half an hour around each horizon.
+  const baseLum = luminance(out.base);
+  const darkInkS = smooth((baseLum - 0.57) / 0.1); // 1 = base light enough for dark ink
+  const deepNightS = smooth((0.35 - baseLum) / 0.15); // 1 = base dark enough for the dim night set
+  for (const key of TEXT_KEYS) {
+    out[key] = mix(mix(LOWER_BRIGHT[key], NIGHT[key], deepNightS), mix(DAY[key], GOLDEN[key], warmS), darkInkS);
+  }
 
   // Derive the top-row ink from the sky top's brightness so it always contrasts (the bug was
   // interpolating it as a colour — it went light while the sky was still light, mid-transition).

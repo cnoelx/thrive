@@ -30,6 +30,21 @@ describe('skyColors', () => {
     expect(skyColors(2 * 60, SR, SS).topText).toBe('#ececf3'); // navy top in the dead of night
   });
 
+  it('keeps the lower-label ink bright through mid-twilight (was mid-grey on a mid-grey base)', () => {
+    // ~40 min after sunset — the washed-out screenshot case: base is a mid-tone, so the ink must be bright.
+    const c = skyColors(SS + 40, SR, SS);
+    expect(c.accent).toBe('#fbe6bc');
+    expect(c.muted).toBe('#d9dee6');
+  });
+
+  it('lower ink settles on the calm dim set at genuine night, dark sets by day/golden', () => {
+    const night = skyColors(2 * 60, SR, SS);
+    expect(night.muted).toBe('#5e6e84'); // the deliberately-dim night look, unchanged
+    expect(night.accent).toBe('#8294aa');
+    expect(skyColors(13 * 60, SR, SS).accent).toBe('#c2570b'); // day anchor exact
+    expect(skyColors(SS, SR, SS).accent).toBe('#b4480b'); // golden anchor exact at the peak
+  });
+
   it('is the full dramatic golden right at the horizon', () => {
     const c = skyColors(SS, SR, SS); // exactly sunset → warmth peaks
     expect(c.top).toBe('#5c6ba8'); // dusky indigo overhead
