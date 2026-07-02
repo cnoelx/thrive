@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ShareCardModal } from '@/components/ShareCardModal';
 import { type WorkoutCardData } from '@/components/WorkoutCard';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
+import { CARDIO_ACTIVITIES } from '@/data/cardio';
 import { dayLabel, dayNumberFromDate, streakEndingAt } from '@/engine/history';
 import { currentStreak } from '@/engine/streak';
 import { useAppStore, type WorkoutSession } from '@/store/useAppStore';
@@ -29,8 +30,11 @@ const whenLabel = (day: number, at: number, today: number): string => {
 };
 
 // One icon per modality (not per area) — scales as new workout types arrive. Strength wins when a
-// session mixes areas (most do); pure cardio → run, pure mobility → yoga.
-function SessionIcon({ categories }: { categories?: string[] }) {
+// session mixes areas (most do); pure cardio → run, pure mobility → yoga. Freestyle cardio activities
+// (Run/Cycle/…) are matched by focus name so each shows its own icon.
+function SessionIcon({ categories, focus }: { categories?: string[]; focus?: string }) {
+  const activity = CARDIO_ACTIVITIES.find((a) => a.name === focus);
+  if (activity) return <MaterialCommunityIcons name={activity.icon} size={21} color={colors.link} />;
   const cats = categories ?? [];
   const strength = cats.some((c) => c === 'move' || c === 'push' || c === 'pull');
   if (!strength && cats.includes('cardio')) return <MaterialCommunityIcons name="run" size={21} color={colors.link} />;
@@ -125,7 +129,7 @@ export default function History() {
             feed.map((ses, i) => (
               <Pressable key={`${ses.at}-${i}`} onPress={() => openDetail(ses)} style={[styles.logRow, i > 0 && styles.logRowDivider]}>
                 <View style={styles.logIcon}>
-                  <SessionIcon categories={ses.categories} />
+                  <SessionIcon categories={ses.categories} focus={ses.focus} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.logFocus}>{ses.focus}</Text>

@@ -4,6 +4,6 @@
 
 const WORKOUT_MET = 5; // moderate-effort calisthenics
 
-export function estimateCalories(weightKg: number, durationMin: number): number {
-  return Math.round(WORKOUT_MET * weightKg * (durationMin / 60));
+export function estimateCalories(weightKg: number, durationMin: number, met: number = WORKOUT_MET): number {
+  return Math.round(met * weightKg * (durationMin / 60));
 }

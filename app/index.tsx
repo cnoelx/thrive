@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { Redirect, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -10,8 +10,10 @@ import { Flame } from '@/components/Flame';
 import { RhythmCard } from '@/components/RhythmCard';
 import { categoryColors, colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { CATEGORIES, MAX_LEVEL, benchmarksFor, categoryCeiling } from '@/data/benchmarks';
+import { CARDIO_BY_KEY, CARDIO_STALE_MS } from '@/data/cardio';
 import { WHATS_NEW } from '@/data/whatsNew';
 import { achievementContext, unlockedIds } from '@/engine/achievements';
+import { formatClock } from '@/engine/circadian';
 import { sessionsTrainingCategory, todaysWorkout } from '@/engine/dailyCard';
 import { dateOfDayNumber, weekDays } from '@/engine/history';
 import { baselineLevel, completedLevel, effectiveCategoryIds, levelCap, nextLevel } from '@/engine/progression';
@@ -83,6 +85,8 @@ export default function Home() {
   const rhythmRemindersEnabled = useAppStore((s) => s.rhythmRemindersEnabled);
   const rhythmLocation = useAppStore((s) => s.rhythmLocation);
   const circadian = useAppStore((s) => s.circadian);
+  const activeCardio = useAppStore((s) => s.activeCardio);
+  const clearCardio = useAppStore((s) => s.clearCardio);
   const [pullStep, setPullStep] = useState<'closed' | 'explain' | 'confirm'>('closed');
   const [levelsOpen, setLevelsOpen] = useState(false);
   const [reminderPicker, setReminderPicker] = useState(false);
@@ -234,6 +238,9 @@ export default function Home() {
   // The "set your own reminder time" banner: shown until they pick a time; dismissing it brings it
   // back a week later (no cap).
   const showReminderBanner = !reminderCustomTime && (reminderNudgeDay === null || day - reminderNudgeDay >= REMINDER_NUDGE_DAYS);
+  // A cardio session still running (persisted through app death) — tap to resume/finish, × to discard.
+  const runningCardio =
+    activeCardio && Date.now() - activeCardio.startedAt < CARDIO_STALE_MS ? CARDIO_BY_KEY[activeCardio.key] ?? null : null;
 
   // The top banner's "set a reminder time" → pick a time, which switches the default morning/afternoon
   // beats for one reminder at the chosen time. Setting a time hides the banner for good.
@@ -308,6 +315,22 @@ export default function Home() {
         </View>
 
         <View style={styles.content}>
+          {/* A run/cycle/… still in progress — resumes the live session with its original start time */}
+          {runningCardio ? (
+            <Pressable onPress={() => router.push(`/workout?cardio=${runningCardio.key}`)} style={styles.remindBanner}>
+              <MaterialCommunityIcons name={runningCardio.icon} size={20} color={colors.link} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.remindBannerTitle}>{runningCardio.name} in progress</Text>
+                <Text style={styles.remindBannerSub}>
+                  Started {formatClock(new Date(activeCardio!.startedAt).getHours() * 60 + new Date(activeCardio!.startedAt).getMinutes())} — tap to finish
+                </Text>
+              </View>
+              <Pressable onPress={clearCardio} hitSlop={12}>
+                <Ionicons name="close" size={20} color={colors.muted} />
+              </Pressable>
+            </Pressable>
+          ) : null}
+
           {/* Set-your-reminder-time nudge — tap to pick a time, × to dismiss (returns in a week) */}
           {showReminderBanner ? (
             <Pressable onPress={openReminderPicker} style={styles.remindBanner}>

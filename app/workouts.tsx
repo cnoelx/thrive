@@ -2,12 +2,13 @@
 // freestyle: the workout screen (launched with ?day=<key>) runs the full guided session but doesn't
 // log or touch the streak. Reached from the "Workouts" button at the bottom of home.
 
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
+import { CARDIO_ACTIVITIES } from '@/data/cardio';
 import { DAY_KEYS } from '@/data/schedule';
 import { workoutForDay } from '@/engine/dailyCard';
 import { useAppStore } from '@/store/useAppStore';
@@ -45,6 +46,23 @@ export default function Workouts() {
             </Pressable>
           ))}
         </View>
+
+        {/* Freestyle cardio — timed activities outside the program; the player clocks Begin → Finish */}
+        <Text style={styles.sectionLabel}>CARDIO</Text>
+        <View style={styles.card}>
+          {CARDIO_ACTIVITIES.map((a, i) => (
+            <Pressable key={a.key} onPress={() => router.push(`/workout?cardio=${a.key}`)} style={[styles.row, i > 0 && styles.rowDivider]}>
+              <View style={styles.icon}>
+                <MaterialCommunityIcons name={a.icon} size={19} color={colors.session} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.name}>{a.name}</Text>
+                <Text style={styles.moves}>{a.target}</Text>
+              </View>
+              <Text style={styles.chevron}>›</Text>
+            </Pressable>
+          ))}
+        </View>
       </ScrollView>
     </View>
   );
@@ -56,6 +74,7 @@ const styles = StyleSheet.create({
   back: { color: colors.link, fontSize: font.body, fontFamily: fonts.bold },
   title: { flex: 1, textAlign: 'center', color: colors.ink, fontSize: font.h2, fontFamily: fonts.heavy },
   intro: { color: colors.muted, fontSize: font.small, fontFamily: fonts.regular, lineHeight: 19, marginBottom: spacing.lg },
+  sectionLabel: { color: colors.link, fontSize: font.eyebrow, fontFamily: fonts.heavy, letterSpacing: 1, marginTop: spacing.xl, marginBottom: spacing.sm },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
   rowDivider: { borderTopWidth: 1, borderTopColor: colors.border },

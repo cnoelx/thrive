@@ -116,6 +116,9 @@ interface AppState {
   /** Screen-on voice coaching during workouts (TTS calls out moves + rest). Muted per-session via the
    *  player's speaker toggle, which writes back here. */
   voiceCoach: boolean;
+  /** A freestyle cardio session in progress (run/cycle/…): persisted the moment it starts so a
+   *  pocketed phone whose OS kills the app doesn't lose the run — the timestamp survives relaunch. */
+  activeCardio: { key: string; startedAt: number } | null;
   /** Achievement ids the user has already seen earned — drives the "new" dot on the hero trophy. */
   achievementsSeen: string[];
   /** Rhythm vertical (standalone — never touches progress/streak/workout). Daily sleep + daylight
@@ -147,6 +150,9 @@ interface AppState {
   setReminderEnabled: (on: boolean) => void;
   setRhythmRemindersEnabled: (on: boolean) => void;
   setVoiceCoach: (on: boolean) => void;
+  /** Start / clear the persisted in-progress cardio session. */
+  startCardio: (key: string, startedAt: number) => void;
+  clearCardio: () => void;
   /** Record the full set of earned achievement ids as "seen" (clears the hero dot). */
   markAchievementsSeen: (ids: string[]) => void;
   setName: (name: string) => void;
@@ -187,6 +193,7 @@ export const useAppStore = create<AppState>()(
       rhythmRemindersEnabled: true,
       pullUnlocked: false,
       voiceCoach: true,
+      activeCardio: null,
       achievementsSeen: [],
       circadian: {},
       rhythmLocation: null,
@@ -282,6 +289,9 @@ export const useAppStore = create<AppState>()(
 
       setVoiceCoach: (on) => set({ voiceCoach: on }),
 
+      startCardio: (key, startedAt) => set({ activeCardio: { key, startedAt } }),
+      clearCardio: () => set({ activeCardio: null }),
+
       markAchievementsSeen: (ids) => set({ achievementsSeen: ids }),
 
       setName: (name) => set({ name }),
@@ -321,6 +331,7 @@ export const useAppStore = create<AppState>()(
           rhythmRemindersEnabled: true,
           pullUnlocked: false,
           voiceCoach: true,
+          activeCardio: null,
           achievementsSeen: [],
           circadian: {},
           rhythmLocation: null,
@@ -357,6 +368,7 @@ export const useAppStore = create<AppState>()(
         rhythmRemindersEnabled: s.rhythmRemindersEnabled,
         pullUnlocked: s.pullUnlocked,
         voiceCoach: s.voiceCoach,
+        activeCardio: s.activeCardio,
         achievementsSeen: s.achievementsSeen,
         circadian: s.circadian,
         rhythmLocation: s.rhythmLocation,

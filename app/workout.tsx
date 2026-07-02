@@ -11,14 +11,16 @@ import { ShareCardModal } from '@/components/ShareCardModal';
 import { WorkoutCard } from '@/components/WorkoutCard';
 import { colors, font, fonts, radius, spacing } from '@/constants/theme';
 import { CategoryId, EXERCISE_BY_KEY, formatTarget } from '@/data/benchmarks';
+import { CARDIO_BY_KEY, CARDIO_STALE_MS } from '@/data/cardio';
 import { estimateCalories } from '@/engine/calories';
-import { todaysWorkout, workoutForDay, type WorkoutItem } from '@/engine/dailyCard';
+import { todaysWorkout, workoutForDay, type TodaysWorkout, type WorkoutItem } from '@/engine/dailyCard';
 import { DAY_KEYS, type DayKey } from '@/data/schedule';
 import { dayLabel } from '@/engine/history';
 import { currentStreak } from '@/engine/streak';
 import { FINISH_CUE, introCue, restCue, setCue } from '@/engine/voiceCues';
 import { refreshReminders, requestNotificationPermission } from '@/lib/notifications';
 import { say, stopSpeaking } from '@/lib/speech';
+import { useNow } from '@/lib/useNow';
 import { useAppStore, type WorkoutFeel } from '@/store/useAppStore';
 
 const KEEP_AWAKE_TAG = 'workout';
@@ -109,20 +111,38 @@ export default function Workout() {
   const dismissReminderOffer = useAppStore((s) => s.dismissReminderOffer);
   const voiceCoach = useAppStore((s) => s.voiceCoach);
   const setVoiceCoach = useAppStore((s) => s.setVoiceCoach);
+  const activeCardio = useAppStore((s) => s.activeCardio);
+  const startCardio = useAppStore((s) => s.startCardio);
+  const clearCardio = useAppStore((s) => s.clearCardio);
 
   const day = todayNumber();
-  // Launched with ?day=<key> from the home "Workouts" list = a freestyle session: full guided workout,
-  // but it never logs or touches the streak/calendar. No param = today's scheduled workout.
-  const params = useLocalSearchParams<{ day?: string }>();
-  const freestyleDay = params.day && (DAY_KEYS as readonly string[]).includes(params.day) ? (params.day as DayKey) : null;
-  const freestyle = freestyleDay !== null;
-  const workout = useMemo(
-    () => (freestyleDay ? workoutForDay(progress, pullUnlocked, freestyleDay) : todaysWorkout(progress, pullUnlocked, new Date())),
-    [progress, pullUnlocked, freestyleDay],
+  // Launched with ?day=<key> from the home "Workouts" list = a freestyle session: full guided workout.
+  // ?cardio=<key> = a freestyle cardio activity (run/cycle/…), a single timed step outside the program.
+  // No param = today's scheduled workout.
+  const params = useLocalSearchParams<{ day?: string; cardio?: string }>();
+  const cardioAct = params.cardio ? CARDIO_BY_KEY[params.cardio] ?? null : null;
+  const freestyleDay = !cardioAct && params.day && (DAY_KEYS as readonly string[]).includes(params.day) ? (params.day as DayKey) : null;
+  const freestyle = freestyleDay !== null || cardioAct !== null;
+  const workout = useMemo<TodaysWorkout>(
+    () =>
+      cardioAct
+        ? {
+            focus: cardioAct.name,
+            rest: false,
+            items: [{ exKey: `cardio-${cardioAct.key}`, categoryId: 'cardio', name: cardioAct.name, why: '', sets: null, target: cardioAct.target, workTarget: cardioAct.target, level: 0, chasing: false }],
+          }
+        : freestyleDay
+          ? workoutForDay(progress, pullUnlocked, freestyleDay)
+          : todaysWorkout(progress, pullUnlocked, new Date()),
+    [progress, pullUnlocked, freestyleDay, cardioAct],
   );
   const steps = useMemo(() => buildCircuit(workout.items), [workout.items]);
 
-  const [started, setStarted] = useState(false); // false = showing the pre-workout overview
+  // A cardio session that's already running (persisted) resumes straight into the live screen with its
+  // original start time — surviving navigation away AND the OS killing the app mid-run.
+  const resumedCardio = !!cardioAct && activeCardio?.key === cardioAct.key && Date.now() - activeCardio.startedAt < CARDIO_STALE_MS;
+
+  const [started, setStarted] = useState(resumedCardio); // false = showing the pre-workout overview
   const [stepIndex, setStepIndex] = useState(0);
   const [resting, setResting] = useState(false);
   const [restLeft, setRestLeft] = useState(0);
@@ -131,9 +151,12 @@ export default function Workout() {
   const [feel, setFeel] = useState<WorkoutFeel | null>(null);
   const [showShare, setShowShare] = useState(false);
   const [infoItem, setInfoItem] = useState<{ exKey: string; name: string } | null>(null);
-  const [startedAt, setStartedAt] = useState(0); // set when the user taps Begin
+  const [startedAt, setStartedAt] = useState(resumedCardio ? activeCardio!.startedAt : 0); // set when the user taps Begin
   const [holdLeft, setHoldLeft] = useState<number | null>(null); // hold-timer seconds left (null = not running)
   const [holdSide, setHoldSide] = useState<1 | 2>(1); // which side of a per-side hold we're on
+  // Live elapsed readout for cardio — ticks each minute and snaps current when the app foregrounds,
+  // so unlocking after a pocketed run shows the true time (duration itself is timestamp-based).
+  const now = useNow();
 
   // Speak a cue when voice coaching is on. Cues fire from the transition points (Begin, Done, rest,
   // finish) rather than from effects, so each line maps to one user action — no double-speak.
@@ -153,15 +176,18 @@ export default function Workout() {
         day,
         at: Date.now(),
         scheduled: !freestyle,
-        categories: [...new Set(workout.items.map((it) => EXERCISE_BY_KEY[it.exKey]?.categoryId).filter((c): c is CategoryId => !!c))],
+        categories: cardioAct
+          ? ['cardio']
+          : [...new Set(workout.items.map((it) => EXERCISE_BY_KEY[it.exKey]?.categoryId).filter((c): c is CategoryId => !!c))],
         focus: workout.focus,
         moves: workout.items.length,
         durationMin: mins,
         totalSets: steps.length,
-        ...(weightKg ? { calories: estimateCalories(weightKg, mins) } : {}),
+        ...(weightKg ? { calories: estimateCalories(weightKg, mins, cardioAct?.met) } : {}),
         // Stored for the shareable workout card (name + the goal target per move).
         items: workout.items.map((it) => ({ name: it.name, sets: it.sets, target: it.target })),
       });
+      if (cardioAct) clearCardio();
       coach(FINISH_CUE);
       setFinished(true);
     } else {
@@ -237,13 +263,15 @@ export default function Workout() {
   }, [stepIndex, resting]);
 
   // Keep the screen awake through the live session so the coach can talk and the timer stays visible.
+  // NOT for cardio activities — the phone lives in a pocket for those; let it dim and lock normally
+  // (the duration is timestamp-based, so locking doesn't affect it).
   useEffect(() => {
-    if (!started || finished) return;
+    if (!started || finished || cardioAct) return;
     activateKeepAwakeAsync(KEEP_AWAKE_TAG);
     return () => {
       deactivateKeepAwake(KEEP_AWAKE_TAG);
     };
-  }, [started, finished]);
+  }, [started, finished, cardioAct]);
 
   // Silence the coach when leaving the workout.
   useEffect(() => () => stopSpeaking(), []);
@@ -262,7 +290,7 @@ export default function Workout() {
   }
 
   if (finished) {
-    const kcal = weightKg ? estimateCalories(weightKg, durationMin) : null;
+    const kcal = weightKg ? estimateCalories(weightKg, durationMin, cardioAct?.met) : null;
     const cardData = {
       focus: workout.focus,
       dateLabel: dayLabel(day),
@@ -389,7 +417,7 @@ export default function Workout() {
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 96 }}>
           <Text style={styles.ovEyebrow}>{freestyle ? 'WORKOUT' : "TODAY'S WORKOUT"}</Text>
           <Text style={styles.ovTitle}>{workout.focus}</Text>
-          <Text style={styles.ovMeta}>{workout.items.length} moves · {steps.length} sets</Text>
+          <Text style={styles.ovMeta}>{cardioAct ? 'Timed — the clock starts on Begin, finish when you’re done' : `${workout.items.length} moves · ${steps.length} sets`}</Text>
           {needsBar ? (
             <View style={styles.ovEquip}>
               <Ionicons name="barbell-outline" size={18} color={colors.warnText} />
@@ -406,9 +434,11 @@ export default function Workout() {
                     {formatTarget(it.target)}
                   </Text>
                 </View>
-                <Pressable onPress={() => setInfoItem({ exKey: it.exKey, name: it.name })} hitSlop={8}>
-                  <Ionicons name="information-circle-outline" size={22} color={colors.muted} />
-                </Pressable>
+                {EXERCISE_BY_KEY[it.exKey] ? (
+                  <Pressable onPress={() => setInfoItem({ exKey: it.exKey, name: it.name })} hitSlop={8}>
+                    <Ionicons name="information-circle-outline" size={22} color={colors.muted} />
+                  </Pressable>
+                ) : null}
               </View>
             ))}
           </View>
@@ -416,7 +446,9 @@ export default function Workout() {
         <View style={[styles.ovFooter, { paddingBottom: insets.bottom + spacing.md }]}>
           <Pressable
             onPress={() => {
-              setStartedAt(Date.now());
+              const t = Date.now();
+              setStartedAt(t);
+              if (cardioAct) startCardio(cardioAct.key, t); // survives app death mid-run
               setStarted(true);
               coach(`${introCue(workout.focus)} ${stepCue(steps[0])}`);
             }}
@@ -507,12 +539,17 @@ export default function Workout() {
           <>
             <View style={styles.nameRow}>
               <Text style={styles.exerciseName}>{step.item.name}</Text>
-              <Pressable onPress={() => setInfoItem({ exKey: step.item.exKey, name: step.item.name })} hitSlop={10}>
-                <Ionicons name="information-circle-outline" size={22} color={sunrise.muted} />
-              </Pressable>
+              {EXERCISE_BY_KEY[step.item.exKey] ? (
+                <Pressable onPress={() => setInfoItem({ exKey: step.item.exKey, name: step.item.name })} hitSlop={10}>
+                  <Ionicons name="information-circle-outline" size={22} color={sunrise.muted} />
+                </Pressable>
+              ) : null}
             </View>
             {EXERCISE_BY_KEY[step.item.exKey]?.check ? <Text style={styles.checkEyebrow}>ONE-TIME CHECK</Text> : null}
             <Text style={styles.targetBig}>{formatTarget(step.target)}</Text>
+            {cardioAct ? (
+              <Text style={styles.cardioElapsed}>{Math.max(0, Math.floor((now.getTime() - startedAt) / 60000))} min</Text>
+            ) : null}
             {hold ? (
               holdLeft !== null ? (
                 <>
@@ -624,6 +661,7 @@ const styles = StyleSheet.create({
   primaryBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: spacing.md + 2, paddingHorizontal: spacing.xl, alignItems: 'center', marginTop: spacing.xxl, minWidth: 200 },
   primaryText: { color: colors.primaryText, fontSize: font.body, fontFamily: fonts.heavy },
 
+  cardioElapsed: { color: sunrise.soft, fontSize: 30, fontFamily: fonts.display, marginTop: spacing.md },
   restLabel: { color: sunrise.muted, fontSize: font.small, fontFamily: fonts.heavy, letterSpacing: 2 },
   countdown: { color: sunrise.soft, fontSize: 64, fontFamily: fonts.display, marginTop: spacing.xs },
   upNext: { color: sunrise.muted, fontSize: font.body, textAlign: 'center', marginTop: spacing.sm, fontFamily: fonts.regular },

@@ -10,4 +10,8 @@ describe('estimateCalories', () => {
   it('is zero for a zero-length session', () => {
     expect(estimateCalories(70, 0)).toBe(0);
   });
+  it('takes a per-activity MET (freestyle cardio) and defaults to the calisthenics 5', () => {
+    expect(estimateCalories(70, 30, 9.8)).toBe(343); // a run burns ~2× the default
+    expect(estimateCalories(70, 30)).toBe(175);
+  });
 });
